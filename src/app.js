@@ -19,6 +19,8 @@ class App {
         this.currentTosses = [];
         this.currentHexData = null;
         this.chart = null; // Radar chart instance
+        this.currentRecordId = null;
+        this.chatMessages = [];
         this.init();
     }
 
@@ -93,8 +95,8 @@ class App {
 
         this.showResultOverlay(originalHex, futureHex, result);
         
-        // Save to Journal
-        JournalService.saveRecord({
+        // Save to Journal and keep ID for chat session
+        this.currentRecordId = JournalService.saveRecord({
             question: document.getElementById('user-question')?.value || "隨喜求卦",
             originalId: originalHex.id,
             originalName: originalHex.name,
@@ -104,8 +106,7 @@ class App {
             hasChange: result.hasChange
         });
 
-        // Reset for next time (after view)
-        this.currentTosses = [];
+        this.chatMessages = []; // Reset chat for new session
     }
 
     showResultOverlay(original, future, meta) {
@@ -209,6 +210,8 @@ class App {
             document.querySelector('.instruction').classList.remove('hidden');
             document.querySelector('.instruction').innerText = "點擊畫面開始第 1 次投擲";
             this.currentTosses = [];
+            this.currentRecordId = null;
+            this.chatMessages = [];
             document.getElementById('casting-progress').innerHTML = ''; // Clear progress
         });
 
@@ -302,8 +305,13 @@ class App {
                 <div class="item-content">
                     <strong>問：${item.question || '未設定'}</strong>
                     <p>卦象：${item.originalName} ${item.hasChange ? '變' : ''} ${item.futureName || ''}</p>
+                    <small class="chat-hint">${item.messages?.length > 0 ? '💬 已有對話紀錄' : '詢問導師'}</small>
                 </div>
             `;
+            el.onclick = () => {
+                const hex = this.library.find(h => h.id === item.originalId);
+                if (hex) this.showHexagramDetail(hex, false, item.id);
+            };
             historyList.appendChild(el);
 
             // Accumulate relative stats if available in the record
@@ -360,12 +368,15 @@ class App {
         });
     }
 
-    showHexagramDetail(hex, isAutoAsk = false) {
+    showHexagramDetail(hex, isAutoAsk = false, recordId = null) {
+        this.currentHexData = hex;
+        this.currentRecordId = recordId || this.currentRecordId;
+        
         const modal = document.getElementById('detail-modal');
         const body = modal.querySelector('.modal-body');
         
         body.innerHTML = `
-            <h2>${hex.name}卦 (${hex.binary})</h2>
+            <h2>${hex.name}卦 (#${hex.id})</h2>
             <div class="detail-section">
                 <h4>卦辭</h4>
                 <p>${hex.original_classic.hexagram_text}</p>
@@ -390,39 +401,92 @@ class App {
             </div>
         `;
 
-        modal.classList.add('active');
-        
-        // AI Integration
+        // Reset and Prepare Chat
+        const chatContainer = document.getElementById('ai-chat-container');
+        const chatHistory = document.getElementById('chat-history');
         const askAiBtn = document.getElementById('ask-ai');
-        const aiResponse = document.getElementById('ai-response');
-        aiResponse.classList.add('hidden'); // Reset
+        
+        chatContainer.classList.add('hidden');
+        chatHistory.innerHTML = '';
+        askAiBtn.classList.remove('hidden');
 
-        const handleAskAI = async () => {
-            const questionInput = document.getElementById('user-question');
-            const question = questionInput ? questionInput.value : "隨喜求卦";
-            aiResponse.classList.remove('hidden');
-            aiResponse.querySelector('.ai-text').innerText = "導師正在感應天機，請稍候...";
-            
-            const interpretation = await AIService.interpret(question, hex);
-            aiResponse.querySelector('.ai-text').innerText = interpretation;
-        };
-
-        askAiBtn.onclick = handleAskAI;
-
-        // Auto-run AI if question is pre-filled
-        if (isAutoAsk) {
-            const questionInput = document.getElementById('user-question');
-            if (questionInput && questionInput.value.trim() !== "") {
-                handleAskAI();
-            }
+        // Load messages if they exist for this record
+        const record = JournalService.getRecord(this.currentRecordId);
+        this.chatMessages = record?.messages || [];
+        
+        if (this.chatMessages.length > 0) {
+            chatContainer.classList.remove('hidden');
+            askAiBtn.classList.add('hidden');
+            this.chatMessages.forEach(msg => this.appendMessageToUI(msg.role, msg.content));
         }
 
-        // Close modal event
+        modal.classList.add('active');
+        
+        askAiBtn.onclick = () => {
+            chatContainer.classList.remove('hidden');
+            askAiBtn.classList.add('hidden');
+            if (this.chatMessages.length === 0) {
+                const firstQuestion = document.getElementById('user-question')?.value || "請導師針對此卦給予建議";
+                this.handleSendChat(firstQuestion);
+            }
+        };
+
+        // Chat Input Event
+        const sendBtn = document.getElementById('send-chat');
+        const chatInput = document.getElementById('chat-input');
+        
+        sendBtn.onclick = () => this.handleSendChat();
+        chatInput.onkeypress = (e) => { if (e.key === 'Enter') this.handleSendChat(); };
+
+        // Auto-run AI if requested
+        if (isAutoAsk && this.chatMessages.length === 0) {
+            askAiBtn.click();
+        }
+
+        // Close modal
         const closeBtn = modal.querySelector('.close-btn');
         closeBtn.onclick = () => modal.classList.remove('active');
-        modal.onclick = (e) => {
-            if (e.target === modal) modal.classList.remove('active');
-        };
+    }
+
+    async handleSendChat(forcedText = null) {
+        const input = document.getElementById('chat-input');
+        const text = forcedText || input.value.trim();
+        if (!text) return;
+
+        if (!forcedText) input.value = '';
+
+        // User Message
+        this.chatMessages.push({ role: 'user', content: text });
+        this.appendMessageToUI('user', text);
+        
+        // AI Response
+        const status = document.querySelector('.chat-status');
+        status.innerText = '感應中...';
+        
+        try {
+            const response = await AIService.chat(this.chatMessages, this.currentHexData);
+            this.chatMessages.push({ role: 'assistant', content: response });
+            this.appendMessageToUI('ai', response);
+            
+            // Persist
+            if (this.currentRecordId) {
+                JournalService.updateMessages(this.currentRecordId, this.chatMessages);
+            }
+        } catch (error) {
+            console.error("AI Chat Error:", error);
+            this.appendMessageToUI('ai', "導師目前無法感應，請稍後再試。");
+        } finally {
+            status.innerText = '在線';
+        }
+    }
+
+    appendMessageToUI(role, content) {
+        const history = document.getElementById('chat-history');
+        const msg = document.createElement('div');
+        msg.className = `chat-msg ${role === 'user' ? 'user' : 'ai'}`;
+        msg.innerText = content;
+        history.appendChild(msg);
+        history.scrollTop = history.scrollHeight;
     }
 }
 

@@ -8,16 +8,41 @@ export class JournalService {
 
   /**
    * Saves a new divination record.
-   * @param {Object} record - { timestamp, question, originalId, futureId, changingLines }
+   * @param {Object} record - { timestamp, question, originalId, futureId, changingLines, messages }
    */
   static saveRecord(record) {
     const history = this.getHistory();
-    history.unshift({
-      id: Date.now(),
+    const newRecord = {
+      id: Date.now().toString(),
       date: new Date().toISOString(),
+      messages: [], // Initialize empty chat
       ...record
-    });
+    };
+    history.unshift(newRecord);
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history));
+    return newRecord.id;
+  }
+
+  /**
+   * Updates messages for a specific record.
+   * @param {string} id - Record ID.
+   * @param {Array} messages - Message history.
+   */
+  static updateMessages(id, messages) {
+    const history = this.getHistory();
+    const index = history.findIndex(item => item.id === id);
+    if (index !== -1) {
+      history[index].messages = messages;
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history));
+    }
+  }
+
+  /**
+   * Gets a specific record by ID.
+   */
+  static getRecord(id) {
+    const history = this.getHistory();
+    return history.find(item => item.id === id);
   }
 
   /**

@@ -5,49 +5,43 @@
 
 export class AIService {
     /**
-     * Get an interpretation for a specific hexagram and user question.
-     * @param {string} question - User's question.
+     * Handles multi-turn chat with the AI Mentor.
+     * @param {Array} messages - Array of {role: 'user'|'assistant', content: string}
      * @param {Object} hexagramData - The JSON data of the hexagram.
-     * @returns {Promise<string>} - The AI generated text.
+     * @returns {Promise<string>} - The AI generated response.
      */
-    static async interpret(question, hexagramData) {
+    static async chat(messages, hexagramData) {
         const currentDate = new Date().toLocaleString('zh-TW', { timeZone: 'America/New_York' });
         const systemPrompt = `你現在是一位精通「六爻」與「術數」的導師。
-        請根據用戶所問的『${question}』，並優先參考以下【納甲數據】進行推演。
-        如果你能判定當日日辰（今天日期：${currentDate}），請結合日辰對爻位五行的生剋進行專業分析。
-        結合『llm_analysis』與『najia_analysis』給出數據與理論並重的回覆。`;
-
-        const context = `
-            卦名：${hexagramData.name}
-            宮位：${hexagramData.najia_analysis?.palace}宮 [${hexagramData.najia_analysis?.palace_wuxing}]
-            六爻納甲：${JSON.stringify(hexagramData.najia_analysis?.lines)}
-            現代解析：${hexagramData.llm_analysis.general}
-        `;
-
-        console.log("AI Interpreting with professional Liu Yao prompt:", systemPrompt);
+        當前卦象：${hexagramData.name} (${hexagramData.najia_analysis?.palace}宮 [${hexagramData.najia_analysis?.palace_wuxing}])
+        納甲數據：${JSON.stringify(hexagramData.najia_analysis?.lines)}
+        今日日期：${currentDate} (波士頓真太陽時校準)。
         
-        // Simulated professional response
+        請根據導師身分，結合上述專業數據與用戶進行深度對話。
+        當前對話歷史如下：`;
+
+        console.log("AI Chatting with context:", systemPrompt);
+        
+        // In a real implementation, we would send the full message array to Gemini.
+        // For simulation, we'll respond based on the last user message.
+        const lastUserMsg = messages.filter(m => m.role === 'user').pop()?.content || "";
+
         return new Promise((resolve) => {
             setTimeout(() => {
-                const lines = hexagramData.najia_analysis?.lines || [];
-                const careerLine = lines.find(l => l.relative === "官鬼");
-                const wealthLine = lines.find(l => l.relative === "妻財");
-                
-                resolve(`【六爻導師專業推演】
-針對您所問的「${question}」，今日得「${hexagramData.name}」卦。
-
-【術數數據分析】
-- 宮位基準：${hexagramData.najia_analysis?.palace}宮（五行：${hexagramData.najia_analysis?.palace_wuxing}）。
-- 關鍵爻位：${careerLine ? `官鬼爻位於第 ${careerLine.line_number} 爻（${careerLine.dizhi}${careerLine.wuxing}），代表目前壓力與責任並存。` : ''}
-${wealthLine ? `- 財運展望：妻財爻位於第 ${wealthLine.line_number} 爻（${wealthLine.dizhi}${wealthLine.wuxing}），目前氣機尚可。` : ''}
-
-【時空校準】
-今日日期為 ${currentDate.split(' ')[0]}，請注意日辰對${hexagramData.najia_analysis?.palace_wuxing}氣的引動。
-
-【建議心法】
-${hexagramData.llm_analysis.career}
-結合卦辭，目前建議穩重求進，不可急躁。`);
-            }, 2000);
+                if (messages.length === 1) {
+                    // Initial interpretation (first turn)
+                    resolve(`【導師感應】
+目前得到「${hexagramData.name}」卦。從六爻來看，第 ${hexagramData.najia_analysis?.lines[0].line_number} 爻的 ${hexagramData.najia_analysis?.lines[0].relative} 動向值得關注。
+針對您問的「${lastUserMsg}」，我建議您從「${hexagramData.llm_analysis.general.substring(0, 20)}」的角度切入思考。
+您還有什麼想深入了解的嗎？`);
+                } else {
+                    // Follow-up responses
+                    resolve(`針對您剛才提到的「${lastUserMsg.substring(0, 15)}...」，
+在術數中這對應到「${hexagramData.najia_analysis?.palace_wuxing}」氣的流轉。
+從專業角度看，這意味著「${hexagramData.summary.substring(0, 30)}」。
+您是否感覺到這股能量的影響？`);
+                }
+            }, 1500);
         });
     }
 }

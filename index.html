@@ -108,10 +108,21 @@
                 <div class="modal-body">
                     <!-- Dynamic content will be injected here -->
                 </div>
-                <div id="ai-response" class="glass-panel hidden">
-                    <h4>AI 導師解語</h4>
-                    <div class="ai-text">正在感應中...</div>
+                <!-- Chat Interface -->
+                <div id="ai-chat-container" class="glass-panel hidden">
+                    <div class="chat-header">
+                        <h4>AI 導師對話</h4>
+                        <span class="chat-status">感應中...</span>
+                    </div>
+                    <div id="chat-history" class="chat-scroll">
+                        <!-- Messages will appear here -->
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="向導師請教更多細節...">
+                        <button id="send-chat" class="btn-icon">➤</button>
+                    </div>
                 </div>
+                
                 <button id="ask-ai" class="btn-primary">詢問 AI 導師</button>
             </div>
         </div>
