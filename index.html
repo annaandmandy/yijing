@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I-Ching Lab | 沉浸式 3D 抽爻</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+    <!-- Google Fonts for premium typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Three.js and Cannon.js for 3D simulation -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
+            }
+        }
+    </script>
+</head>
+<body class="dark-mode">
+    <div id="app">
+        <!-- Navigation Bar -->
+        <nav class="glass-nav">
+            <div class="logo">I-Ching Lab</div>
+            <div class="nav-links">
+                <a href="#tabletop" class="active">抽爻 Tabletop</a>
+                <a href="#library">圖書館 Library</a>
+                <a href="#history">每日紀錄 Journal</a>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="view-container">
+            <!-- 3D Tabletop View -->
+            <section id="tabletop" class="view active">
+                <div class="question-container">
+                    <input type="text" id="user-question" placeholder="輸入你想問的事（例如：今日運勢、創業建議）..." class="glass-input">
+                </div>
+                <div id="canvas-container">
+                    <!-- Three.js Canvas will be injected here -->
+                    <div class="instruction">震動手機或按住拖拽以投擲</div>
+                </div>
+                <!-- Hexagram Result Overlay -->
+                <div id="result-overlay" class="hidden glass-panel">
+                    <div class="binary-display"></div>
+                    <h1 class="hex-name">--</h1>
+                    <p class="hex-summary"></p>
+                    <button id="view-details" class="btn-primary">查看詳解</button>
+                    <button id="re-toss" class="btn-secondary">再次投擲</button>
+                </div>
+            </section>
+
+            <!-- Library View -->
+            <section id="library" class="view">
+                <div class="header">
+                    <h2>全卦圖書館</h2>
+                    <div class="filters">
+                        <!-- Elemental filters will go here -->
+                    </div>
+                </div>
+                <div id="hex-grid" class="grid-container">
+                    <!-- 64 hexagrams will be generated here -->
+                </div>
+            </section>
+
+            <!-- History View -->
+            <section id="history" class="view">
+                <div class="header">
+                    <h2>每日抽爻紀錄</h2>
+                </div>
+                <div id="history-container">
+                    <div class="stats-card glass-panel">
+                        <h3>能量分佈</h3>
+                        <canvas id="radar-chart"></canvas>
+                    </div>
+                    <div class="history-list">
+                        <!-- History items will be listed here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Detail Modal -->
+        <div id="detail-modal" class="modal">
+            <div class="modal-content glass-panel">
+                <span class="close-btn">&times;</span>
+                <div class="modal-body">
+                    <!-- Dynamic content will be injected here -->
+                </div>
+                <div id="ai-response" class="glass-panel hidden">
+                    <h4>AI 導師解語</h4>
+                    <div class="ai-text">正在感應中...</div>
+                </div>
+                <button id="ask-ai" class="btn-primary">詢問 AI 導師</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main JS entry -->
+    <script type="module" src="src/app.js"></script>
+</body>
+</html>
