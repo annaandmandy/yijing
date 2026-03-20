@@ -30,6 +30,7 @@ class App {
         // Load data
         this.library = await ManifestService.loadAllHexagrams();
         console.log(`Loaded ${this.library.length} hexagrams.`);
+        if (this.library.length > 0) console.log("Sample Hexagram Data:", this.library[0]);
 
         this.setupNavigation();
         this.setupCastingManager();
@@ -99,6 +100,7 @@ class App {
         this.currentRecordId = JournalService.saveRecord({
             question: document.getElementById('user-question')?.value || "隨喜求卦",
             originalId: originalHex.id,
+            originalBinary: result.originalBinary,
             originalName: originalHex.name,
             futureId: futureHex?.id,
             futureName: futureHex?.name,
@@ -109,7 +111,8 @@ class App {
         this.chatMessages = []; // Reset chat for new session
     }
 
-    showResultOverlay(original, future, meta) {
+    showResultOverlay(original, future, meta, recordId = null) {
+        this.currentRecordId = recordId || this.currentRecordId;
         const overlay = document.getElementById('result-overlay');
         const nameEl = overlay.querySelector('.hex-name');
         const binaryEl = overlay.querySelector('.binary-display');
@@ -166,7 +169,7 @@ class App {
         // Link View Details button
         const detailBtn = overlay.querySelector('#view-details');
         detailBtn.onclick = () => {
-            this.showHexagramDetail(original, true);
+            this.showHexagramDetail(original, true, recordId);
         };
     }
 
@@ -294,38 +297,68 @@ class App {
         const history = JournalService.getHistory();
         historyList.innerHTML = history.length === 0 ? '<p>尚無任何紀錄</p>' : '';
         
-        // Stats for Five Elements and Six Relatives
         const relativeStats = { "官鬼": 0, "父母": 0, "兄弟": 0, "子孫": 0, "妻財": 0 };
+        const groups = {};
 
         history.forEach(item => {
-            const el = document.createElement('div');
-            el.className = 'history-item glass-panel';
-            el.innerHTML = `
-                <div class="item-date">${new Date(item.date).toLocaleDateString()}</div>
-                <div class="item-content">
-                    <strong>問：${item.question || '未設定'}</strong>
-                    <p>卦象：${item.originalName} ${item.hasChange ? '變' : ''} ${item.futureName || ''}</p>
-                    <small class="chat-hint">${item.messages?.length > 0 ? '💬 已有對話紀錄' : '詢問導師'}</small>
-                </div>
-            `;
-            el.onclick = () => {
-                const hex = this.library.find(h => h.id === item.originalId);
-                if (hex) this.showHexagramDetail(hex, false, item.id);
-            };
-            historyList.appendChild(el);
+            const dateStr = new Date(item.date).toLocaleDateString();
+            if (!groups[dateStr]) groups[dateStr] = [];
+            groups[dateStr].push(item);
 
-            // Accumulate relative stats if available in the record
-            // Since we didn't save najia_analysis in history record before, 
-            // we should lookup from library if possible, or just skip for old records.
             const hex = this.library.find(h => h.id === item.originalId);
             if (hex && hex.najia_analysis) {
-                // Count the count of each relative in the 6 lines
                 hex.najia_analysis.lines.forEach(l => {
-                    if (relativeStats[l.relative] !== undefined) {
-                        relativeStats[l.relative]++;
-                    }
+                    if (relativeStats[l.relative] !== undefined) relativeStats[l.relative]++;
                 });
             }
+        });
+
+        // Render date groups
+        Object.keys(groups).forEach(date => {
+            const header = document.createElement('div');
+            header.className = 'date-header';
+            header.innerText = date;
+            historyList.appendChild(header);
+
+            groups[date].forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'history-item glass-panel';
+                
+                const lastMsg = item.messages?.length > 0 ? item.messages[item.messages.length - 1].content.substring(0, 40) + '...' : '點擊與導師深入對話';
+
+                el.innerHTML = `
+                    <div class="item-main">
+                        <strong>問：${item.question || '未設定'}</strong>
+                        <div class="item-summary">${lastMsg}</div>
+                        <small class="chat-hint">引發自：${item.originalName}卦</small>
+                    </div>
+                    <button class="result-action">查看當時卦象</button>
+                `;
+                
+                // Open Chat on main area click
+                el.onclick = (e) => {
+                    if (e.target.closest('.result-action')) return;
+                    const hex = this.library.find(h => h.id === item.originalId);
+                    if (hex) this.showHexagramDetail(hex, false, item.id);
+                };
+
+                // Open Result Overlay on button click
+                const resBtn = el.querySelector('.result-action');
+                resBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const hex = this.library.find(h => h.id === item.originalId);
+                    const future = item.futureId ? this.library.find(h => h.id === item.futureId) : null;
+                    if (hex) {
+                        this.switchView('tabletop');
+                        this.showResultOverlay(hex, future, {
+                            originalBinary: item.originalBinary || "------",
+                            hasChange: item.hasChange
+                        }, item.id);
+                    }
+                };
+                
+                historyList.appendChild(el);
+            });
         });
 
         this.renderRadarChart(relativeStats);
@@ -369,34 +402,40 @@ class App {
     }
 
     showHexagramDetail(hex, isAutoAsk = false, recordId = null) {
+        if (!hex) {
+            console.error("showHexagramDetail: hex is undefined");
+            return;
+        }
+        console.log("Showing detail for hex:", hex.id, hex.name);
+        
         this.currentHexData = hex;
-        this.currentRecordId = recordId || this.currentRecordId;
+        this.currentRecordId = recordId;
         
         const modal = document.getElementById('detail-modal');
         const body = modal.querySelector('.modal-body');
         
         body.innerHTML = `
-            <h2>${hex.name}卦 (#${hex.id})</h2>
+            <h2>${hex.name || '未知'}卦 (#${hex.id || '??'})</h2>
             <div class="detail-section">
                 <h4>卦辭</h4>
-                <p>${hex.original_classic.hexagram_text}</p>
+                <p>${hex.original_classic?.hexagram_text || '尚無文獻'}</p>
             </div>
             <div class="detail-section">
                 <h4>現代解析</h4>
-                <p>${hex.llm_analysis.general}</p>
+                <p>${hex.llm_analysis?.general || '正在研讀中...'}</p>
             </div>
             <div class="detail-section">
                 <h4>結構與邏輯</h4>
-                <p>${hex.logic_teaching}</p>
+                <p>${hex.logic_teaching || '術數推演中...'}</p>
             </div>
             <div class="detail-section">
                 <h4>視覺意象</h4>
-                <p>${hex.visual_vibe}</p>
+                <p>${hex.visual_vibe || '意象捕捉中...'}</p>
             </div>
             <div class="detail-section">
                 <h4>記憶竅門</h4>
                 <ul>
-                    ${hex.memory_hacks.map(h => `<li>${h}</li>`).join('')}
+                    ${(hex.memory_hacks || []).map(h => `<li>${h}</li>`).join('')}
                 </ul>
             </div>
         `;

@@ -1,47 +1,73 @@
-/**
- * AIService.js
- * Handles AI-based interpretation of hexagrams.
- */
+import { EnvService } from './EnvService.js';
 
 export class AIService {
     /**
-     * Handles multi-turn chat with the AI Mentor.
+     * Handles multi-turn chat with the AI Mentor using Gemini 1.5 Flash.
      * @param {Array} messages - Array of {role: 'user'|'assistant', content: string}
      * @param {Object} hexagramData - The JSON data of the hexagram.
      * @returns {Promise<string>} - The AI generated response.
      */
     static async chat(messages, hexagramData) {
+        const apiKey = await EnvService.get('GOOGLE_API_KEY');
+        if (!apiKey) {
+            console.error("Missing Gemini API Key in .env");
+            return "抱歉，導師連線失敗。請確認根目錄下的 .env 檔案包含 GOOGLE_API_KEY。";
+        }
+
         const currentDate = new Date().toLocaleString('zh-TW', { timeZone: 'America/New_York' });
-        const systemPrompt = `你現在是一位精通「六爻」與「術數」的導師。
-        當前卦象：${hexagramData.name} (${hexagramData.najia_analysis?.palace}宮 [${hexagramData.najia_analysis?.palace_wuxing}])
+
+        // Map messages to Gemini API format
+        const history = messages.slice(0, -1).map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }]
+        }));
+        const lastUserContent = messages[messages.length - 1].content;
+
+        const systemInstruction = `你現在是一位精通「六爻」與「術數」的易經導師。
+        當前卦象：${hexagramData.name}卦 (#${hexagramData.id})
+        宮位：${hexagramData.najia_analysis?.palace}宮 [${hexagramData.najia_analysis?.palace_wuxing}]
         納甲數據：${JSON.stringify(hexagramData.najia_analysis?.lines)}
         今日日期：${currentDate} (波士頓真太陽時校準)。
         
-        請根據導師身分，結合上述專業數據與用戶進行深度對話。
-        當前對話歷史如下：`;
+        請根據導師身分與上述數據進行深度術數對話。
+        請注意：
+        1. 保持導師的威嚴與慈悲感。
+        2. 結合日辰與卦中五行的生剋進行專業演繹。
+        3. 回覆要簡潔且具備啟發性。`;
 
-        console.log("AI Chatting with context:", systemPrompt);
-        
-        // In a real implementation, we would send the full message array to Gemini.
-        // For simulation, we'll respond based on the last user message.
-        const lastUserMsg = messages.filter(m => m.role === 'user').pop()?.content || "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                if (messages.length === 1) {
-                    // Initial interpretation (first turn)
-                    resolve(`【導師感應】
-目前得到「${hexagramData.name}」卦。從六爻來看，第 ${hexagramData.najia_analysis?.lines[0].line_number} 爻的 ${hexagramData.najia_analysis?.lines[0].relative} 動向值得關注。
-針對您問的「${lastUserMsg}」，我建議您從「${hexagramData.llm_analysis.general.substring(0, 20)}」的角度切入思考。
-您還有什麼想深入了解的嗎？`);
-                } else {
-                    // Follow-up responses
-                    resolve(`針對您剛才提到的「${lastUserMsg.substring(0, 15)}...」，
-在術數中這對應到「${hexagramData.najia_analysis?.palace_wuxing}」氣的流轉。
-從專業角度看，這意味著「${hexagramData.summary.substring(0, 30)}」。
-您是否感覺到這股能量的影響？`);
-                }
-            }, 1500);
-        });
+        try {
+            console.log("Fetching Gemini API...");
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [
+                        { role: 'user', parts: [{ text: systemInstruction }] },
+                        { role: 'model', parts: [{ text: "學生受教。我已準備好結合當下卦象與日辰氣機進行推演。請說出您的疑惑。" }] },
+                        ...history,
+                        { role: 'user', parts: [{ text: lastUserContent }] }
+                    ]
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Gemini API Error Response:", errorData);
+                return `導師感應中斷 (API Error ${response.status}): ${errorData.error?.message || '未知錯誤'}`;
+            }
+
+            const data = await response.json();
+            if (data.candidates && data.candidates.length > 0) {
+                return data.candidates[0].content.parts[0].text;
+            } else {
+                console.error("No candidates in response:", data);
+                return "導師暫無所應（未返回解析內容），請換個方式請教。";
+            }
+        } catch (error) {
+            console.error("Network Error during Gemini fetch:", error);
+            return `導師目前無法感應（網路連線異常：${error.message}），請檢查連線或 API Key。`;
+        }
     }
 }
