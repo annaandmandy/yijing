@@ -49,5 +49,47 @@
     ],
     "id": 33,
     "binary": "001111",
-    "name": "遁"
+    "name": "遁",
+    "najia_analysis": {
+        "palace": "坤",
+        "palace_wuxing": "土",
+        "lines": [
+            {
+                "line_number": 1,
+                "dizhi": "子",
+                "wuxing": "水",
+                "relative": "妻財"
+            },
+            {
+                "line_number": 2,
+                "dizhi": "寅",
+                "wuxing": "木",
+                "relative": "官鬼"
+            },
+            {
+                "line_number": 3,
+                "dizhi": "辰",
+                "wuxing": "土",
+                "relative": "兄弟"
+            },
+            {
+                "line_number": 4,
+                "dizhi": "戌",
+                "wuxing": "土",
+                "relative": "兄弟"
+            },
+            {
+                "line_number": 5,
+                "dizhi": "子",
+                "wuxing": "水",
+                "relative": "妻財"
+            },
+            {
+                "line_number": 6,
+                "dizhi": "寅",
+                "wuxing": "木",
+                "relative": "官鬼"
+            }
+        ]
+    }
 }

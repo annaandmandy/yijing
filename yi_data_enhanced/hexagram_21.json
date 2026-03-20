@@ -58,5 +58,47 @@
     ],
     "id": 21,
     "binary": "100101",
-    "name": "噬嗑"
+    "name": "噬嗑",
+    "najia_analysis": {
+        "palace": "震",
+        "palace_wuxing": "木",
+        "lines": [
+            {
+                "line_number": 1,
+                "dizhi": "卯",
+                "wuxing": "木",
+                "relative": "兄弟"
+            },
+            {
+                "line_number": 2,
+                "dizhi": "丑",
+                "wuxing": "土",
+                "relative": "妻財"
+            },
+            {
+                "line_number": 3,
+                "dizhi": "亥",
+                "wuxing": "水",
+                "relative": "父母"
+            },
+            {
+                "line_number": 4,
+                "dizhi": "午",
+                "wuxing": "火",
+                "relative": "子孫"
+            },
+            {
+                "line_number": 5,
+                "dizhi": "申",
+                "wuxing": "金",
+                "relative": "官鬼"
+            },
+            {
+                "line_number": 6,
+                "dizhi": "戌",
+                "wuxing": "土",
+                "relative": "妻財"
+            }
+        ]
+    }
 }

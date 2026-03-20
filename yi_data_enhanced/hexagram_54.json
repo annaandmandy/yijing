@@ -52,5 +52,47 @@
     ],
     "id": 54,
     "binary": "110100",
-    "name": "歸妹"
+    "name": "歸妹",
+    "najia_analysis": {
+        "palace": "震",
+        "palace_wuxing": "木",
+        "lines": [
+            {
+                "line_number": 1,
+                "dizhi": "子",
+                "wuxing": "水",
+                "relative": "父母"
+            },
+            {
+                "line_number": 2,
+                "dizhi": "寅",
+                "wuxing": "木",
+                "relative": "兄弟"
+            },
+            {
+                "line_number": 3,
+                "dizhi": "辰",
+                "wuxing": "土",
+                "relative": "妻財"
+            },
+            {
+                "line_number": 4,
+                "dizhi": "未",
+                "wuxing": "土",
+                "relative": "妻財"
+            },
+            {
+                "line_number": 5,
+                "dizhi": "巳",
+                "wuxing": "火",
+                "relative": "子孫"
+            },
+            {
+                "line_number": 6,
+                "dizhi": "卯",
+                "wuxing": "木",
+                "relative": "兄弟"
+            }
+        ]
+    }
 }

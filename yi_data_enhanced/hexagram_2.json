@@ -58,5 +58,47 @@
     ],
     "id": 2,
     "binary": "000000",
-    "name": "坤"
+    "name": "坤",
+    "najia_analysis": {
+        "palace": "坤",
+        "palace_wuxing": "土",
+        "lines": [
+            {
+                "line_number": 1,
+                "dizhi": "未",
+                "wuxing": "土",
+                "relative": "兄弟"
+            },
+            {
+                "line_number": 2,
+                "dizhi": "巳",
+                "wuxing": "火",
+                "relative": "父母"
+            },
+            {
+                "line_number": 3,
+                "dizhi": "卯",
+                "wuxing": "木",
+                "relative": "官鬼"
+            },
+            {
+                "line_number": 4,
+                "dizhi": "丑",
+                "wuxing": "土",
+                "relative": "兄弟"
+            },
+            {
+                "line_number": 5,
+                "dizhi": "亥",
+                "wuxing": "水",
+                "relative": "妻財"
+            },
+            {
+                "line_number": 6,
+                "dizhi": "酉",
+                "wuxing": "金",
+                "relative": "子孫"
+            }
+        ]
+    }
 }

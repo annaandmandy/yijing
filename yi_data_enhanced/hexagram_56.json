@@ -70,5 +70,47 @@
     ],
     "id": 56,
     "binary": "001101",
-    "name": "旅"
+    "name": "旅",
+    "najia_analysis": {
+        "palace": "坎",
+        "palace_wuxing": "水",
+        "lines": [
+            {
+                "line_number": 1,
+                "dizhi": "卯",
+                "wuxing": "木",
+                "relative": "子孫"
+            },
+            {
+                "line_number": 2,
+                "dizhi": "丑",
+                "wuxing": "土",
+                "relative": "官鬼"
+            },
+            {
+                "line_number": 3,
+                "dizhi": "亥",
+                "wuxing": "水",
+                "relative": "兄弟"
+            },
+            {
+                "line_number": 4,
+                "dizhi": "戌",
+                "wuxing": "土",
+                "relative": "官鬼"
+            },
+            {
+                "line_number": 5,
+                "dizhi": "子",
+                "wuxing": "水",
+                "relative": "兄弟"
+            },
+            {
+                "line_number": 6,
+                "dizhi": "寅",
+                "wuxing": "木",
+                "relative": "子孫"
+            }
+        ]
+    }
 }

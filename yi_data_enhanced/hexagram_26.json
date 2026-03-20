@@ -55,5 +55,47 @@
     ],
     "id": 26,
     "binary": "111001",
-    "name": "大畜"
+    "name": "大畜",
+    "najia_analysis": {
+        "palace": "兌",
+        "palace_wuxing": "金",
+        "lines": [
+            {
+                "line_number": 1,
+                "dizhi": "辰",
+                "wuxing": "土",
+                "relative": "父母"
+            },
+            {
+                "line_number": 2,
+                "dizhi": "午",
+                "wuxing": "火",
+                "relative": "官鬼"
+            },
+            {
+                "line_number": 3,
+                "dizhi": "申",
+                "wuxing": "金",
+                "relative": "兄弟"
+            },
+            {
+                "line_number": 4,
+                "dizhi": "午",
+                "wuxing": "火",
+                "relative": "官鬼"
+            },
+            {
+                "line_number": 5,
+                "dizhi": "申",
+                "wuxing": "金",
+                "relative": "兄弟"
+            },
+            {
+                "line_number": 6,
+                "dizhi": "戌",
+                "wuxing": "土",
+                "relative": "父母"
+            }
+        ]
+    }
 }
