@@ -498,22 +498,37 @@ class App {
         this.chatMessages.push({ role: 'user', content: text });
         this.appendMessageToUI('user', text);
         
-        // AI Response
+        // AI Response placeholder
         const status = document.querySelector('.chat-status');
         status.innerText = '感應中...';
         
+        // Create an empty AI message bubble for streaming
+        const aiMsgEl = this.appendMessageToUI('ai', '');
+        let fullResponse = '';
+
         try {
-            const response = await AIService.chat(this.chatMessages, this.currentHexData);
-            this.chatMessages.push({ role: 'assistant', content: response });
-            this.appendMessageToUI('ai', response);
+            console.log("App: Requesting stream from AIService...");
+            const stream = AIService.streamChat(this.chatMessages, this.currentHexData);
+            for await (const chunk of stream) {
+                console.log("App: received chunk:", chunk);
+                fullResponse += chunk;
+                aiMsgEl.innerText = fullResponse;
+                const history = document.getElementById('chat-history');
+                history.scrollTop = history.scrollHeight;
+            }
+            
+            console.log("App: Stream completed.");
+            console.log("App: Full AI Answer:", fullResponse);
+            
+            this.chatMessages.push({ role: 'assistant', content: fullResponse });
             
             // Persist
             if (this.currentRecordId) {
                 JournalService.updateMessages(this.currentRecordId, this.chatMessages);
             }
         } catch (error) {
-            console.error("AI Chat Error:", error);
-            this.appendMessageToUI('ai', "導師目前無法感應，請稍後再試。");
+            console.error("AI Stream Error:", error);
+            aiMsgEl.innerText = "導師目前無法感應（連線異常），請稍後再試。";
         } finally {
             status.innerText = '在線';
         }
@@ -526,6 +541,7 @@ class App {
         msg.innerText = content;
         history.appendChild(msg);
         history.scrollTop = history.scrollHeight;
+        return msg; // Return element for updates
     }
 }
 

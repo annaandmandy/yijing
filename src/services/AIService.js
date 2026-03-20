@@ -1,22 +1,19 @@
-import { EnvService } from './EnvService.js';
-
 export class AIService {
     /**
-     * Handles multi-turn chat with the AI Mentor using Gemini 1.5 Flash.
+     * Handles multi-turn streaming chat with the AI Mentor.
      * @param {Array} messages - Array of {role: 'user'|'assistant', content: string}
      * @param {Object} hexagramData - The JSON data of the hexagram.
-     * @returns {Promise<string>} - The AI generated response.
+     * @yields {string} - Chunks of the AI generated response.
      */
-    static async chat(messages, hexagramData) {
-        const apiKey = await EnvService.get('GOOGLE_API_KEY');
+    static async *streamChat(messages, hexagramData) {
+        const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
         if (!apiKey) {
-            console.error("Missing Gemini API Key in .env");
-            return "抱歉，導師連線失敗。請確認根目錄下的 .env 檔案包含 GOOGLE_API_KEY。";
+            yield "抱歉，導師連線失敗。請確認 .env 檔案包含 VITE_GOOGLE_API_KEY。";
+            return;
         }
 
         const currentDate = new Date().toLocaleString('zh-TW', { timeZone: 'America/New_York' });
 
-        // Map messages to Gemini API format
         const history = messages.slice(0, -1).map(msg => ({
             role: msg.role === 'user' ? 'user' : 'model',
             parts: [{ text: msg.content }]
@@ -33,19 +30,23 @@ export class AIService {
         請注意：
         1. 保持導師的威嚴與慈悲感。
         2. 結合日辰與卦中五行的生剋進行專業演繹。
-        3. 回覆要簡潔且具備啟發性。`;
+        3. 請務必使用「白話文」來解籤，確保學生能聽懂微言大義。
+        4. 回覆要簡潔且具備啟發性。`;
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
+
+        console.log("AIService: Attempting streamChat with model gemini-2.5-flash...");
+        // Log partially masked API key for debugging without exposure
+        console.log(`AIService: API key starting with: ${apiKey.substring(0, 5)}...`);
 
         try {
-            console.log("Fetching Gemini API...");
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [
                         { role: 'user', parts: [{ text: systemInstruction }] },
-                        { role: 'model', parts: [{ text: "學生受教。我已準備好結合當下卦象與日辰氣機進行推演。請說出您的疑惑。" }] },
+                        { role: 'model', parts: [{ text: "學生受教。我已準備好用平實的白話文，結合當下卦象與日辰氣機為您解惑。請說出您的疑問。" }] },
                         ...history,
                         { role: 'user', parts: [{ text: lastUserContent }] }
                     ]
@@ -53,21 +54,41 @@ export class AIService {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Gemini API Error Response:", errorData);
-                return `導師感應中斷 (API Error ${response.status}): ${errorData.error?.message || '未知錯誤'}`;
+                yield `導師感應中斷 (API Error ${response.status})`;
+                return;
             }
 
-            const data = await response.json();
-            if (data.candidates && data.candidates.length > 0) {
-                return data.candidates[0].content.parts[0].text;
-            } else {
-                console.error("No candidates in response:", data);
-                return "導師暫無所應（未返回解析內容），請換個方式請教。";
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            console.log("AIService: Fetch successful, starting reader...");
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+
+                    const jsonString = trimmedLine.substring(6);
+                    try {
+                        const json = JSON.parse(jsonString);
+                        const chunk = json.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (chunk) yield chunk;
+                    } catch (e) {
+                        console.error("AIService: JSON Parse Error:", e, "on string:", jsonString);
+                    }
+                }
             }
         } catch (error) {
-            console.error("Network Error during Gemini fetch:", error);
-            return `導師目前無法感應（網路連線異常：${error.message}），請檢查連線或 API Key。`;
+            console.error("AIService: Stream Error:", error);
+            yield `導師目前無法感應（網路連線異常：${error.message}）。`;
         }
     }
 }
