@@ -163,6 +163,71 @@ body {
     transform: translate(-50%, -50%) scale(0.9);
 }
 
+/* Hexagram Symbols */
+#casting-progress {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 60px;
+    height: 160px;
+    display: flex;
+    flex-direction: column-reverse; /* Bottom up */
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    z-index: 10;
+}
+
+.hex-line {
+    height: 8px;
+    width: 100%;
+    position: relative;
+}
+
+.hex-line.yang { background: var(--accent-gold); }
+.hex-line.yin { 
+    background: transparent;
+    display: flex;
+    justify-content: space-between;
+}
+.hex-line.yin::before, .hex-line.yin::after {
+    content: "";
+    width: 42%;
+    height: 100%;
+    background: var(--accent-gold);
+}
+
+/* Moving Lines indicators */
+.hex-line.old-yang::after {
+    content: "○";
+    position: absolute;
+    right: -20px;
+    color: var(--accent-gold);
+    font-size: 1rem;
+    top: -5px;
+}
+.hex-line.old-yin::after {
+    content: "×";
+    position: absolute;
+    right: -20px;
+    color: var(--accent-gold);
+    font-size: 1rem;
+    top: -5px;
+}
+
+/* Card Symbol */
+.card-symbol {
+    height: 35px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column-reverse; /* Bottom up */
+    justify-content: center;
+    gap: 3px;
+    padding: 0 5px;
+}
+.card-symbol .hex-line { height: 3px; }
+
 .binary-display {
     font-family: monospace;
     font-size: 1.2rem;
@@ -212,7 +277,75 @@ body {
     color: #fff;
 }
 
-/* Library Grid */
+/* Focus Selectors */
+.focus-selectors {
+    margin-bottom: 20px;
+    padding: 10px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.focus-selectors small {
+    display: block;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-focus {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 8px 15px;
+    border-radius: 15px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.btn-focus:hover, .btn-focus.active {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+    background: rgba(212, 175, 55, 0.1);
+}
+
+/* Najia Info Box */
+#najia-info {
+    margin: 15px 0;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.palace-info {
+    text-align: center;
+    color: var(--accent-blue);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.najia-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin-bottom: 3px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.najia-line.highlight {
+    background: rgba(212, 175, 55, 0.2);
+    border: 1px solid var(--accent-gold);
+}
+
+.line-rel { font-weight: 700; color: var(--accent-gold); min-width: 50px; }
+.line-dz { color: var(--text-primary); }
+.line-wx { color: var(--text-secondary); font-size: 0.75rem; }
+
+/* Grid and Library */
 .grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));

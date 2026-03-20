@@ -45,7 +45,8 @@ class App {
     handleTossResult(sum) {
         this.currentTosses.push(sum);
         console.log(`Toss ${this.currentTosses.length}: Sum = ${sum}`);
-
+        this.renderCastingProgress();
+        
         if (this.currentTosses.length < 6) {
             // Update UI to show progress
             this.updateTossProgress();
@@ -57,6 +58,26 @@ class App {
         } else {
             this.finishDivination();
         }
+    }
+
+    renderCastingProgress() {
+        const container = document.getElementById('casting-progress');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        this.currentTosses.forEach(sum => {
+            const line = document.createElement('div');
+            line.className = 'hex-line ' + this.getLineClass(sum);
+            container.appendChild(line);
+        });
+    }
+
+    getLineClass(sum) {
+        if (sum === 9) return 'yang old-yang';
+        if (sum === 8) return 'yin';
+        if (sum === 7) return 'yang';
+        if (sum === 6) return 'yin old-yin';
+        return '';
     }
 
     updateTossProgress() {
@@ -102,14 +123,75 @@ class App {
             summaryEl.innerText = `本卦：${original.name}\n之卦：${future.name}\n${original.summary}`;
         }
 
+        // Professional Najia Rendering
+        const najiaBox = document.getElementById('najia-info');
+        if (original.najia_analysis) {
+            najiaBox.classList.remove('hidden');
+            najiaBox.querySelector('.palace-info').innerText = `${original.najia_analysis.palace}宮 [${original.najia_analysis.palace_wuxing}]`;
+            
+            const linesContainer = najiaBox.querySelector('.lines-najia');
+            linesContainer.innerHTML = '';
+            
+            // Reversed to show lines from top (6) to bottom (1) or bottom-up?
+            // Usually I-Ching UI is bottom-up, let's keep it bottom-up (1 to 6)
+            original.najia_analysis.lines.forEach(line => {
+                const lineEl = document.createElement('div');
+                lineEl.className = 'najia-line';
+                lineEl.dataset.line = line.line_number;
+                lineEl.dataset.relative = line.relative;
+                lineEl.innerHTML = `
+                    <span class="line-rel">${line.relative}</span>
+                    <span class="line-dz">${line.dizhi}</span>
+                    <span class="line-wx">${line.wuxing}</span>
+                `;
+                linesContainer.appendChild(lineEl);
+            });
+        }
+
         overlay.classList.remove('hidden');
         document.querySelector('.instruction').classList.add('hidden');
+
+        // Setup Focus Buttons
+        const focusBtns = overlay.querySelectorAll('.btn-focus');
+        focusBtns.forEach(btn => {
+            btn.classList.remove('active');
+            btn.onclick = () => {
+                focusBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.highlightYongShen(btn.dataset.type, original);
+            };
+        });
 
         // Link View Details button
         const detailBtn = overlay.querySelector('#view-details');
         detailBtn.onclick = () => {
             this.showHexagramDetail(original, true);
         };
+    }
+
+    highlightYongShen(type, hex) {
+        if (!hex.najia_analysis) return;
+        
+        // Define Target Six Relatives for each focus
+        const targetMap = {
+            "career": ["官鬼"],
+            "wealth": ["妻財"],
+            "love": ["妻財", "官鬼"] // Usually Wealth for men, Official for women
+        };
+
+        const targets = targetMap[type];
+        const lines = document.querySelectorAll('.najia-line');
+        
+        lines.forEach(line => {
+            const isMatch = targets.includes(line.dataset.relative);
+            line.classList.toggle('highlight', isMatch);
+            
+            // Proactive: Highlight corresponding 3D/2D segments if possible
+            // This would require CastingManager to support selective highlighting
+            // For now, we highlight the UI list
+        });
+
+        console.log(`Highlighted YongShen for ${type}:`, targets);
     }
 
     setupEventListeners() {
@@ -127,6 +209,7 @@ class App {
             document.querySelector('.instruction').classList.remove('hidden');
             document.querySelector('.instruction').innerText = "點擊畫面開始第 1 次投擲";
             this.currentTosses = [];
+            document.getElementById('casting-progress').innerHTML = ''; // Clear progress
         });
 
         // Device Orientation for mobile
@@ -182,10 +265,21 @@ class App {
         this.library.forEach(hex => {
             const card = document.createElement('div');
             card.className = 'hex-card glass-panel';
+            
+            // Generate symbol for card
+            let symbolHtml = '<div class="card-symbol">';
+            // In our data, binary string "111000" where index 0 is line 1 (bottom).
+            // Our CSS uses flex-direction: column-reverse, so appending lines in order 0-5 will show them 1-6 from bottom up.
+            hex.binary.split('').forEach(char => {
+                symbolHtml += `<div class="hex-line ${char === '1' ? 'yang' : 'yin'}"></div>`;
+            });
+            symbolHtml += '</div>';
+
             card.innerHTML = `
+                ${symbolHtml}
+                <div class="card-id">#${hex.id}</div>
+                <div class="card-name">${hex.name}卦</div>
                 <div class="card-binary">${hex.binary}</div>
-                <h3>${hex.name}</h3>
-                <p>${hex.summary.substring(0, 30)}...</p>
             `;
             card.onclick = () => this.showHexagramDetail(hex);
             grid.appendChild(card);
@@ -197,7 +291,8 @@ class App {
         const history = JournalService.getHistory();
         historyList.innerHTML = history.length === 0 ? '<p>尚無任何紀錄</p>' : '';
         
-        const elementStats = { "金": 0, "木": 0, "水": 0, "火": 0, "土": 0 };
+        // Stats for Five Elements and Six Relatives
+        const relativeStats = { "官鬼": 0, "父母": 0, "兄弟": 0, "子孫": 0, "妻財": 0 };
 
         history.forEach(item => {
             const el = document.createElement('div');
@@ -211,12 +306,21 @@ class App {
             `;
             historyList.appendChild(el);
 
-            // Accumulate element stats
-            const element = HEXAGRAM_ELEMENTS[item.originalId];
-            if (element) elementStats[element]++;
+            // Accumulate relative stats if available in the record
+            // Since we didn't save najia_analysis in history record before, 
+            // we should lookup from library if possible, or just skip for old records.
+            const hex = this.library.find(h => h.id === item.originalId);
+            if (hex && hex.najia_analysis) {
+                // Count the count of each relative in the 6 lines
+                hex.najia_analysis.lines.forEach(l => {
+                    if (relativeStats[l.relative] !== undefined) {
+                        relativeStats[l.relative]++;
+                    }
+                });
+            }
         });
 
-        this.renderRadarChart(elementStats);
+        this.renderRadarChart(relativeStats);
     }
 
     renderRadarChart(stats) {
@@ -231,7 +335,7 @@ class App {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: '能量分佈',
+                    label: '六親能量分佈',
                     data: data,
                     backgroundColor: 'rgba(212, 175, 55, 0.2)',
                     borderColor: '#d4af37',
@@ -244,8 +348,9 @@ class App {
                     r: {
                         angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
                         grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        pointLabels: { color: '#f0f0f0' },
-                        ticks: { display: false }
+                        pointLabels: { color: '#f0f0f0', font: { size: 14 } },
+                        ticks: { display: false },
+                        suggestedMin: 0
                     }
                 },
                 plugins: {

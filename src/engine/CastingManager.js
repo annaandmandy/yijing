@@ -133,18 +133,30 @@ export class CastingManager {
 
     checkResults() {
         let stableCount = 0;
+        
+        // UX Improvement: 3-second maximum wait time
+        const maxWaitTimeout = setTimeout(() => {
+            if (this.isCasting) {
+                console.log("UX: Forcing result after 3s timeout");
+                clearInterval(checkInterval);
+                this.finishCasting();
+            }
+        }, 3000);
+
         const checkInterval = setInterval(() => {
             let allStable = true;
             this.coins.forEach(coin => {
-                if (coin.body.velocity.length() > 0.1 || coin.body.angularVelocity.length() > 0.1) {
+                // Check if velocity is low enough to be "mostly" stable
+                if (coin.body.velocity.length() > 0.2 || coin.body.angularVelocity.length() > 0.2) {
                     allStable = false;
                 }
             });
 
             if (allStable) {
                 stableCount++;
-                if (stableCount > 10) { // Confirmed stability
+                if (stableCount > 5) { // Reduced from 10 to speed up natural stop
                     clearInterval(checkInterval);
+                    clearTimeout(maxWaitTimeout);
                     this.finishCasting();
                 }
             } else {
@@ -154,11 +166,19 @@ export class CastingManager {
     }
 
     finishCasting() {
+        if (!this.isCasting) return;
+        
         const results = this.coins.map(coin => {
+            // Update mesh from body one last time just in case
+            coin.mesh.position.copy(coin.body.position);
+            coin.mesh.quaternion.copy(coin.body.quaternion);
+
             // Determine result based on up vector
             const up = new THREE.Vector3(0, 1, 0);
             up.applyQuaternion(coin.mesh.quaternion);
-            return up.y > 0 ? 3 : 2; // 3 for Yang, 2 for Yin
+            
+            // In Three.js, Cylinder up is Y. If Y > 0, it's face up (Yang=3).
+            return up.y > 0 ? 3 : 2; 
         });
 
         const sum = results.reduce((a, b) => a + b, 0);
