@@ -4,6 +4,9 @@
 
 ---
 
+## 網站:
+https://yijing-ebon.vercel.app/
+
 ## 🚀 快速開始
 
 請按照以下步驟來「泡」這個專案：
