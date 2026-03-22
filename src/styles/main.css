@@ -181,14 +181,14 @@ canvas {
 
 /* Result Overlay */
 #result-overlay {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
     max-width: 450px;
     text-align: center;
-    transition: var(--transition-smooth);
+    transition: opacity 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     z-index: 1500;
     /* Ensure it's on top of everything */
 }
@@ -1057,8 +1057,13 @@ canvas {
         width: 95%;
         max-width: none;
         padding: 15px;
-        top: calc(50% - 40px);
-        /* Lift up slightly to avoid bottom nav bar */
+        /* Keep top at 50% to avoid transition jumps; use transform for mobile offset */
+        top: 50%;
+        transform: translate(-50%, -54%);
+    }
+
+    #result-overlay.hidden {
+        transform: translate(-50%, -54%) scale(0.9);
     }
 
     .hex-name {

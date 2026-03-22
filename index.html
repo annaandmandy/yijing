@@ -40,33 +40,6 @@
                     <!-- Real-time Hexagram Progress -->
                     <div id="casting-progress" class="glass-panel"></div>
                 </div>
-                <!-- Hexagram Result Overlay -->
-                <div id="result-overlay" class="hidden glass-panel">
-                    <button class="close-btn" id="close-result-overlay">×</button>
-                    <div class="binary-display"></div>
-                    <h1 class="hex-name">--</h1>
-
-                    <!-- Target Focus Selection -->
-                    <div class="focus-selectors">
-                        <small>針對特定的事分析：</small>
-                        <div class="btn-group">
-                            <button class="btn-focus" data-type="career">問事業</button>
-                            <button class="btn-focus" data-type="wealth">問金錢</button>
-                            <button class="btn-focus" data-type="love">問感情</button>
-                        </div>
-                    </div>
-
-                    <!-- Najia Info List -->
-                    <div id="najia-info" class="hidden">
-                        <div class="palace-info"></div>
-                        <div class="lines-najia"></div>
-                    </div>
-
-                    <p class="hex-summary"></p>
-                    <button id="ask-mentor-result" class="btn-primary">請導師解籤</button>
-                    <button id="copy-result" class="btn-secondary">複製結果</button>
-                    <button id="re-toss" class="btn-secondary">再次投擲</button>
-                </div>
             </section>
 
             <!-- Library View -->
@@ -135,6 +108,34 @@
                 </div>
             </section>
         </main>
+
+        <!-- Global Result Overlay (Fixed for stability) -->
+        <div id="result-overlay" class="hidden glass-panel">
+            <button class="close-btn" id="close-result-overlay">×</button>
+            <div class="binary-display"></div>
+            <h1 class="hex-name">--</h1>
+
+            <!-- Target Focus Selection -->
+            <div class="focus-selectors">
+                <small>針對特定的事分析：</small>
+                <div class="btn-group">
+                    <button class="btn-focus" data-type="career">問事業</button>
+                    <button class="btn-focus" data-type="wealth">問金錢</button>
+                    <button class="btn-focus" data-type="love">問感情</button>
+                </div>
+            </div>
+
+            <!-- Najia Info List -->
+            <div id="najia-info" class="hidden">
+                <div class="palace-info"></div>
+                <div class="lines-najia"></div>
+            </div>
+
+            <p class="hex-summary"></p>
+            <button id="ask-mentor-result" class="btn-primary">請導師解籤</button>
+            <button id="copy-result" class="btn-secondary">複製結果</button>
+            <button id="re-toss" class="btn-secondary">再次投擲</button>
+        </div>
 
         <!-- Detail Modal -->
         <div id="detail-modal" class="modal">
