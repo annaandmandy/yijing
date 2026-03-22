@@ -120,6 +120,25 @@ class App {
             return;
         }
 
+        // Calculate Advanced Theory for AI Context
+        const relations = HexagramEngine.getRelatedHexagrams(result.originalBinary);
+        const gZ = TimeService.getGanZhi(new Date());
+        const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
+        const strengthMap = TimeService.getWuxingStrength(gZ.monthBranch);
+
+        const advancedTheory = {
+            relations: {
+                nuclear: this.library.find(h => h.binary === relations.nuclearBinary)?.name,
+                inverted: this.library.find(h => h.binary === relations.invertedBinary)?.name,
+                opposite: this.library.find(h => h.binary === relations.oppositeBinary)?.name
+            },
+            beasts: beasts,
+            chronoEnergy: {
+                ganzhi: `${gZ.day}日 ${gZ.month}月`,
+                strength: strengthMap
+            }
+        };
+
         // Save to Journal first to get ID for chat session
         const recordId = JournalService.saveRecord({
             question: document.getElementById('user-question')?.value || "隨喜求卦",
@@ -129,7 +148,8 @@ class App {
             futureId: futureHex?.id,
             futureName: futureHex?.name,
             changingLines: result.changingLines,
-            hasChange: result.hasChange
+            hasChange: result.hasChange,
+            advancedTheory: advancedTheory
         });
         this.currentRecordId = recordId;
         this.chatMessages = []; // Reset chat for new session

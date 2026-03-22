@@ -12,10 +12,13 @@ app = FastAPI()
 
 # Enable CORS
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+# Special handling: credentials cannot be used with '*'
+allow_all = "*" in allowed_origins
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_credentials=not allow_all, # Disable if *, enable if specific domains
     allow_methods=["*"],
     allow_headers=["*"],
 )
