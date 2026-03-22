@@ -144,14 +144,21 @@ class App {
 
         const overlay = document.getElementById('result-overlay');
         const nameEl = overlay.querySelector('.hex-name');
-        const binaryEl = overlay.querySelector('.binary-display');
-        const summaryEl = overlay.querySelector('.hex-summary');
-
         const origPhonetics = HEXAGRAM_PHONETICS[original.id];
-        const origPhoneticStr = origPhonetics ? `<small class="result-phonetic-inline">${origPhonetics.bopomofo} ${origPhonetics.pinyin}</small>` : '';
+        const origPhoneticStr = origPhonetics ? `
+            <div class="result-phonetic-stack">
+                <span class="zhuyin">${origPhonetics.bopomofo}</span>
+                <span class="pinyin">${origPhonetics.pinyin}</span>
+            </div>
+        ` : '';
 
         const futurePhonetics = future ? HEXAGRAM_PHONETICS[future.id] : null;
-        const futurePhoneticStr = futurePhonetics ? `<small class="result-phonetic-inline">${futurePhonetics.bopomofo} ${futurePhonetics.pinyin}</small>` : '';
+        const futurePhoneticStr = futurePhonetics ? `
+            <div class="result-phonetic-stack">
+                <span class="zhuyin">${futurePhonetics.bopomofo}</span>
+                <span class="pinyin">${futurePhonetics.pinyin}</span>
+            </div>
+        ` : '';
 
         nameEl.innerHTML = `
             <div class="result-hex-display">
@@ -779,13 +786,19 @@ class App {
         const modal = document.getElementById('detail-modal');
         const body = modal.querySelector('.modal-body');
         const phonetics = HEXAGRAM_PHONETICS[hex.id];
-        const phoneticStr = phonetics ? `${phonetics.bopomofo} (${phonetics.pinyin})` : '';
+        const phoneticHtml = phonetics ? `
+            <div class="header-phonetic-stack">
+                <span class="zhuyin">${phonetics.bopomofo}</span>
+                <span class="pinyin">${phonetics.pinyin}</span>
+            </div>
+        ` : '';
 
         body.innerHTML = `
             <div class="modal-header">
                 <div class="modal-header-flex">
                     <div class="header-main-title">
-                        <h2>第${hex.id}卦 ${hex.name}卦 <small class="header-phonetic">${phoneticStr}</small></h2>
+                        <h2>第${hex.id}卦 ${hex.name}卦</h2>
+                        ${phoneticHtml}
                     </div>
                     <div class="hex-badges">
                         ${this.renderMiniHexSymbol(hex.binary)}

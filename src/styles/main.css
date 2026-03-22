@@ -1787,24 +1787,49 @@ canvas {
 .hex-name-wrap {
     display: flex;
     flex-direction: row;
-    align-items: baseline;
+    align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 12px;
     margin-top: 8px;
     white-space: nowrap;
 }
 
-.result-phonetic-inline {
+/* Vertical stack for the phonetics specifically */
+.result-phonetic-stack,
+.header-phonetic-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Left align phonetics in their stack */
+    line-height: 1.1;
+}
+
+.result-phonetic-stack .zhuyin,
+.header-phonetic-stack .zhuyin {
     font-size: 0.75rem;
     color: var(--accent-gold);
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+}
+
+.result-phonetic-stack .pinyin,
+.header-phonetic-stack .pinyin {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    font-style: italic;
     opacity: 0.8;
-    white-space: nowrap;
 }
 
 .header-main-title {
-    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
     white-space: nowrap;
+}
+
+.header-main-title h2 {
+    margin-bottom: 0;
 }
 
 .t-detail-grid {
