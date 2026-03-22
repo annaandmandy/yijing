@@ -1132,6 +1132,7 @@ canvas {
     background-size: cover;
     border-radius: 8px;
     position: absolute;
+    transform: translate(var(--base-x), var(--base-y)) rotate(var(--base-angle));
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -1141,14 +1142,14 @@ canvas {
 }
 
 .fan-card:hover {
-    transform: translateY(-40px) scale(1.1) !important;
+    transform: translate(var(--base-x), var(--base-y)) rotate(var(--base-angle)) translateY(-40px) scale(1.1);
     z-index: 1000 !important;
     box-shadow: 0 10px 20px rgba(212, 175, 55, 0.4);
 }
 
 .fan-card.picked {
     opacity: 0;
-    transform: translateY(-200px) scale(1.5) rotate(0deg) !important;
+    transform: translate(var(--base-x), var(--base-y)) translateY(-200px) scale(1.5) rotate(0deg);
     pointer-events: none;
     z-index: 2000 !important;
     transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.5s ease-out;

@@ -1539,7 +1539,9 @@ class App {
             const x = Math.cos(radian) * radius;
             const y = Math.sin(radian) * radius + radius - 100; // Curve upwards
 
-            card.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`;
+            card.style.setProperty('--base-x', `${x}px`);
+            card.style.setProperty('--base-y', `${y}px`);
+            card.style.setProperty('--base-angle', `${angle}deg`);
             card.style.zIndex = i;
 
             // Pick based on original shuffled deck
