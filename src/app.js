@@ -9,6 +9,7 @@ import { JournalService } from './services/JournalService.js';
 import { CastingManager } from './engine/CastingManager.js';
 
 import { AIService } from './services/AIService.js';
+import { TimeService } from './services/TimeService.js';
 
 import { HEXAGRAM_ELEMENTS, HEXAGRAM_PHONETICS } from './constants.js';
 
@@ -145,6 +146,8 @@ class App {
 
         const overlay = document.getElementById('result-overlay');
         const nameEl = overlay.querySelector('.hex-name');
+        const binaryEl = overlay.querySelector('.binary-display');
+        const summaryEl = overlay.querySelector('.hex-summary');
         const origPhonetics = HEXAGRAM_PHONETICS[original.id];
         const origPhoneticStr = origPhonetics ? `
             <div class="result-phonetic-stack">
@@ -160,6 +163,20 @@ class App {
                 <span class="pinyin">${futurePhonetics.pinyin}</span>
             </div>
         ` : '';
+
+        // Advanced Theory Logic
+        const relations = HexagramEngine.getRelatedHexagrams(original.binary);
+        const nuclearHex = this.library.find(h => h.binary === relations.nuclearBinary);
+        const invertedHex = this.library.find(h => h.binary === relations.invertedBinary);
+
+        const gZ = TimeService.getGanZhi(new Date());
+        const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
+        const strength = TimeService.getWuxingStrength(gZ.monthBranch);
+
+        // Update Radar Chart if available
+        if (this.radarChart) {
+            // Future extension: Update chart with line strength
+        }
 
         nameEl.innerHTML = `
             <div class="result-hex-display">
@@ -222,6 +239,70 @@ class App {
                 linesContainer.appendChild(lineEl);
             });
         }
+        // Insert Advanced Panel
+        const advancedPanel = document.createElement('div');
+        advancedPanel.className = 'advanced-insights-panel hidden';
+        advancedPanel.id = 'advanced-panel';
+
+        const palaceWuxing = original.najia_analysis?.palace_wuxing || "金";
+        const relatives = (original.najia_analysis?.lines || []).map(line => line.relative);
+
+        advancedPanel.innerHTML = `
+            <div class="advanced-grid">
+                <div class="insight-col">
+                    <h4><i class="fas fa-link"></i> 關聯卦象</h4>
+                    <div class="related-hexes">
+                        <div class="rel-item" onclick="app.showHexagramDetail(app.library.find(h=>h.id==='${nuclearHex?.id}'))">
+                            <span class="rel-label">互卦 (內在)</span>
+                            <span class="rel-name">${nuclearHex?.name || "無"}卦</span>
+                        </div>
+                        <div class="rel-item" onclick="app.showHexagramDetail(app.library.find(h=>h.id==='${invertedHex?.id}'))">
+                            <span class="rel-label">綜卦 (視角)</span>
+                            <span class="rel-name">${invertedHex?.name || "無"}卦</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="insight-col">
+                    <h4><i class="fas fa-dragon"></i> 六親與六神</h4>
+                    <ul class="beast-list">
+                        ${relatives.slice().reverse().map((rel, i) => `
+                            <li>
+                                <span class="beast-name">${beasts[5 - i]}</span>
+                                <span class="relative-name">${rel}</span>
+                                <span class="line-idx">爻 ${6 - i}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+                <div class="insight-col">
+                    <h4><i class="fas fa-bolt"></i> 今日能量 (${gZ.day})</h4>
+                    <div class="strength-tags">
+                        ${Object.entries(strength).map(([el, st]) => `
+                            <span class="strength-tag ${st}">${el}:${st}</span>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const existingPanel = overlay.querySelector('.advanced-insights-panel');
+        if (existingPanel) existingPanel.remove();
+        overlay.querySelector('.result-actions').before(advancedPanel);
+
+        // Toggle Button
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'btn-secondary toggle-advanced';
+        toggleBtn.innerHTML = '<i class="fas fa-flask"></i> 顯示深層分析';
+        toggleBtn.onclick = () => {
+            advancedPanel.classList.toggle('hidden');
+            toggleBtn.innerHTML = advancedPanel.classList.contains('hidden') ?
+                '<i class="fas fa-flask"></i> 顯示深層分析' : '<i class="fas fa-times"></i> 隱藏分析';
+        };
+
+        const actionArea = overlay.querySelector('.result-actions');
+        const existingToggle = actionArea.querySelector('.toggle-advanced');
+        if (existingToggle) existingToggle.remove();
+        actionArea.prepend(toggleBtn);
 
         overlay.classList.remove('hidden');
         document.querySelector('.instruction').classList.add('hidden');
@@ -468,7 +549,30 @@ class App {
                 </section>
 
                 <section>
-                    <h3>3. 推薦資源</h3>
+                    <h3>3. 術數進階：梅花易數 (Plum Blossom)</h3>
+                    <p>這是一種靈活的起卦法，不需要硬幣，只需「數」與「象」。</p>
+                    <div class="plum-blossom-tool glass-panel" style="padding:15px; margin-top:10px; border:1px solid rgba(212,175,55,0.3);">
+                        <p style="font-size:0.85rem; margin-bottom:10px; color:var(--accent-gold);">體驗數位起卦：輸入兩個數字（如日期、手機尾數）</p>
+                        <div style="display:flex; gap:10px;">
+                            <input type="number" id="pb-num1" placeholder="數字 1" style="width:70px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white; padding:5px; border-radius:5px;">
+                            <input type="number" id="pb-num2" placeholder="數字 2" style="width:70px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white; padding:5px; border-radius:5px;">
+                            <button class="nav-btn gold" onclick="app.calculatePlumBlossom()" style="padding:5px 12px; font-size:0.85rem;">生成卦象</button>
+                        </div>
+                        <div id="pb-result" style="margin-top:10px; font-size:0.9rem;"></div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>4. 易經成語與智慧</h3>
+                    <ul>
+                        <li><strong>「君子豹變」</strong>（革卦）：指君子隨時代而變，自我革新。</li>
+                        <li><strong>「同聲相應」</strong>（乾卦）：指志同道合的人會互相感召。</li>
+                        <li><strong>「三陽開泰」</strong>（泰卦）：意為好運降臨，萬象更新。</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>5. 推薦資源</h3>
                     <ul>
                         <li>《易經今註今譯》- 基礎入門首選</li>
                         <li>《增刪卜易》- 進階六爻占卜必讀</li>
@@ -477,6 +581,26 @@ class App {
                 </section>
             </article>
         `;
+    }
+
+    calculatePlumBlossom() {
+        const n1 = parseInt(document.getElementById('pb-num1').value);
+        const n2 = parseInt(document.getElementById('pb-num2').value);
+        if (isNaN(n1) || isNaN(n2)) return;
+
+        const standard = ["111", "011", "101", "001", "110", "010", "100", "000"];
+        const lowerIdx = (n1 % 8) || 8;
+        const upperIdx = (n2 % 8) || 8;
+
+        const lowerBin = standard[lowerIdx - 1];
+        const upperBin = standard[upperIdx - 1];
+        const finalBinary = lowerBin + upperBin;
+
+        const hex = this.library.find(h => h.binary === finalBinary);
+        const resEl = document.getElementById('pb-result');
+        if (hex) {
+            resEl.innerHTML = `卦象結果：<strong>${hex.name}卦</strong> <button class="nav-btn" onclick="app.showHexagramDetail(app.library.find(h=>h.id===${hex.id}))">查看詳解</button>`;
+        }
     }
 
     setupEventListeners() {

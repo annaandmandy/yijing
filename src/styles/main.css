@@ -68,7 +68,7 @@ body {
     background: var(--glass-bg);
     backdrop-filter: blur(15px);
     border-bottom: 1px solid var(--glass-border);
-    z-index: 1000;
+    z-index: 2000;
 }
 
 .logo {
@@ -188,8 +188,12 @@ canvas {
     width: 90%;
     max-width: 450px;
     text-align: center;
-    transition: opacity 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    z-index: 1500;
+    transition: var(--transition-smooth);
+    z-index: 1100;
+    max-height: 85vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-gold) transparent;
     /* Ensure it's on top of everything */
 }
 
@@ -921,6 +925,146 @@ canvas {
     margin-right: 4px;
 }
 
+/* Advanced Insights Panel */
+.advanced-insights-panel {
+    background: rgba(212, 175, 55, 0.03);
+    border: 1px solid rgba(212, 175, 55, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    animation: slideDown 0.3s ease-out;
+}
+
+.advanced-insights-panel.hidden {
+    display: none;
+}
+
+.advanced-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.insight-col h4 {
+    font-size: 0.85rem;
+    color: var(--accent-gold);
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+    padding-bottom: 5px;
+}
+
+.related-hexes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rel-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.rel-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-gold);
+}
+
+.rel-label {
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
+
+.rel-name {
+    font-weight: 600;
+    color: var(--accent-blue);
+}
+
+.beast-list {
+    list-style: none;
+    padding: 0;
+    font-size: 0.8rem;
+}
+
+.beast-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+}
+
+.beast-name {
+    color: var(--accent-gold);
+    font-weight: 600;
+    width: 60px;
+}
+
+.relative-name {
+    color: var(--text-primary);
+    flex-grow: 1;
+    text-align: center;
+}
+
+.line-idx {
+    font-size: 0.75rem;
+    opacity: 0.5;
+    width: 40px;
+    text-align: right;
+}
+
+.strength-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.strength-tag {
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.strength-tag.旺 {
+    background: rgba(76, 175, 80, 0.2);
+    color: #81c784;
+    border-color: #4caf50;
+}
+
+.strength-tag.相 {
+    background: rgba(33, 150, 243, 0.2);
+    color: #64b5f6;
+    border-color: #2196f3;
+}
+
+.strength-tag.死 {
+    background: rgba(244, 67, 54, 0.2);
+    color: #e57373;
+    border-color: #f44336;
+}
+
+.strength-tag.休,
+.strength-tag.囚 {
+    background: rgba(255, 255, 255, 0.03);
+    color: #999;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .header {
     text-align: center;
     margin: 20px 0 30px 0;
@@ -1117,8 +1261,9 @@ canvas {
         max-width: none;
         padding: 15px;
         /* Keep top at 50% to avoid transition jumps; use transform for mobile offset */
-        top: 50%;
-        transform: translate(-50%, -54%);
+        top: 48%;
+        transform: translate(-50%, -50%);
+        max-height: calc(100vh - 140px);
     }
 
     #result-overlay.hidden {
@@ -1164,14 +1309,15 @@ canvas {
     }
 
     .modal-content {
-        width: 100vw;
-        height: 100vh;
-        max-width: 100vw;
-        max-height: 100vh;
-        border-radius: 0;
+        width: 95vw;
+        height: auto;
+        max-width: 95vw;
+        max-height: calc(100vh - 120px);
+        border-radius: 15px;
         padding: 20px;
-        padding-bottom: 100px;
-        /* Safe area for bottom nav */
+        overflow-y: auto;
+        margin-bottom: 70px;
+        /* Space for nav bar */
     }
 
     .modal-header-flex h2 {
