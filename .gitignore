@@ -2,6 +2,9 @@
 venv/
 __pycache__/
 *.json
+!package.json
+!package-lock.json
+!vercel.json
 !yi_data_enhanced/*.json
 !yi_data_library/*.json
 node_modules
