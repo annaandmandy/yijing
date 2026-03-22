@@ -25,11 +25,11 @@ api_key = os.getenv("VITE_GOOGLE_API_KEY") or os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=api_key)
 
 # Use the latest stable flash model for performance/cost balance
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 @app.get("/")
 async def root():
-    return {"status": "I-Ching Lab AI Backend Running", "engine": "Gemini-1.5-Flash"}
+    return {"status": "I-Ching Lab AI Backend Running", "engine": "Gemini-2.5-Flash"}
 
 @app.post("/chat")
 async def chat_endpoint(request: Request):
@@ -44,7 +44,7 @@ async def chat_endpoint(request: Request):
     # Gemini history format: {"role": "user"|"model", "parts": ["text"]}
     history = []
     # Add system instruction as the first user/model interaction to set the stage
-    # Actually, Gemini 1.5 supports system_instruction in the model config, but we can also pass it as turns
+    # Actually, Gemini 2.5 supports system_instruction in the model config, but we can also pass it as turns
     
     # Map roles: 'assistant' -> 'model'
     formatted_messages = []

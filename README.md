@@ -69,6 +69,13 @@ npm run generate
 
 ---
 
+## 🌐 部署至雲端 (Deployment)
+
+本專案支援快速部署至 **Railway (後端)** 與 **Vercel (前端)**。
+詳情請參閱：[部署指南 (Deployment Guide)](file:///home/annaandmandy/.gemini/antigravity/brain/e58cbc9b-4cf6-40f7-b998-99303baccee5/deployment_guide.md)
+
+---
+
 ## 📂 專案結構
 - `src/`: 前端原始碼 (Engine, Services, Styles)。
 - `docs/`: 專案設計文件與上下文 (`CONTEXT.md`)。
