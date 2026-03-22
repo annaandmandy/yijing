@@ -1446,6 +1446,8 @@ class App {
 
     handleTarotStart() {
         this.tarotStep = 'shuffling';
+        this.tarotShuffleCount = 0;
+        if (this.shuffleInterval) clearInterval(this.shuffleInterval);
         const analysisCont = document.getElementById('tarot-quick-analysis');
         if (analysisCont) analysisCont.classList.add('hidden');
 
@@ -1469,6 +1471,11 @@ class App {
         if (this.tarotStep !== 'shuffling') return;
         this.isTarotShuffling = true;
         document.querySelector('.deck-pile')?.classList.add('active');
+        
+        if (this.shuffleInterval) clearInterval(this.shuffleInterval);
+        this.shuffleInterval = setInterval(() => {
+            this.handleTarotShuffling();
+        }, 50);
     }
 
     handleTarotShuffling(e) {
@@ -1485,13 +1492,17 @@ class App {
 
         if (this.tarotShuffleCount > 30) {
             this.stopTarotShuffle();
-            this.finishTarotShuffle();
         }
     }
 
     stopTarotShuffle() {
         this.isTarotShuffling = false;
+        if (this.shuffleInterval) clearInterval(this.shuffleInterval);
         document.querySelector('.deck-pile')?.classList.remove('active');
+        
+        if (this.tarotStep === 'shuffling') {
+            this.finishTarotShuffle();
+        }
     }
 
     async finishTarotShuffle() {

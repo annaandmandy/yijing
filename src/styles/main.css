@@ -27,6 +27,10 @@
     box-sizing: border-box;
 }
 
+.hidden:not(#result-overlay) {
+    display: none !important;
+}
+
 .question-container {
     position: absolute;
     top: calc(70px + 20px + var(--safe-top));
@@ -1042,8 +1046,6 @@ canvas {
     /* Allow cards to overflow on sides */
     overflow: visible !important;
 }
-
-    padding-top: 40px !important;
 .shuffling-container {
     display: flex;
     flex-direction: column;
@@ -2606,6 +2608,7 @@ canvas {
         display: flex;
         flex-direction: column;
         align-items: center;
+        height: auto; /* Ensure wrapper height fits content on mobile */
     }
 
     .tarot-card {
