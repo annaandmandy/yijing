@@ -1023,12 +1023,17 @@ class App {
             </details>
         `;
 
-        // Switch button logic to point to main AI View
+        // Switch button logic to point to main AI View (Defensive check for missing button)
         const askAiBtn = document.getElementById('ask-ai');
-        askAiBtn.onclick = () => {
-            modal.classList.remove('active');
-            this.switchView('ai-mentor');
-        };
+        if (askAiBtn) {
+            // Hide if viewing from history (recordId exists)
+            askAiBtn.style.display = recordId ? 'none' : 'block';
+
+            askAiBtn.onclick = () => {
+                modal.classList.remove('active');
+                this.switchView('ai-mentor');
+            };
+        }
 
         // Close modal
         const closeBtn = modal.querySelector('.close-btn');
