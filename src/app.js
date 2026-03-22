@@ -101,10 +101,8 @@ class App {
         const originalHex = this.library.find(h => h.binary === result.originalBinary);
         const futureHex = result.hasChange ? this.library.find(h => h.binary === result.futureBinary) : null;
 
-        this.showResultOverlay(originalHex, futureHex, result);
-
-        // Save to Journal and keep ID for chat session
-        this.currentRecordId = JournalService.saveRecord({
+        // Save to Journal first to get ID for chat session
+        const recordId = JournalService.saveRecord({
             question: document.getElementById('user-question')?.value || "隨喜求卦",
             originalId: originalHex.id,
             originalBinary: result.originalBinary,
@@ -114,11 +112,13 @@ class App {
             changingLines: result.changingLines,
             hasChange: result.hasChange
         });
-
+        this.currentRecordId = recordId;
         this.chatMessages = []; // Reset chat for new session
 
+        this.showResultOverlay(originalHex, futureHex, result, recordId);
+
         // Proactive: Highlight detail button to encourage AI interaction
-        const detailBtn = document.getElementById('view-details');
+        const detailBtn = document.getElementById('ask-mentor-result');
         if (detailBtn) detailBtn.classList.add('pulse-gold');
     }
 
@@ -181,10 +181,23 @@ class App {
             };
         });
 
-        // Link View Details button
-        const detailBtn = overlay.querySelector('#view-details');
-        detailBtn.onclick = () => {
-            this.showHexagramDetail(original, true, recordId);
+        // Link Consult Mentor button directly to AI view with record
+        const askAiBtn = overlay.querySelector('#ask-mentor-result');
+        askAiBtn.onclick = () => {
+            const question = document.getElementById('user-question')?.value || "隨喜求卦";
+            overlay.classList.add('hidden');
+
+            // CRITICAL: Set state before switching/sending
+            this.currentHexData = original;
+            this.currentRecordId = recordId;
+
+            this.switchView('ai-mentor');
+            this.prepareAIMentorView(original, recordId);
+
+            // Auto-send first message if empty
+            if (this.chatMessages.length === 0) {
+                this.handleSendChat(`針對在此次「${question}」的占卜中，請導師為我開示此卦。`);
+            }
         };
 
         // Link Copy button
@@ -311,6 +324,13 @@ class App {
         } else if (this.currentView === 'ai-mentor') {
             if (this.currentHexData) {
                 this.prepareAIMentorView(this.currentHexData, this.currentRecordId);
+            } else {
+                const history = document.getElementById('chat-history-main');
+                history.innerHTML = `<div class="empty-state">
+                    <h3>尚未選擇卦象</h3>
+                    <p>請先前往「全卦圖書館」選擇一卦，或從「每日紀錄」中開啟先前的對話。</p>
+                </div>`;
+                document.getElementById('mentor-current-hex').innerText = "等待導引...";
             }
         }
     }
@@ -403,7 +423,8 @@ class App {
                         this.switchView('tabletop');
                         this.showResultOverlay(hex, future, {
                             originalBinary: item.originalBinary || "------",
-                            hasChange: item.hasChange
+                            hasChange: item.hasChange,
+                            changingLines: item.changingLines // Make sure changingLines is passed
                         }, item.id);
                     }
                 };
@@ -554,7 +575,10 @@ class App {
         let fullResponse = '';
 
         try {
-            const stream = AIService.streamChat(this.chatMessages, this.currentHexData);
+            // Get the full record context for the AI
+            const record = JournalService.getRecord(this.currentRecordId);
+            const stream = AIService.streamChat(this.chatMessages, this.currentHexData, record || {});
+
             for await (const chunk of stream) {
                 if (fullResponse === '') aiMsgEl.innerText = ''; // Clear placeholder on first chunk
                 fullResponse += chunk;
@@ -573,7 +597,8 @@ class App {
                 JournalService.updateMessages(this.currentRecordId, this.chatMessages);
             }
         } catch (error) {
-            aiMsgEl.innerText = "導師連線中斷，請稍候。";
+            aiMsgEl.innerText = `導師連線中斷：${error.message}`;
+            console.error("Chat Error:", error);
         } finally {
             status.innerText = '在線';
         }
