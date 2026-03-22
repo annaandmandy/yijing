@@ -30,8 +30,8 @@ export class AIService {
         請注意：
         1. 保持導師的威嚴與慈悲感。
         2. 結合日辰與卦中五行的生剋進行專業演繹。
-        3. 請務必使用「白話文」來解籤，確保學生能聽懂微言大義。
-        4. 回覆要簡潔且具備啟發性。`;
+        3. 請務必使用「普通話」來解籤，確保學生能聽懂微言大義。
+        4. 回覆必須精簡，總字數請嚴格限制在 500 字以內，直取卦意核心。`;
 
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
 
