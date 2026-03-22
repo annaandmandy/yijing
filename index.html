@@ -44,14 +44,48 @@
 
             <!-- Library View -->
             <section id="library" class="view">
-                <div class="header">
-                    <h2>全卦圖書館</h2>
-                    <div class="filters">
-                        <!-- Elemental filters will go here -->
+                <div class="library-sub-nav glass-panel">
+                    <button class="sub-nav-btn active" data-sub="grid">卦象大全</button>
+                    <button class="sub-nav-btn" data-sub="bagua">八卦圖解</button>
+                    <button class="sub-nav-btn" data-sub="lookup">進階對照</button>
+                    <button class="sub-nav-btn" data-sub="learn">自學中心</button>
+                </div>
+
+                <!-- Subpages -->
+                <div id="subpage-grid" class="library-subpage active">
+                    <div class="header">
+                        <h2>全卦圖書館</h2>
+                        <div class="filters"></div>
+                    </div>
+                    <div id="hex-grid" class="grid-container"></div>
+                </div>
+
+                <div id="subpage-bagua" class="library-subpage">
+                    <div class="header">
+                        <h2>八卦示意圖</h2>
+                    </div>
+                    <div id="bagua-diagram-container" class="glass-panel">
+                        <!-- Interactive Bagua SVG will go here -->
+                        <div class="placeholder-text">八卦互動圖表加載中...</div>
                     </div>
                 </div>
-                <div id="hex-grid" class="grid-container">
-                    <!-- 64 hexagrams will be generated here -->
+
+                <div id="subpage-lookup" class="library-subpage">
+                    <div class="header">
+                        <h2>進階對照工具</h2>
+                    </div>
+                    <div class="lookup-tables">
+                        <!-- Najia and Five Elements tables -->
+                    </div>
+                </div>
+
+                <div id="subpage-learn" class="library-subpage">
+                    <div class="header">
+                        <h2>自學與導航</h2>
+                    </div>
+                    <div class="learn-content glass-panel">
+                        <!-- Markdown articles -->
+                    </div>
                 </div>
             </section>
 

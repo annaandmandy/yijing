@@ -859,7 +859,66 @@ canvas {
 
 .detail-section h4 {
     color: var(--accent-blue);
+    margin-bottom: 8px;
+}
+
+/* Phonetic Styles */
+.card-phonetic {
+    font-size: 0.75rem;
+    color: var(--accent-gold);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     margin-bottom: 5px;
+    opacity: 0.9;
+}
+
+.zhuyin {
+    letter-spacing: 1px;
+}
+
+.pinyin {
+    font-style: italic;
+    opacity: 0.7;
+    font-size: 0.7rem;
+}
+
+.header-phonetic {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.result-phonetic {
+    font-size: 0.9rem;
+    color: var(--accent-gold);
+    margin-bottom: 15px;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.t-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    text-align: left;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.t-detail-grid span {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.t-detail-grid span strong {
+    color: var(--accent-gold);
+    margin-right: 4px;
 }
 
 .header {
@@ -1458,4 +1517,299 @@ canvas {
         font-size: 1.4rem;
         margin: 0 5px;
     }
+}
+
+/* Library Sub-navigation */
+.library-sub-nav {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
+    padding: 10px !important;
+    border-radius: 30px !important;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.sub-nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: var(--transition-smooth);
+}
+
+.sub-nav-btn.active {
+    background: var(--accent-gold);
+    color: var(--bg-dark);
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+.sub-nav-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.library-subpage {
+    display: none;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.library-subpage.active {
+    display: block;
+}
+
+/* Ba Gua Diagram */
+#bagua-diagram-container {
+    padding: 40px;
+    min-height: 450px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.bagua-circle {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.bagua-center {
+    font-size: 4rem;
+    color: var(--accent-gold);
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+}
+
+.trigram-node {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    padding: 10px;
+    border-radius: 12px;
+}
+
+.trigram-node:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.t-symbol {
+    font-size: 2.5rem;
+    line-height: 1;
+    color: var(--accent-gold);
+}
+
+.t-name {
+    font-size: 1.1rem;
+    margin-top: 5px;
+    font-weight: 600;
+}
+
+/* Clockwise from South (Top) - Hou Tian Ba Gua */
+.t-0 {
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Li - S (Top) */
+.t-1 {
+    top: 20px;
+    right: -20px;
+}
+
+/* Kun - SW (Top-Right) */
+.t-2 {
+    top: 50%;
+    right: -20px;
+    transform: translateY(-50%);
+}
+
+/* Dui - W (Right) */
+.t-3 {
+    bottom: 20px;
+    right: -20px;
+}
+
+/* Qian - NW (Bottom-Right) */
+.t-4 {
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Kan - N (Bottom) */
+.t-5 {
+    bottom: 20px;
+    left: -20px;
+}
+
+/* Gen - NE (Bottom-Left) */
+.t-6 {
+    top: 50%;
+    left: -20px;
+    transform: translateY(-50%);
+}
+
+/* Zhen - E (Left) */
+.t-7 {
+    top: 20px;
+    left: -20px;
+}
+
+/* Xun - SE (Top-Left) */
+
+.trigram-info-panel {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    text-align: center;
+}
+
+.t-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    text-align: left;
+    margin-top: 15px;
+}
+
+/* Lookup Tables */
+.lookup-tables {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding-bottom: 50px;
+}
+
+.lookup-card {
+    padding: 25px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 0.95rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.data-table th {
+    color: var(--accent-gold);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+/* Learn Content */
+.learn-content {
+    padding: 30px;
+    line-height: 1.8;
+}
+
+.learn-article h2 {
+    color: var(--accent-gold);
+    margin-bottom: 20px;
+}
+
+.learn-article h3 {
+    margin-top: 25px;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.learn-article section {
+    margin-bottom: 30px;
+}
+
+.learn-article ul {
+    padding-left: 20px;
+    margin-top: 10px;
+}
+
+.learn-article li {
+    margin-bottom: 8px;
+}
+
+/* Phonetic Styles */
+.card-phonetic {
+    font-size: 0.7rem;
+    color: var(--accent-gold);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    opacity: 0.9;
+}
+
+.zhuyin {
+    letter-spacing: 0.5px;
+}
+
+.pinyin {
+    font-style: italic;
+    opacity: 0.7;
+    font-size: 0.65rem;
+}
+
+.header-phonetic {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.result-phonetic {
+    font-size: 0.9rem;
+    color: var(--accent-gold);
+    margin-bottom: 12px;
+    letter-spacing: 1.5px;
+    text-align: center;
+}
+
+.t-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    text-align: left;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.t-detail-grid span {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.t-detail-grid span strong {
+    color: var(--accent-gold);
+    margin-right: 4px;
 }

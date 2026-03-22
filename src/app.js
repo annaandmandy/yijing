@@ -10,7 +10,7 @@ import { CastingManager } from './engine/CastingManager.js';
 
 import { AIService } from './services/AIService.js';
 
-import { HEXAGRAM_ELEMENTS } from './constants.js';
+import { HEXAGRAM_ELEMENTS, HEXAGRAM_PHONETICS } from './constants.js';
 
 class App {
     constructor() {
@@ -24,10 +24,10 @@ class App {
 
         // Calendar State
         this.calendarDate = new Date();
-        this.calendarYear = this.calendarDate.getFullYear();
         this.calendarMonth = this.calendarDate.getMonth();
         this.radarChart = null;
-        this.resultSource = 'tabletop'; // Source of current result view
+        this.resultSource = 'tabletop';
+        this.librarySubpage = 'grid'; // Sub-view within library
 
         window.app = this; // Global reference for inline oncilcks
         this.init();
@@ -44,7 +44,8 @@ class App {
         this.setupNavigation();
         this.setupCastingManager();
         this.setupEventListeners();
-        this.setupCalendarNav(); // Added calendar navigation setup
+        this.setupCalendarNav();
+        this.setupLibraryNav();
 
         // Initial view render
         this.renderView();
@@ -146,7 +147,11 @@ class App {
         const binaryEl = overlay.querySelector('.binary-display');
         const summaryEl = overlay.querySelector('.hex-summary');
 
+        const phonetics = HEXAGRAM_PHONETICS[original.id];
+        const phoneticStr = phonetics ? `<div class="result-phonetic">${phonetics.bopomofo} | ${phonetics.pinyin}</div>` : '';
+
         nameEl.innerHTML = `
+            ${phoneticStr}
             <div class="result-hex-display">
                 <div class="hex-block original">
                     <span class="hex-label">本卦 (當前)</span>
@@ -293,6 +298,171 @@ class App {
         console.log(`Highlighted YongShen for ${type}:`, targets);
     }
 
+    setupLibraryNav() {
+        const btns = document.querySelectorAll('.sub-nav-btn');
+        btns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const subId = btn.dataset.sub;
+                this.switchLibrarySubpage(subId);
+            });
+        });
+    }
+
+    switchLibrarySubpage(subId) {
+        this.librarySubpage = subId;
+
+        // Update Buttons
+        document.querySelectorAll('.sub-nav-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.sub === subId);
+        });
+
+        // Update Subpages
+        document.querySelectorAll('.library-subpage').forEach(page => {
+            page.classList.toggle('active', page.id === `subpage-${subId}`);
+        });
+
+        if (subId === 'grid') this.renderLibrary();
+        if (subId === 'bagua') this.renderBaguaDiagram();
+        if (subId === 'lookup') this.renderLookupTables();
+        if (subId === 'learn') this.renderLearnContent();
+
+        console.log(`Switched Library to subpage: ${subId}`);
+    }
+
+    renderBaguaDiagram() {
+        const container = document.getElementById('bagua-diagram-container');
+        if (!container) return;
+
+        const trigrams = [
+            { name: "離", phonetic: "ㄌㄧˊ (Lí)", symbol: "☲", nature: "火", dir: "南 (Top)" },
+            { name: "坤", phonetic: "ㄎㄨㄣ (Kūn)", symbol: "☷", nature: "地", dir: "西南" },
+            { name: "兌", phonetic: "ㄉㄨㄟˋ (Duì)", symbol: "☱", nature: "澤", dir: "西 (Right)" },
+            { name: "乾", phonetic: "ㄑㄧㄢˊ (Qián)", symbol: "☰", nature: "天", dir: "西北" },
+            { name: "坎", phonetic: "ㄎㄢˇ (Kǎn)", symbol: "☵", nature: "水", dir: "北 (Bottom)" },
+            { name: "艮", phonetic: "ㄍㄣˋ (Gèn)", symbol: "☶", nature: "山", dir: "東北" },
+            { name: "震", phonetic: "ㄓㄣˋ (Zhèn)", symbol: "☳", nature: "雷", dir: "東 (Left)" },
+            { name: "巽", phonetic: "ㄒㄩㄣˋ (Xùn)", symbol: "☴", nature: "風", dir: "東南" }
+        ];
+
+        // Let's use a simpler Grid-based circle for better mobile responsiveness than pure SVG math
+        container.innerHTML = `
+            <div class="bagua-circle">
+                <div class="bagua-center">☯</div>
+                ${trigrams.map((t, i) => `
+                    <div class="trigram-node t-${i}" onclick="app.showTrigramDetail('${t.name}')">
+                        <span class="t-symbol">${t.symbol}</span>
+                        <span class="t-name">${t.name}</span>
+                    </div>
+                `).join('')}
+            </div>
+            <div id="trigram-detail-panel" class="trigram-info-panel">
+                <p>點擊卦象查看詳細資訊</p>
+            </div>
+        `;
+    }
+
+    showTrigramDetail(name) {
+        const data = {
+            "乾": { nature: "天", attribute: "健", element: "金", animal: "馬", family: "父", body: "首", color: "大赤、金", season: "秋冬之交", zhuyin: "ㄑㄧㄢˊ", pinyin: "Qián" },
+            "坤": { nature: "地", attribute: "順", element: "土", animal: "牛", family: "母", body: "腹", color: "黃、黑", season: "夏秋之交", zhuyin: "ㄎㄨㄣ", pinyin: "Kūn" },
+            "震": { nature: "雷", attribute: "動", element: "木", animal: "龍", family: "長男", body: "足", color: "青、綠", season: "春", zhuyin: "ㄓㄣˋ", pinyin: "Zhèn" },
+            "巽": { nature: "風", attribute: "入", element: "木", animal: "雞", family: "長女", body: "股 (大腿)", color: "白", season: "春夏之交", zhuyin: "ㄒㄩㄣˋ", pinyin: "Xùn" },
+            "坎": { nature: "水", attribute: "陷", element: "水", animal: "豕 (豬)", family: "中男", body: "耳", color: "黑、藍", season: "冬", zhuyin: "ㄎㄢˇ", pinyin: "Kǎn" },
+            "離": { nature: "火", attribute: "麗", element: "火", animal: "雉 (雉雞)", family: "中女", body: "目", color: "紅、紫", season: "夏", zhuyin: "ㄌㄧˊ", pinyin: "Lí" },
+            "艮": { nature: "山", attribute: "止", element: "土", animal: "狗", family: "少男", body: "手", color: "黃", season: "冬春之交", zhuyin: "ㄍㄣˋ", pinyin: "Gèn" },
+            "兌": { nature: "澤", attribute: "說 (悅)", element: "金", animal: "羊", family: "少女", body: "口", color: "白", season: "秋", zhuyin: "ㄉㄨㄟˋ", pinyin: "Duì" }
+        };
+        const t = data[name];
+        const panel = document.getElementById('trigram-detail-panel');
+        if (!panel) return;
+
+        panel.innerHTML = `
+            <h3>${name} 卦 <small>${t.zhuyin} | ${t.pinyin}</small></h3>
+            <div class="t-detail-grid">
+                <span><strong>自然：</strong>${t.nature}</span>
+                <span><strong>五行：</strong>${t.element}</span>
+                <span><strong>動物：</strong>${t.animal}</span>
+                <span><strong>特性：</strong>${t.attribute}</span>
+                <span><strong>家族：</strong>${t.family}</span>
+                <span><strong>人體：</strong>${t.body}</span>
+                <span><strong>代表色：</strong>${t.color}</span>
+                <span><strong>時令：</strong>${t.season}</span>
+            </div>
+        `;
+    }
+
+    renderLookupTables() {
+        const container = document.querySelector('#subpage-lookup .lookup-tables');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="lookup-card glass-panel">
+                <h3>五行對應表 (Five Elements)</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>五行</th><th>方位</th><th>季節</th><th>顏色</th><th>五官</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>木</td><td>東</td><td>春</td><td>青</td><td>目</td></tr>
+                        <tr><td>火</td><td>南</td><td>夏</td><td>赤</td><td>舌</td></tr>
+                        <tr><td>土</td><td>中</td><td>四季</td><td>黃</td><td>口</td></tr>
+                        <tr><td>金</td><td>西</td><td>秋</td><td>白</td><td>鼻</td></tr>
+                        <tr><td>水</td><td>北</td><td>冬</td><td>黑</td><td>耳</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="lookup-card glass-panel">
+                <h3>納甲地支對應 (Najia Reference - Full)</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>八宮屬性</th><th>內卦 (Bottom)</th><th>外卦 (Top)</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>乾宮 (金) / 震宮 (木)</td><td>子、寅、辰</td><td>午、申、戌</td></tr>
+                        <tr><td>坤宮 (土)</td><td>未、巳、卯</td><td>丑、亥、酉</td></tr>
+                        <tr><td>坎宮 (水)</td><td>寅、辰、午</td><td>申、戌、子</td></tr>
+                        <tr><td>離宮 (火)</td><td>卯、丑、亥</td><td>酉、未、巳</td></tr>
+                        <tr><td>巽宮 (木)</td><td>丑、亥、酉</td><td>未、巳、卯</td></tr>
+                        <tr><td>兌宮 (金)</td><td>巳、卯、丑</td><td>亥、酉、未</td></tr>
+                        <tr><td>艮宮 (土)</td><td>辰、午、申</td><td>戌、子、寅</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    renderLearnContent() {
+        const container = document.querySelector('#subpage-learn .learn-content');
+        if (!container) return;
+
+        container.innerHTML = `
+            <article class="learn-article">
+                <h2>☯ 如何開始學習易經？</h2>
+                <p>易經並非單純的迷信，而是一套古代的「符號邏輯系統」，用來解釋萬物變化的規律。</p>
+                
+                <section>
+                    <h3>1. 認識符號 (陰陽與八卦)</h3>
+                    <p>一長橫「⚊」代表陽，兩個短橫「⚋」代表陰。三爻組成一個「經卦」（八卦），六爻組成一個「別卦」（六十四卦）。</p>
+                </section>
+
+                <section>
+                    <h3>2. 掌握「變爻」</h3>
+                    <p>本占卜系統使用 6, 7, 8, 9 數字法。<strong>6 為老陰，9 為老陽</strong>，這兩個數字代表「變動」，會演變成相反的符號。這就是「易」——變化的真諦。</p>
+                </section>
+
+                <section>
+                    <h3>3. 推薦資源</h3>
+                    <ul>
+                        <li>《易經今註今譯》- 基礎入門首選</li>
+                        <li>《增刪卜易》- 進階六爻占卜必讀</li>
+                        <li>本應用 AI 導師：隨時對話請教，是您最好的領路人。</li>
+                    </ul>
+                </section>
+            </article>
+        `;
+    }
+
     setupEventListeners() {
         // Manual toss button/click on canvas
         const container = document.getElementById('canvas-container');
@@ -363,7 +533,7 @@ class App {
 
     renderView() {
         if (this.currentView === 'library') {
-            this.renderLibrary();
+            this.switchLibrarySubpage(this.librarySubpage); // This handles both grid and other subpages
         } else if (this.currentView === 'history') {
             this.renderCalendar(); // Call renderCalendar for history view
         } else if (this.currentView === 'ai-mentor') {
@@ -397,10 +567,19 @@ class App {
             });
             symbolHtml += '</div>';
 
+            const phonetics = HEXAGRAM_PHONETICS[hex.id];
+            const phoneticHtml = phonetics ? `
+                <div class="card-phonetic">
+                    <span class="zhuyin">${phonetics.bopomofo}</span>
+                    <span class="pinyin">${phonetics.pinyin}</span>
+                </div>
+            ` : '';
+
             card.innerHTML = `
                 ${symbolHtml}
                 <div class="card-id">#${hex.id}</div>
                 <div class="card-name">${hex.name}卦</div>
+                ${phoneticHtml}
                 <div class="card-binary">${hex.binary}</div>
             `;
             card.onclick = () => this.showHexagramDetail(hex);
@@ -591,11 +770,16 @@ class App {
 
         const modal = document.getElementById('detail-modal');
         const body = modal.querySelector('.modal-body');
+        const phonetics = HEXAGRAM_PHONETICS[hex.id];
+        const phoneticStr = phonetics ? `${phonetics.bopomofo} (${phonetics.pinyin})` : '';
 
         body.innerHTML = `
-            <div class="modal-header-flex">
-                ${this.renderMiniHexSymbol(hex.binary)}
-                <h2>${hex.name || '未知'}卦 (#${hex.id || '??'})</h2>
+            <div class="modal-header">
+                <h2>${hex.name}卦 <small class="header-phonetic">${phoneticStr}</small></h2>
+                <div class="hex-badges">
+                    ${this.renderMiniHexSymbol(hex.binary)}
+                    <div class="card-id">#${hex.id}</div>
+                </div>
             </div>
 
             <details class="detail-section" open>
