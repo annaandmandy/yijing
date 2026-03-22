@@ -2596,15 +2596,17 @@ canvas {
     }
 
     .tarot-spread {
-        flex-direction: column;
-        align-items: center;
-        gap: 30px;
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 10px;
         padding-bottom: 80px;
         /* Space for nav */
     }
 
     .tarot-card-wrapper {
-        width: 100%;
+        flex: 1;
+        max-width: 110px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -2612,10 +2614,20 @@ canvas {
     }
 
     .tarot-card {
-        width: 120px;
+        width: 100%;
         aspect-ratio: 13 / 21;
         height: auto;
         flex-shrink: 0;
+    }
+
+    .spread-label {
+        font-size: 0.6rem;
+        letter-spacing: 0;
+        margin-bottom: 2px;
+    }
+
+    .tarot-card-name {
+        font-size: 0.75rem;
     }
 }
 

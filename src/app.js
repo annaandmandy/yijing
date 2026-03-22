@@ -1549,7 +1549,7 @@ class App {
                 const isTopRow = i >= groupSize;
                 const localIdx = i % groupSize;
                 const radius = isTopRow ? 140 : 180;
-                const yShift = isTopRow ? 40 : 140;
+                const yShift = isTopRow ? 0 : 160;
 
                 const angle = ((localIdx / (groupSize - 1)) - 0.5) * arcSpread;
                 const radian = (angle - 90) * (Math.PI / 180);
