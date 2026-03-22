@@ -1446,6 +1446,9 @@ class App {
 
     handleTarotStart() {
         this.tarotStep = 'shuffling';
+        const analysisCont = document.getElementById('tarot-quick-analysis');
+        if (analysisCont) analysisCont.classList.add('hidden');
+
         this.renderView();
         this.renderTarotDeck();
     }
@@ -1577,7 +1580,7 @@ class App {
             resultCont.scrollIntoView({ behavior: 'smooth' });
         }
 
-        setTimeout(() => {
+        setTimeout(async () => {
             document.getElementById('tarot-selection-container')?.classList.add('hidden');
             document.getElementById('tarot-result-container')?.classList.remove('hidden');
             document.getElementById('tarot-actions')?.classList.remove('hidden');
@@ -1593,7 +1596,7 @@ class App {
                 };
             }
 
-            this.renderTarotSpread();
+            await this.renderTarotSpread();
             this.autoInterpretTarot();
         }, 600);
     }
@@ -1716,14 +1719,24 @@ class App {
             `;
 
             spreadContainer.appendChild(wrapper);
-
-            // Sequential flip animation
-            setTimeout(() => {
-                const el = document.getElementById(`card-result-${i}`);
-                if (el) el.classList.add('flipped');
-            }, 400 * (i + 1));
         }
+
+        // Return promise that resolves when all cards have finished flipping
+        return new Promise((resolve) => {
+            const count = config.keys.length;
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const el = document.getElementById(`card-result-${i}`);
+                    if (el) el.classList.add('flipped');
+                    // Resolve after the last card finishes its flip (approx 600ms transition)
+                    if (i === count - 1) {
+                        setTimeout(resolve, 800);
+                    }
+                }, 400 * (i + 1));
+            }
+        });
     }
+
     async autoInterpretTarot() {
         const analysisCont = document.getElementById('tarot-quick-analysis');
         const analysisText = document.getElementById('tarot-analysis-text');
