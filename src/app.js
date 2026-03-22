@@ -117,11 +117,13 @@ class App {
 
         this.chatMessages = []; // Reset chat for new session
 
-        // Proactive: Ask AI for an initial summary if auto-talk is enabled
-        setTimeout(() => {
-            const detailBtn = document.getElementById('view-details');
-            if (detailBtn) detailBtn.classList.add('pulse-gold');
-        }, 1500);
+        // Proactive: Highlight detail button to encourage AI interaction
+        const detailBtn = document.getElementById('view-details');
+        if (detailBtn) detailBtn.classList.add('pulse-gold');
+    }
+
+    getSolarTime() {
+        return new Date().toLocaleString('zh-TW', { timeZone: 'America/New_York' }) + " (波士頓真太陽時)";
     }
 
     showResultOverlay(original, future, meta, recordId = null) {
@@ -189,10 +191,30 @@ class App {
         const copyBtn = overlay.querySelector('#copy-result');
         copyBtn.onclick = () => {
             const question = document.getElementById('user-question')?.value || "隨喜求卦";
-            const text = `【I-Ching Lab 卦象】\n問題：${question}\n本卦：${original.name}\n${meta.hasChange ? "之卦：" + future.name + "\n" : ""}${original.summary}\n#IChingLab`;
+            const solarTime = this.getSolarTime();
+
+            // Generate Hexagram Lines Text
+            let linesText = "";
+            if (original.najia_analysis) {
+                // Formatting Najia lines
+                linesText = original.najia_analysis.lines.map(l => {
+                    const isMoving = meta.changingLines.includes(l.line_number);
+                    return `L${l.line_number}: [${l.relative}] ${l.dizhi}${l.wuxing}${isMoving ? ' (動)' : ''}`;
+                }).reverse().join("\n");
+            }
+
+            const text = `【I-Ching Lab 卦象紀錄】\n` +
+                `問題：${question}\n` +
+                `時間：${solarTime}\n` +
+                `本卦：${original.name}${meta.hasChange ? " 之 " + future.name : ""}\n` +
+                `二进制：${meta.originalBinary}\n\n` +
+                `[納甲資訊]\n${original.najia_analysis?.palace}宮 [${original.najia_analysis?.palace_wuxing}]\n${linesText}\n\n` +
+                `解義：${original.summary}\n` +
+                `#IChingLab #易經 #術數`;
+
             navigator.clipboard.writeText(text).then(() => {
                 const oldText = copyBtn.innerText;
-                copyBtn.innerText = "已複製！";
+                copyBtn.innerText = "已複製資訊！";
                 setTimeout(() => copyBtn.innerText = oldText, 2000);
             });
         };
@@ -286,6 +308,10 @@ class App {
             this.renderLibrary();
         } else if (this.currentView === 'history') {
             this.renderHistory();
+        } else if (this.currentView === 'ai-mentor') {
+            if (this.currentHexData) {
+                this.prepareAIMentorView(this.currentHexData, this.currentRecordId);
+            }
         }
     }
 
@@ -443,7 +469,7 @@ class App {
             <h2>${hex.name || '未知'}卦 (#${hex.id || '??'})</h2>
             <div class="detail-section">
                 <h4>卦辭</h4>
-                <p>${hex.original_classic?.hexagram_text || '尚無文獻'}</p>
+                <p>${hex.original_classic?.hexagram_text || '尚聯文獻'}</p>
             </div>
             <div class="detail-section">
                 <h4>現代解析</h4>
@@ -465,108 +491,93 @@ class App {
             </div>
         `;
 
-        // Reset and Prepare Chat
-        const chatContainer = document.getElementById('ai-chat-container');
-        const chatHistory = document.getElementById('chat-history');
+        // Switch button logic to point to main AI View
         const askAiBtn = document.getElementById('ask-ai');
-
-        chatContainer.classList.add('hidden');
-        chatHistory.innerHTML = '';
-        askAiBtn.classList.remove('hidden');
-
-        // Load messages if they exist for this record
-        const record = JournalService.getRecord(this.currentRecordId);
-        this.chatMessages = record?.messages || [];
-
-        if (this.chatMessages.length > 0) {
-            chatContainer.classList.remove('hidden');
-            askAiBtn.classList.add('hidden');
-            this.chatMessages.forEach(msg => this.appendMessageToUI(msg.role, msg.content));
-        }
-
-        modal.classList.add('active');
-
         askAiBtn.onclick = () => {
-            chatContainer.classList.remove('hidden');
-            askAiBtn.classList.add('hidden');
-            if (this.chatMessages.length === 0) {
-                const firstQuestion = document.getElementById('user-question')?.value || "請導師針對此卦給予建議";
-                this.handleSendChat(firstQuestion);
-            }
+            modal.classList.remove('active');
+            this.switchView('ai-mentor');
         };
-
-        // Chat Input Event
-        const sendBtn = document.getElementById('send-chat');
-        const chatInput = document.getElementById('chat-input');
-
-        sendBtn.onclick = () => this.handleSendChat();
-        chatInput.onkeypress = (e) => { if (e.key === 'Enter') this.handleSendChat(); };
-
-        // Auto-run AI if requested
-        if (isAutoAsk && this.chatMessages.length === 0) {
-            askAiBtn.click();
-        }
 
         // Close modal
         const closeBtn = modal.querySelector('.close-btn');
         closeBtn.onclick = () => modal.classList.remove('active');
+
+        modal.classList.add('active');
+
+        // Automatically prepare AI view with this hex
+        this.prepareAIMentorView(hex, recordId);
+    }
+
+    prepareAIMentorView(hex, recordId) {
+        const header = document.getElementById('mentor-current-hex');
+        header.innerText = `${hex.name}卦 (#${hex.id}) - 導師對話中`;
+
+        const chatHistory = document.getElementById('chat-history-main');
+        chatHistory.innerHTML = '';
+
+        // Load messages if they exist
+        const record = JournalService.getRecord(recordId || this.currentRecordId);
+        this.chatMessages = record?.messages || [];
+
+        if (this.chatMessages.length > 0) {
+            this.chatMessages.forEach(msg => this.appendMessageToUI(msg.role, msg.content));
+        } else {
+            chatHistory.innerHTML = `<p class="empty-state">點擊發送按鈕或輸入疑問，與導師探討「${hex.name}卦」的深層意涵。</p>`;
+        }
+
+        // Setup send click
+        document.getElementById('send-chat-main').onclick = () => this.handleSendChat();
+        document.getElementById('chat-input-main').onkeypress = (e) => { if (e.key === 'Enter') this.handleSendChat(); };
     }
 
     async handleSendChat(forcedText = null) {
-        const input = document.getElementById('chat-input');
+        const input = document.getElementById('chat-input-main');
         const text = forcedText || input.value.trim();
-        if (!text) return;
+        if (!text && !forcedText) return;
 
         if (!forcedText) input.value = '';
+
+        // Clear empty state if any
+        const history = document.getElementById('chat-history-main');
+        const empty = history.querySelector('.empty-state');
+        if (empty) empty.remove();
 
         // User Message
         this.chatMessages.push({ role: 'user', content: text });
         this.appendMessageToUI('user', text);
 
-        // AI Response placeholder
         const status = document.querySelector('.chat-status');
-        status.innerText = '感應中...';
+        status.innerText = '導師感應中...';
 
-        // Create an empty AI message bubble for streaming
         const aiMsgEl = this.appendMessageToUI('ai', '');
         let fullResponse = '';
 
         try {
-            console.log("App: Requesting stream from AIService...");
             const stream = AIService.streamChat(this.chatMessages, this.currentHexData);
             for await (const chunk of stream) {
-                console.log("App: received chunk:", chunk);
                 fullResponse += chunk;
                 aiMsgEl.innerText = fullResponse;
-                const history = document.getElementById('chat-history');
                 history.scrollTop = history.scrollHeight;
             }
-
-            console.log("App: Stream completed.");
-            console.log("App: Full AI Answer:", fullResponse);
-
             this.chatMessages.push({ role: 'assistant', content: fullResponse });
-
-            // Persist
             if (this.currentRecordId) {
                 JournalService.updateMessages(this.currentRecordId, this.chatMessages);
             }
         } catch (error) {
-            console.error("AI Stream Error:", error);
-            aiMsgEl.innerText = "導師目前無法感應（連線異常），請稍後再試。";
+            aiMsgEl.innerText = "導師連線中斷，請稍候。";
         } finally {
             status.innerText = '在線';
         }
     }
 
     appendMessageToUI(role, content) {
-        const history = document.getElementById('chat-history');
+        const history = document.getElementById('chat-history-main');
         const msg = document.createElement('div');
         msg.className = `chat-msg ${role === 'user' ? 'user' : 'ai'}`;
         msg.innerText = content;
         history.appendChild(msg);
         history.scrollTop = history.scrollHeight;
-        return msg; // Return element for updates
+        return msg;
     }
 }
 

@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>I-Ching Lab | 沉浸式 3D 抽爻</title>
     <link rel="stylesheet" href="./src/styles/main.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Noto+Serif+TC:wght@400;700&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="dark-mode">
     <div id="app">
         <!-- Navigation Bar -->
@@ -16,6 +20,7 @@
             <div class="logo">I-Ching Lab</div>
             <div class="nav-links">
                 <a href="#tabletop" class="active">抽爻 Tabletop</a>
+                <a href="#ai-mentor">導師 AI Mentor</a>
                 <a href="#library">圖書館 Library</a>
                 <a href="#history">每日紀錄 Journal</a>
             </div>
@@ -38,7 +43,7 @@
                 <div id="result-overlay" class="hidden glass-panel">
                     <div class="binary-display"></div>
                     <h1 class="hex-name">--</h1>
-                    
+
                     <!-- Target Focus Selection -->
                     <div class="focus-selectors">
                         <small>針對特定的事分析：</small>
@@ -90,6 +95,28 @@
                     </div>
                 </div>
             </section>
+
+            <!-- AI Mentor View -->
+            <section id="ai-mentor" class="view">
+                <div class="header">
+                    <h2>AI 導師對話</h2>
+                </div>
+                <div class="ai-mentor-container">
+                    <div id="ai-chat-container-main" class="glass-panel">
+                        <div class="chat-header">
+                            <h4 id="mentor-current-hex">等待卦象中...</h4>
+                            <span class="chat-status">感應中...</span>
+                        </div>
+                        <div id="chat-history-main" class="chat-scroll">
+                            <p class="empty-state">請先完成抽爻，或從紀錄中選擇一卦以開始與導師對話。</p>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input-main" placeholder="向導師請教更多細節...">
+                            <button id="send-chat-main" class="btn-icon">➤</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
 
         <!-- Detail Modal -->
@@ -99,22 +126,8 @@
                 <div class="modal-body">
                     <!-- Dynamic content will be injected here -->
                 </div>
-                <!-- Chat Interface -->
-                <div id="ai-chat-container" class="glass-panel hidden">
-                    <div class="chat-header">
-                        <h4>AI 導師對話</h4>
-                        <span class="chat-status">感應中...</span>
-                    </div>
-                    <div id="chat-history" class="chat-scroll">
-                        <!-- Messages will appear here -->
-                    </div>
-                    <div class="chat-input-area">
-                        <input type="text" id="chat-input" placeholder="向導師請教更多細節...">
-                        <button id="send-chat" class="btn-icon">➤</button>
-                    </div>
-                </div>
-                
-                <button id="ask-ai" class="btn-primary">詢問 AI 導師</button>
+
+                <button id="ask-ai" class="btn-primary">啟動 AI 導航</button>
             </div>
         </div>
     </div>
@@ -122,4 +135,5 @@
     <!-- Main JS entry -->
     <script type="module" src="src/app.js"></script>
 </body>
+
 </html>
