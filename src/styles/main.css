@@ -771,11 +771,20 @@ canvas {
 
 .close-btn {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 2rem;
-    cursor: pointer;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
     color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 100;
+    transition: var(--transition-smooth);
+}
+
+.close-btn:hover {
+    color: var(--accent-gold);
+    transform: scale(1.1);
 }
 
 .modal-body h2 {

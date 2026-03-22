@@ -27,6 +27,7 @@ class App {
         this.calendarYear = this.calendarDate.getFullYear();
         this.calendarMonth = this.calendarDate.getMonth();
         this.radarChart = null;
+        this.resultSource = 'tabletop'; // Source of current result view
 
         window.app = this; // Global reference for inline oncilcks
         this.init();
@@ -137,6 +138,9 @@ class App {
 
     showResultOverlay(original, future, meta, recordId = null) {
         this.currentRecordId = recordId || this.currentRecordId;
+        // Don't override resultSource if it's already 'history'
+        if (this.currentRecordId && !this.resultSource) this.resultSource = 'history';
+
         const overlay = document.getElementById('result-overlay');
         const nameEl = overlay.querySelector('.hex-name');
         const binaryEl = overlay.querySelector('.binary-display');
@@ -298,6 +302,15 @@ class App {
             }
         });
 
+        // Close result overlay
+        document.getElementById('close-result-overlay').addEventListener('click', () => {
+            document.getElementById('result-overlay').classList.add('hidden');
+            if (this.resultSource === 'history') {
+                this.switchView('history');
+                this.resultSource = 'tabletop'; // Reset
+            }
+        });
+
         // Re-toss button
         document.getElementById('re-toss').addEventListener('click', () => {
             document.getElementById('result-overlay').classList.add('hidden');
@@ -306,6 +319,7 @@ class App {
             this.currentTosses = [];
             this.currentRecordId = null;
             this.chatMessages = [];
+            this.resultSource = 'tabletop'; // Reset source to tabletop
             document.getElementById('casting-progress').innerHTML = ''; // Clear progress
         });
 
@@ -809,6 +823,7 @@ class App {
         modal.classList.remove('active');
 
         // Restore overlay view
+        this.resultSource = 'history';
         this.switchView('tabletop');
         this.showResultOverlay(original, future, {
             originalBinary: record.originalBinary || "000000",
