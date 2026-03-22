@@ -547,16 +547,25 @@ class App {
         this.appendMessageToUI('user', text);
 
         const status = document.querySelector('.chat-status');
-        status.innerText = '導師感應中...';
+        status.innerText = '導師沈思中...';
 
-        const aiMsgEl = this.appendMessageToUI('ai', '');
+        // Show placeholder instead of empty bubble
+        const aiMsgEl = this.appendMessageToUI('ai', '導師思考中...');
         let fullResponse = '';
 
         try {
             const stream = AIService.streamChat(this.chatMessages, this.currentHexData);
             for await (const chunk of stream) {
+                if (fullResponse === '') aiMsgEl.innerText = ''; // Clear placeholder on first chunk
                 fullResponse += chunk;
-                aiMsgEl.innerText = fullResponse;
+
+                // Use marked for markdown rendering if available
+                if (window.marked) {
+                    aiMsgEl.innerHTML = window.marked.parse(fullResponse);
+                } else {
+                    aiMsgEl.innerText = fullResponse;
+                }
+
                 history.scrollTop = history.scrollHeight;
             }
             this.chatMessages.push({ role: 'assistant', content: fullResponse });
@@ -574,7 +583,13 @@ class App {
         const history = document.getElementById('chat-history-main');
         const msg = document.createElement('div');
         msg.className = `chat-msg ${role === 'user' ? 'user' : 'ai'}`;
-        msg.innerText = content;
+
+        if (role === 'ai' && window.marked && content !== '導師思考中...') {
+            msg.innerHTML = window.marked.parse(content);
+        } else {
+            msg.innerText = content;
+        }
+
         history.appendChild(msg);
         history.scrollTop = history.scrollHeight;
         return msg;
