@@ -48,28 +48,35 @@
                     <input type="text" id="tarot-question" placeholder="輸入你想請教塔羅的事..." class="glass-input">
                 </div>
 
-                <div id="tarot-canvas-container" class="shuffling-container">
+                <!-- Unified Tarot Interaction Zone -->
+                <div id="tarot-interaction-zone" class="interaction-zone glass-panel hidden">
                     <div class="tarot-intro" id="tarot-intro">
                         <p>沉浸於神祕學的指引...</p>
                         <button id="start-tarot" class="btn-primary gold-glow">開始占卜</button>
                     </div>
-                    <div class="deck-pile hidden" id="tarot-deck">
-                        <div class="deck-cards-logic">
-                            <!-- Shuffling cards will be here -->
-                        </div>
-                        <div class="deck-instruction">按住手勢或點擊以洗牌</div>
-                    </div>
-                </div>
 
-                <div id="tarot-selection-container" class="tarot-selection hidden">
-                    <div class="selection-instruction">請憑直覺點選 <span id="cards-to-pick">3</span> 張牌</div>
-                    <div id="tarot-fan" class="tarot-fan">
-                        <!-- Fan of cards will be here -->
+                    <div id="tarot-deck" class="deck-pile hidden">
+                        <div class="deck-cards-logic"></div>
+                        <div class="deck-instruction">按住或點擊以洗牌</div>
+                    </div>
+
+                    <div id="tarot-selection-container" class="tarot-selection hidden">
+                        <div class="selection-instruction">請憑直覺點選 <span id="cards-to-pick">3</span> 張牌</div>
+                        <div id="tarot-fan" class="tarot-fan"></div>
                     </div>
                 </div>
 
                 <div id="tarot-result-container" class="tarot-spread hidden">
                     <!-- Selected cards will be shown here -->
+                </div>
+
+                <div id="tarot-quick-analysis" class="quick-analysis hidden glass-panel">
+                    <div class="analysis-header">
+                        <span class="sparkle">✨</span> 導師初步解析 Quick Insight
+                    </div>
+                    <div id="tarot-analysis-text" class="analysis-body">
+                        正在整理牌義中...
+                    </div>
                 </div>
 
                 <div class="tarot-actions hidden" id="tarot-actions">
@@ -255,7 +262,7 @@
         <!-- Detail Modal -->
         <div id="detail-modal" class="modal">
             <div class="modal-content glass-panel">
-                <span class="close-btn">&times;</span>
+                <span class="close-btn close-modal">&times;</span>
                 <div class="modal-body">
                     <!-- Dynamic content will be injected here -->
                 </div>

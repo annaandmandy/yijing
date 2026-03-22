@@ -11,7 +11,6 @@ export class TarotEngine {
      * @returns {Array} - Array of objects {id, isReversed}
      */
     static shuffleDeck() {
-        // Define all IDs (Major: 00-21, Minor: suit_01-14)
         const major = Array.from({ length: 22 }, (_, i) => i.toString().padStart(2, '0'));
         const suits = ['wands', 'cups', 'swords', 'pentacles'];
         const minor = suits.flatMap(suit =>
@@ -20,7 +19,7 @@ export class TarotEngine {
 
         let deck = [...major, ...minor].map(id => ({
             id,
-            isReversed: Math.random() > 0.5 // 50% chance for reversal
+            isReversed: Math.random() > 0.5
         }));
 
         // Fisher-Yates Shuffle
