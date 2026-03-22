@@ -25,6 +25,7 @@ class App {
         // Calendar State
         this.calendarDate = new Date();
         this.calendarMonth = this.calendarDate.getMonth();
+        this.calendarYear = this.calendarDate.getFullYear();
         this.radarChart = null;
         this.resultSource = 'tabletop';
         this.librarySubpage = 'grid'; // Sub-view within library
