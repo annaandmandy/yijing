@@ -1,6 +1,6 @@
 /* main.css - I-Ching Lab Premium Design System */
 :root {
-    --bg-dark: #0a0a0c;
+    --bg-dark: #000;
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
     --accent-gold: #d4af37;
@@ -133,7 +133,7 @@ body {
     height: calc(100svh - 70px);
     /* Use svh for better mobile support */
     position: relative;
-    background: radial-gradient(circle at center, #1a1b26 0%, #0a0c10 100%);
+    background: #000;
     overflow: hidden;
 }
 
