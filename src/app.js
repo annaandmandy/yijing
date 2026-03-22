@@ -21,6 +21,14 @@ class App {
         this.chart = null; // Radar chart instance
         this.currentRecordId = null;
         this.chatMessages = [];
+
+        // Calendar State
+        this.calendarDate = new Date();
+        this.calendarYear = this.calendarDate.getFullYear();
+        this.calendarMonth = this.calendarDate.getMonth();
+        this.radarChart = null;
+
+        window.app = this; // Global reference for inline oncilcks
         this.init();
     }
 
@@ -35,6 +43,7 @@ class App {
         this.setupNavigation();
         this.setupCastingManager();
         this.setupEventListeners();
+        this.setupCalendarNav(); // Added calendar navigation setup
 
         // Initial view render
         this.renderView();
@@ -134,24 +143,34 @@ class App {
         const summaryEl = overlay.querySelector('.hex-summary');
 
         nameEl.innerHTML = `
-            <div style="display:flex; align-items:center; gap:15px; justify-content:center; margin-bottom:10px;">
-                ${this.renderMiniHexSymbol(original.binary)}
-                <span>${original.name}</span>
+            <div class="result-hex-display">
+                <div class="hex-block original">
+                    <span class="hex-label">本卦 (當前)</span>
+                    ${this.renderMiniHexSymbol(original.binary)}
+                    <span class="hex-name-text">${original.name}</span>
+                </div>
+                ${meta.hasChange ? `
+                <div class="hex-arrow">→</div>
+                <div class="hex-block future">
+                    <span class="hex-label">之卦 (演變)</span>
+                    ${this.renderMiniHexSymbol(future.binary)}
+                    <span class="hex-name-text">${future.name}</span>
+                </div>
+                ` : ''}
             </div>
         `;
 
         binaryEl.innerText = meta.originalBinary;
-        summaryEl.innerText = original.summary;
 
         if (meta.hasChange) {
-            nameEl.innerHTML += `
-                <div style="font-size: 0.9rem; opacity: 0.6; margin-top:5px; display:flex; align-items:center; gap:10px; justify-content:center;">
-                    <span>之</span>
-                    ${this.renderMiniHexSymbol(future.binary)}
-                    <span>${future.name}</span>
+            summaryEl.innerHTML = `
+                <div class="change-info">
+                    <p><strong>現狀：</strong>${original.name}卦 — ${original.summary}</p>
+                    <p><strong>趨勢：</strong>變爻引發向 ${future.name}卦 的演進。這代表了事態未來的發展方向。</p>
                 </div>
             `;
-            summaryEl.innerText = `本卦：${original.name}\n之卦：${future.name}\n${original.summary}`;
+        } else {
+            summaryEl.innerText = original.summary;
         }
 
         // Professional Najia Rendering
@@ -332,7 +351,7 @@ class App {
         if (this.currentView === 'library') {
             this.renderLibrary();
         } else if (this.currentView === 'history') {
-            this.renderHistory();
+            this.renderCalendar(); // Call renderCalendar for history view
         } else if (this.currentView === 'ai-mentor') {
             if (this.currentHexData) {
                 this.prepareAIMentorView(this.currentHexData, this.currentRecordId);
@@ -375,115 +394,167 @@ class App {
         });
     }
 
-    renderHistory() {
-        const historyList = document.querySelector('.history-list');
-        const history = JournalService.getHistory();
-        historyList.innerHTML = history.length === 0 ? '<p>尚無任何紀錄</p>' : '';
-
-        const relativeStats = { "官鬼": 0, "父母": 0, "兄弟": 0, "子孫": 0, "妻財": 0 };
-        const groups = {};
-
-        history.forEach(item => {
-            const dateStr = new Date(item.date).toLocaleDateString();
-            if (!groups[dateStr]) groups[dateStr] = [];
-            groups[dateStr].push(item);
-
-            const hex = this.library.find(h => h.id === item.originalId);
-            if (hex && hex.najia_analysis) {
-                hex.najia_analysis.lines.forEach(l => {
-                    if (relativeStats[l.relative] !== undefined) relativeStats[l.relative]++;
-                });
-            }
-        });
-
-        // Render date groups
-        Object.keys(groups).forEach(date => {
-            const header = document.createElement('div');
-            header.className = 'date-header';
-            header.innerText = date;
-            historyList.appendChild(header);
-
-            groups[date].forEach(item => {
-                const el = document.createElement('div');
-                el.className = 'history-item glass-panel';
-
-                const lastMsg = item.messages?.length > 0 ? item.messages[item.messages.length - 1].content.substring(0, 40) + '...' : '點擊與導師深入對話';
-
-                el.innerHTML = `
-                    <div class="item-main">
-                        <strong>問：${item.question || '未設定'}</strong>
-                        <div class="item-summary">${lastMsg}</div>
-                        <small class="chat-hint">引發自：${item.originalName}卦</small>
-                    </div>
-                    <button class="result-action">查看當時卦象</button>
-                `;
-
-                // Open Chat on main area click
-                el.onclick = (e) => {
-                    if (e.target.closest('.result-action')) return;
-                    const hex = this.library.find(h => h.id === item.originalId);
-                    if (hex) this.showHexagramDetail(hex, false, item.id);
-                };
-
-                // Open Result Overlay on button click
-                const resBtn = el.querySelector('.result-action');
-                resBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    const hex = this.library.find(h => h.id === item.originalId);
-                    const future = item.futureId ? this.library.find(h => h.id === item.futureId) : null;
-                    if (hex) {
-                        this.switchView('tabletop');
-                        this.showResultOverlay(hex, future, {
-                            originalBinary: item.originalBinary || "------",
-                            hasChange: item.hasChange,
-                            changingLines: item.changingLines // Make sure changingLines is passed
-                        }, item.id);
-                    }
-                };
-
-                historyList.appendChild(el);
-            });
-        });
-
-        this.renderRadarChart(relativeStats);
+    setupCalendarNav() {
+        const prevBtn = document.getElementById('prev-month');
+        const nextBtn = document.getElementById('next-month');
+        if (prevBtn) prevBtn.onclick = () => this.changeCalendarMonth(-1);
+        if (nextBtn) nextBtn.onclick = () => this.changeCalendarMonth(1);
     }
 
-    renderRadarChart(stats) {
+    changeCalendarMonth(delta) {
+        this.calendarMonth += delta;
+        if (this.calendarMonth < 0) {
+            this.calendarMonth = 11;
+            this.calendarYear--;
+        } else if (this.calendarMonth > 11) {
+            this.calendarMonth = 0;
+            this.calendarYear++;
+        }
+        this.renderCalendar();
+    }
+
+    renderCalendar() {
+        if (this.currentView !== 'history') return;
+
+        const grid = document.getElementById('calendar-grid');
+        const display = document.getElementById('current-month-display');
+        if (!grid || !display) return;
+
+        display.innerText = `${this.calendarYear}年 ${this.calendarMonth + 1}月`;
+        grid.innerHTML = '';
+
+        // Day Headers
+        const days = ['日', '一', '二', '三', '四', '五', '六'];
+        days.forEach(d => {
+            const el = document.createElement('div');
+            el.className = 'calendar-day-head';
+            el.innerText = d;
+            grid.appendChild(el);
+        });
+
+        // Calendar Logic
+        const firstDay = new Date(this.calendarYear, this.calendarMonth, 1).getDay();
+        const daysInMonth = new Date(this.calendarYear, this.calendarMonth + 1, 0).getDate();
+        const prevMonthDays = new Date(this.calendarYear, this.calendarMonth, 0).getDate();
+
+        // Get Records for the month
+        const records = JournalService.getMonthlyHistory(this.calendarYear, this.calendarMonth);
+        const recordMap = {};
+        records.forEach(r => {
+            const day = new Date(r.date).getDate();
+            if (!recordMap[day]) recordMap[day] = [];
+            recordMap[day].push(r);
+        });
+
+        // Fill empty days from prev month
+        for (let i = firstDay - 1; i >= 0; i--) {
+            const day = document.createElement('div');
+            day.className = 'calendar-day';
+            day.innerHTML = `<span class="day-number">${prevMonthDays - i}</span>`;
+            grid.appendChild(day);
+        }
+
+        // Fill current month days
+        const today = new Date();
+        for (let i = 1; i <= daysInMonth; i++) {
+            const day = document.createElement('div');
+            const isToday = today.getDate() === i && today.getMonth() === this.calendarMonth && today.getFullYear() === this.calendarYear;
+            day.className = `calendar-day current-month ${isToday ? 'today' : ''}`;
+
+            const dayRecords = recordMap[i] || [];
+            if (dayRecords.length > 0) {
+                day.classList.add('has-record');
+                let dotsHtml = '<div class="records-preview">';
+                dayRecords.forEach(() => dotsHtml += '<div class="record-dot"></div>');
+                dotsHtml += '</div>';
+
+                day.innerHTML = `<span class="day-number">${i}</span>${dotsHtml}`;
+                day.onclick = () => {
+                    this.showDaySelectionModal(i, dayRecords);
+                };
+            } else {
+                day.innerHTML = `<span class="day-number">${i}</span>`;
+            }
+            grid.appendChild(day);
+        }
+
+        this.updateMonthlyStats();
+    }
+
+    updateMonthlyStats() {
+        const stats = JournalService.getMonthlyStats(this.calendarYear, this.calendarMonth, this.library);
         const ctx = document.getElementById('radar-chart').getContext('2d');
-        if (this.chart) this.chart.destroy();
+        const summaryEl = document.getElementById('stats-summary');
 
-        const labels = Object.keys(stats);
-        const data = Object.values(stats);
+        const labels = Object.keys(stats.wuxing);
+        const values = Object.values(stats.wuxing);
 
-        this.chart = new Chart(ctx, {
+        if (this.radarChart) this.radarChart.destroy();
+
+        if (stats.total === 0) {
+            summaryEl.innerHTML = "<p>本月尚無紀錄，快去開啟您的易經探索吧！</p>";
+            // Empty Chart
+            this.radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: { labels: ['金', '木', '水', '火', '土'], datasets: [] },
+                options: { scales: { r: { display: false } } }
+            });
+            return;
+        }
+
+        // Find dominant element
+        let maxVal = -1;
+        let dominant = "";
+        for (let key in stats.wuxing) {
+            if (stats.wuxing[key] > maxVal) {
+                maxVal = stats.wuxing[key];
+                dominant = key;
+            }
+        }
+
+        const descriptions = {
+            "木": "木氣充盈，代表本月您的能量集中在「成長」與「開拓」上。適合啟動新計畫或自我提升。",
+            "火": "火氣旺盛，顯示本月生活節奏快且充滿熱情。注意情緒管理，轉化衝動為行動力。",
+            "土": "土氣沈穩，象徵著安定與收穫。本月適合守成、反思或處理與家庭、根基相關的事宜。",
+            "金": "金氣銳利，代表果斷與原則。本月您的決策力和執行力極佳，適合解決積壓已久的難題。",
+            "水": "水氣靈動，象徵智慧與變化。本月您的直覺敏銳，適合深度思考與人際交流的柔性處理。"
+        };
+
+        summaryEl.innerHTML = `
+            <p>本月共計 <strong>${stats.total}</strong> 次占卜。</p>
+            <p>主導能量：<strong>${dominant}</strong> 元素</p>
+            <p>${descriptions[dominant] || ''}</p>
+        `;
+
+        this.radarChart = new Chart(ctx, {
             type: 'radar',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: '六親能量分佈',
-                    data: data,
+                    label: '五行強度',
+                    data: values,
                     backgroundColor: 'rgba(212, 175, 55, 0.2)',
                     borderColor: '#d4af37',
-                    pointBackgroundColor: '#d4af37',
-                    borderWidth: 2
+                    borderWidth: 2,
+                    pointBackgroundColor: '#d4af37'
                 }]
             },
             options: {
                 scales: {
                     r: {
-                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        pointLabels: { color: '#f0f0f0', font: { size: 14 } },
+                        beginAtZero: true,
                         ticks: { display: false },
-                        suggestedMin: 0
+                        suggestedMax: Math.max(...values) + 1,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                        pointLabels: { color: '#f0f0f0', font: { size: 12 } }
                     }
                 },
-                plugins: {
-                    legend: { display: false }
-                }
+                plugins: { legend: { display: false } }
             }
         });
     }
+
 
     renderMiniHexSymbol(binary) {
         if (!binary || binary.length !== 6) return '';
@@ -685,6 +756,70 @@ class App {
         history.appendChild(msg);
         history.scrollTop = history.scrollHeight;
         return msg;
+    }
+
+    showDaySelectionModal(day, records) {
+        const modal = document.getElementById('detail-modal');
+        const body = modal.querySelector('.modal-body');
+
+        body.innerHTML = `
+            <div class="modal-header-flex">
+                <div class="calendar-icon-header" style="font-size: 1.5rem;">📅</div>
+                <h2>${this.calendarYear}年${this.calendarMonth + 1}月${day}日 的占卜紀錄</h2>
+            </div>
+            
+            <div class="day-selection-list" style="margin-top: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <p class="selection-hint" style="color: var(--text-secondary); font-size: 0.9rem;">當天共有 ${records.length} 筆紀錄，請選擇欲查看的項目：</p>
+                ${records.map(record => {
+            const hex = this.library.find(h => h.id === record.originalId);
+            const time = new Date(record.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return `
+                        <div class="selection-item glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                            <div class="item-info" style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                                    <span style="font-size: 0.8rem; background: rgba(212, 175, 55, 0.2); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px;">${time}</span>
+                                    <strong style="color: var(--text-primary);">${hex?.name || '未知'}卦</strong>
+                                </div>
+                                <div style="font-size: 0.9rem; color: var(--text-secondary);">${record.question || '隨喜求卦'}</div>
+                            </div>
+                            <div class="item-actions" style="display: flex; gap: 8px;">
+                                <button class="nav-btn" onclick="window.app.showHistoryResultOverlay('${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">查看斷語</button>
+                                <button class="nav-btn gold" onclick="window.app.showHexagramDetailById('${hex?.id}', '${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">詳解</button>
+                            </div>
+                        </div>
+                    `;
+        }).join('')}
+            </div>
+        `;
+
+        modal.classList.add('active');
+    }
+
+    showHistoryResultOverlay(recordId) {
+        const record = JournalService.getRecord(recordId);
+        if (!record) return;
+
+        const original = this.library.find(h => h.id === record.originalId);
+        const future = record.futureId ? this.library.find(h => h.id === record.futureId) : null;
+
+        if (!original) return;
+
+        // Close selection modal
+        const modal = document.getElementById('detail-modal');
+        modal.classList.remove('active');
+
+        // Restore overlay view
+        this.switchView('tabletop');
+        this.showResultOverlay(original, future, {
+            originalBinary: record.originalBinary || "000000",
+            hasChange: record.hasChange,
+            changingLines: record.changingLines || []
+        }, recordId);
+    }
+
+    showHexagramDetailById(hexId, recordId) {
+        const hex = this.library.find(h => h.id === parseInt(hexId));
+        if (hex) this.showHexagramDetail(hex, false, recordId);
     }
 }
 

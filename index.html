@@ -83,16 +83,34 @@
 
             <!-- History View -->
             <section id="history" class="view">
-                <div class="header">
-                    <h2>每日抽爻紀錄</h2>
-                </div>
-                <div id="history-container">
-                    <div class="stats-card glass-panel">
-                        <h3>能量分佈</h3>
-                        <canvas id="radar-chart"></canvas>
+                <div class="calendar-header-wrapper">
+                    <div class="header">
+                        <h2>每日抽爻紀錄</h2>
+                        <div class="calendar-nav">
+                            <button id="prev-month" class="nav-btn">上個月</button>
+                            <span id="current-month-display">2026年3月</span>
+                            <button id="next-month" class="nav-btn">下個月</button>
+                        </div>
                     </div>
-                    <div class="history-list">
-                        <!-- History items will be listed here -->
+                </div>
+
+                <div id="history-container">
+                    <div class="calendar-layout">
+                        <div class="calendar-grid-card glass-panel">
+                            <div id="calendar-grid">
+                                <!-- Calendar grid will be generated here -->
+                            </div>
+                        </div>
+
+                        <div class="stats-card glass-panel">
+                            <h3>本月五行分佈</h3>
+                            <div class="chart-container">
+                                <canvas id="radar-chart"></canvas>
+                            </div>
+                            <div id="stats-summary" class="stats-summary">
+                                <!-- Monthly summary text -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>

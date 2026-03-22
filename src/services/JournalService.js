@@ -61,15 +61,34 @@ export class JournalService {
   }
 
   /**
-   * Gets statistics for trends (e.g., Five Elements distribution).
-   * This would be expanded as we integrate more data.
+   * Gets records for a specific month.
    */
-  static getStats() {
+  static getMonthlyHistory(year, month) {
     const history = this.getHistory();
-    // Logic for radar chart data generation goes here
+    return history.filter(record => {
+      const d = new Date(record.date);
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+  }
+
+  /**
+   * Gets statistics for a specific month (Five Elements distribution).
+   */
+  static getMonthlyStats(year, month, library) {
+    const records = this.getMonthlyHistory(year, month);
+    const wuxingCounters = { "金": 0, "木": 0, "水": 0, "火": 0, "土": 0 };
+
+    records.forEach(record => {
+      const hex = library.find(h => h.id === record.originalId);
+      if (hex && hex.najia_analysis?.palace_wuxing) {
+        const wx = hex.najia_analysis.palace_wuxing;
+        if (wuxingCounters[wx] !== undefined) wuxingCounters[wx]++;
+      }
+    });
+
     return {
-      total: history.length,
-      // ... stats
+      total: records.length,
+      wuxing: wuxingCounters
     };
   }
 }
