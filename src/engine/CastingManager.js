@@ -22,7 +22,7 @@ export class CastingManager {
 
     initThree() {
         this.scene = new THREE.Scene();
-        
+
         const aspect = this.container.clientWidth / this.container.clientHeight;
         this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
         this.camera.position.set(0, 15, 12);
@@ -62,10 +62,41 @@ export class CastingManager {
         groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
         this.world.addBody(groundBody);
 
+        // Invisible Walls for containment
+        const wallShape = new CANNON.Plane();
+        const wallMaterial = new CANNON.Material();
+
+        // Back Wall
+        const wallBack = new CANNON.Body({ mass: 0, material: wallMaterial });
+        wallBack.addShape(wallShape);
+        wallBack.position.set(0, 0, -8);
+        this.world.addBody(wallBack);
+
+        // Front Wall
+        const wallFront = new CANNON.Body({ mass: 0, material: wallMaterial });
+        wallFront.addShape(wallShape);
+        wallFront.quaternion.setFromEuler(0, Math.PI, 0);
+        wallFront.position.set(0, 0, 8);
+        this.world.addBody(wallFront);
+
+        // Left Wall
+        const wallLeft = new CANNON.Body({ mass: 0, material: wallMaterial });
+        wallLeft.addShape(wallShape);
+        wallLeft.quaternion.setFromEuler(0, Math.PI / 2, 0);
+        wallLeft.position.set(-10, 0, 0);
+        this.world.addBody(wallLeft);
+
+        // Right Wall
+        const wallRight = new CANNON.Body({ mass: 0, material: wallMaterial });
+        wallRight.addShape(wallShape);
+        wallRight.quaternion.setFromEuler(0, -Math.PI / 2, 0);
+        wallRight.position.set(10, 0, 0);
+        this.world.addBody(wallRight);
+
         // Visual floor (decorative)
         const floorGeo = new THREE.PlaneGeometry(20, 20);
-        const floorMat = new THREE.MeshStandardMaterial({ 
-            color: 0x1a1b26, 
+        const floorMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1b26,
             roughness: 0.8,
             metalness: 0.2
         });
@@ -76,13 +107,30 @@ export class CastingManager {
     }
 
     createCoins() {
-        const coinGeometry = new THREE.CylinderGeometry(1.2, 1.2, 0.2, 32);
-        
-        // Materials for Yang (3) and Yin (2) sides
-        const sideMat = new THREE.MeshStandardMaterial({ color: 0xaa8a2b });
-        const faceMatYang = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.8 }); // Gold
-        const faceMatYin = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.3, metalness: 0.8 }); // Silver-ish
-        
+        // Smaller and more refined geometry
+        const coinGeometry = new THREE.CylinderGeometry(0.85, 0.85, 0.15, 64);
+
+        // More exquisite materials
+        const sideMat = new THREE.MeshStandardMaterial({
+            color: 0x8c6a1b,
+            metalness: 0.9,
+            roughness: 0.1
+        });
+        const faceMatYang = new THREE.MeshStandardMaterial({
+            color: 0xffd700,
+            metalness: 1.0,
+            roughness: 0.05,
+            emissive: 0xd4af37,
+            emissiveIntensity: 0.2
+        });
+        const faceMatYin = new THREE.MeshStandardMaterial({
+            color: 0xdddddd,
+            metalness: 0.8,
+            roughness: 0.2,
+            emissive: 0x999999,
+            emissiveIntensity: 0.1
+        });
+
         const materials = [sideMat, faceMatYang, faceMatYin];
 
         for (let i = 0; i < 3; i++) {
@@ -90,15 +138,16 @@ export class CastingManager {
             coinMesh.castShadow = true;
             this.scene.add(coinMesh);
 
-            const coinShape = new CANNON.Cylinder(1.2, 1.2, 0.2, 32);
+            // Refined physics shape
+            const coinShape = new CANNON.Cylinder(0.85, 0.85, 0.15, 32);
             const coinBody = new CANNON.Body({
-                mass: 1,
+                mass: 1.2,
                 shape: coinShape,
-                material: new CANNON.Material({ friction: 0.3, restitution: 0.5 })
+                material: new CANNON.Material({ friction: 0.1, restitution: 0.6 })
             });
 
             // Initial spread
-            coinBody.position.set((i - 1) * 3, 5, 0);
+            coinBody.position.set((i - 1) * 2, 5, 0);
             this.world.addBody(coinBody);
 
             this.coins.push({ mesh: coinMesh, body: coinBody });
@@ -112,7 +161,7 @@ export class CastingManager {
         this.coins.forEach((coin, idx) => {
             coin.body.wakeUp();
             coin.body.position.set((idx - 1) * 2, 8 + Math.random() * 2, 0);
-            
+
             // Random spin and force
             const forceX = (Math.random() - 0.5) * 5;
             const forceZ = (Math.random() - 0.5) * 5;
@@ -120,7 +169,7 @@ export class CastingManager {
                 new CANNON.Vec3(forceX, 10, forceZ),
                 new CANNON.Vec3(Math.random(), Math.random(), Math.random())
             );
-            
+
             coin.body.angularVelocity.set(
                 Math.random() * 20,
                 Math.random() * 20,
@@ -133,7 +182,7 @@ export class CastingManager {
 
     checkResults() {
         let stableCount = 0;
-        
+
         // UX Improvement: 3-second maximum wait time
         const maxWaitTimeout = setTimeout(() => {
             if (this.isCasting) {
@@ -167,7 +216,7 @@ export class CastingManager {
 
     finishCasting() {
         if (!this.isCasting) return;
-        
+
         const results = this.coins.map(coin => {
             // Update mesh from body one last time just in case
             coin.mesh.position.copy(coin.body.position);
@@ -176,9 +225,9 @@ export class CastingManager {
             // Determine result based on up vector
             const up = new THREE.Vector3(0, 1, 0);
             up.applyQuaternion(coin.mesh.quaternion);
-            
+
             // In Three.js, Cylinder up is Y. If Y > 0, it's face up (Yang=3).
-            return up.y > 0 ? 3 : 2; 
+            return up.y > 0 ? 3 : 2;
         });
 
         const sum = results.reduce((a, b) => a + b, 0);
@@ -188,7 +237,7 @@ export class CastingManager {
 
     animate() {
         requestAnimationFrame(() => this.animate());
-        
+
         this.world.fixedStep();
 
         this.coins.forEach(coin => {
