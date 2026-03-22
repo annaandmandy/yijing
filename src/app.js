@@ -473,6 +473,15 @@ class App {
         });
     }
 
+    renderMiniHexSymbol(binary) {
+        if (!binary || binary.length !== 6) return '';
+        return `
+            <div class="mini-hex-symbol">
+                ${binary.split('').map(b => `<div class="line ${b === '0' ? 'yin' : 'yang'}"></div>`).join('')}
+            </div>
+        `;
+    }
+
     showHexagramDetail(hex, isAutoAsk = false, recordId = null) {
         if (!hex) {
             console.error("showHexagramDetail: hex is undefined");
@@ -487,29 +496,75 @@ class App {
         const body = modal.querySelector('.modal-body');
 
         body.innerHTML = `
-            <h2>${hex.name || '未知'}卦 (#${hex.id || '??'})</h2>
-            <div class="detail-section">
-                <h4>卦辭</h4>
-                <p>${hex.original_classic?.hexagram_text || '尚聯文獻'}</p>
+            <div class="modal-header-flex">
+                ${this.renderMiniHexSymbol(hex.binary)}
+                <h2>${hex.name || '未知'}卦 (#${hex.id || '??'})</h2>
             </div>
-            <div class="detail-section">
-                <h4>現代解析</h4>
-                <p>${hex.llm_analysis?.general || '正在研讀中...'}</p>
-            </div>
-            <div class="detail-section">
-                <h4>結構與邏輯</h4>
-                <p>${hex.logic_teaching || '術數推演中...'}</p>
-            </div>
-            <div class="detail-section">
-                <h4>視覺意象</h4>
-                <p>${hex.visual_vibe || '意象捕捉中...'}</p>
-            </div>
-            <div class="detail-section">
-                <h4>記憶竅門</h4>
-                <ul>
-                    ${(hex.memory_hacks || []).map(h => `<li>${h}</li>`).join('')}
-                </ul>
-            </div>
+
+            <details class="detail-section" open>
+                <summary>卦象綜述</summary>
+                <div class="detail-content">
+                    <p><strong>概括：</strong>${hex.summary || '尚無總結'}</p>
+                    <p><strong>卦辭：</strong>${hex.original_classic?.hexagram_text || '尚聯文獻'}</p>
+                    <p><strong>彖傳：</strong>${hex.original_classic?.tuan_zhuan || '尚聯文獻'}</p>
+                </div>
+            </details>
+
+            <details class="detail-section">
+                <summary>結構與邏輯</summary>
+                <div class="detail-content">
+                    <p>${hex.logic_teaching || hex.structure?.interaction_logic || '術數推演中...'}</p>
+                    ${hex.structure?.upper_trigram_attr ? `<p><strong>上卦：</strong>${hex.structure.upper_trigram_attr}</p>` : ''}
+                    ${hex.structure?.lower_trigram_attr ? `<p><strong>下卦：</strong>${hex.structure.lower_trigram_attr}</p>` : ''}
+                </div>
+            </details>
+
+            <details class="detail-section">
+                <summary>六爻詳解</summary>
+                <div class="detail-content">
+                    <div class="yao-details">
+                        ${(hex.line_details || []).map(l => `
+                            <div class="yao-item">
+                                <strong>第 ${l.line} 爻：${l.classic_text}</strong>
+                                <p>${l.modern_interpretation}</p>
+                            </div>
+                        `).join('') || '<p>正在整理爻辭中...</p>'}
+                    </div>
+                </div>
+            </details>
+
+            <details class="detail-section">
+                <summary>現代解析 (事業/感情/財運)</summary>
+                <div class="detail-content">
+                    <div class="analysis-grid">
+                        <div class="analysis-item"><strong>總體：</strong>${hex.llm_analysis?.general || '正在研讀中...'}</div>
+                        <div class="analysis-item"><strong>事業：</strong>${hex.llm_analysis?.career || '正在研讀中...'}</div>
+                        <div class="analysis-item"><strong>感情：</strong>${hex.llm_analysis?.love || '正在研讀中...'}</div>
+                        <div class="analysis-item"><strong>財運：</strong>${hex.llm_analysis?.finance || '正在研讀中...'}</div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="detail-section">
+                <summary>象徵、陰暗面與典故</summary>
+                <div class="detail-content">
+                    <p><strong>原型意象：</strong>${(hex.archetypes || []).join('、') || '尚無資料'}</p>
+                    <p><strong>陰暗面：</strong>${hex.shadow_side || '尚無資料'}</p>
+                    <hr style="opacity:0.1; margin:15px 0;">
+                    <p style="color:var(--accent-gold); font-weight:600; margin-bottom:5px;">【典故】${hex.ancient_story?.title || ''}</p>
+                    <p style="font-style:italic; border-left: 2px solid var(--glass-border); padding-left: 10px;">${hex.ancient_story?.content || '尚無內容'}</p>
+                </div>
+            </details>
+
+            <details class="detail-section">
+                <summary>視覺意象與記憶竅門</summary>
+                <div class="detail-content">
+                    <p><strong>視覺場景：</strong>${hex.visual_vibe || '意象捕捉中...'}</p>
+                    <ul style="margin-top:10px; padding-left:20px;">
+                        ${(hex.memory_hacks || []).map(h => `<li style="margin-bottom:5px;">${h}</li>`).join('')}
+                    </ul>
+                </div>
+            </details>
         `;
 
         // Switch button logic to point to main AI View

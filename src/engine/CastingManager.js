@@ -50,7 +50,7 @@ export class CastingManager {
 
     initPhysics() {
         this.world = new CANNON.World();
-        this.world.gravity.set(0, -20, 0); // Stronger gravity for tactile feel
+        this.world.gravity.set(0, -25, 0); // Slightly stronger gravity for better containment
         this.world.allowSleep = true;
     }
 
@@ -107,8 +107,8 @@ export class CastingManager {
     }
 
     createCoins() {
-        // Smaller and more refined geometry
-        const coinGeometry = new THREE.CylinderGeometry(0.85, 0.85, 0.15, 64);
+        // Thicker geometry for better visual weight
+        const coinGeometry = new THREE.CylinderGeometry(0.85, 0.85, 0.25, 64);
 
         // More exquisite materials
         const sideMat = new THREE.MeshStandardMaterial({
@@ -138,16 +138,16 @@ export class CastingManager {
             coinMesh.castShadow = true;
             this.scene.add(coinMesh);
 
-            // Refined physics shape
-            const coinShape = new CANNON.Cylinder(0.85, 0.85, 0.15, 32);
+            // Refined physics shape (matching thicker geometry)
+            const coinShape = new CANNON.Cylinder(0.85, 0.85, 0.25, 32);
             const coinBody = new CANNON.Body({
                 mass: 1.2,
                 shape: coinShape,
                 material: new CANNON.Material({ friction: 0.1, restitution: 0.6 })
             });
 
-            // Initial spread
-            coinBody.position.set((i - 1) * 2, 5, 0);
+            // Initial spread - slightly lower to stay in view
+            coinBody.position.set((i - 1) * 2, 4, 0);
             this.world.addBody(coinBody);
 
             this.coins.push({ mesh: coinMesh, body: coinBody });
@@ -162,11 +162,11 @@ export class CastingManager {
             coin.body.wakeUp();
             coin.body.position.set((idx - 1) * 2, 8 + Math.random() * 2, 0);
 
-            // Random spin and force
-            const forceX = (Math.random() - 0.5) * 5;
-            const forceZ = (Math.random() - 0.5) * 5;
+            // Random spin and force - reduced Y impulse to prevent flying out of view
+            const forceX = (Math.random() - 0.5) * 4;
+            const forceZ = (Math.random() - 0.5) * 4;
             coin.body.applyImpulse(
-                new CANNON.Vec3(forceX, 10, forceZ),
+                new CANNON.Vec3(forceX, 8, forceZ),
                 new CANNON.Vec3(Math.random(), Math.random(), Math.random())
             );
 
