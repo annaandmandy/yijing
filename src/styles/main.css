@@ -138,8 +138,8 @@ body {
     animation: fadeIn 0.6s ease-out;
     height: 100%;
     /* Fill container height */
-    overflow: hidden;
-    /* Default to no scroll unless specified */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .view.active {
@@ -1003,7 +1003,7 @@ canvas {
     display: flex;
     gap: 15px;
     align-items: center;
-    margin: 0 auto 25px auto;
+    margin: 0 auto 80px auto !important;
     width: 100%;
     max-width: 600px;
     /* Constrain width for a more premium look */
@@ -1032,22 +1032,23 @@ canvas {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start !important;
     min-height: 550px;
     position: relative;
     padding: 30px;
-    margin: 20px 0;
+    margin: 0 0 40px 0 !important;
     border: none !important;
     background: rgba(255, 255, 255, 0.03);
     /* Allow cards to overflow on sides */
     overflow: visible !important;
 }
 
+    padding-top: 40px !important;
 .shuffling-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start !important;
     width: 100%;
     height: 100%;
 }
@@ -1071,7 +1072,9 @@ canvas {
 .deck-pile {
     position: relative;
     width: 200px;
-    height: 300px;
+    aspect-ratio: 13 / 21;
+    height: auto;
+    flex-shrink: 0;
     cursor: pointer;
     transition: var(--transition-smooth);
     margin: 20px 0;
@@ -1126,7 +1129,9 @@ canvas {
 
 .fan-card {
     width: 130px;
-    height: 210px;
+    aspect-ratio: 13 / 21;
+    height: auto;
+    flex-shrink: 0;
     background: #1a1a1a;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="130" height="210" viewBox="0 0 130 210"><rect width="130" height="210" fill="%231a1a1a"/><rect x="5" y="5" width="120" height="200" fill="none" stroke="%23d4af37" stroke-width="1"/><circle cx="65" cy="105" r="20" fill="none" stroke="%23d4af37" stroke-width="0.5"/></svg>');
     background-size: cover;
@@ -1207,9 +1212,11 @@ canvas {
     /* Controlled by app.js */
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 80vh;
-    padding-bottom: 100px;
+    min-height: calc(100vh - 100px);
+    justify-content: flex-start;
+    /* Better for mobile overflow */
+    padding-top: 80px !important;
+    padding-bottom: 120px;
     position: relative;
     z-index: 10;
 }
@@ -1221,7 +1228,8 @@ canvas {
 .tarot-spread {
     display: flex;
     gap: 30px;
-    margin: 60px auto 40px auto;
+    margin: 80px auto 40px auto;
+    /* Increased top margin to avoid overlap with controls */
     perspective: 2000px;
     justify-content: center;
     min-height: 350px;
@@ -2562,12 +2570,22 @@ canvas {
     }
 
     .deck-pile {
-        width: 180px;
-        height: 270px;
+        width: 160px;
+        aspect-ratio: 13 / 21;
+        height: auto;
+        flex-shrink: 0;
     }
 
     .tarot-fan {
-        height: 280px;
+        height: 420px;
+        width: 100%;
+        margin: 60px auto 20px auto;
+        perspective: 1000px;
+    }
+
+    .interaction-zone {
+        min-height: 480px;
+        padding: 80px 15px 15px 15px;
     }
 
     .fan-card {
@@ -2579,6 +2597,22 @@ canvas {
         flex-direction: column;
         align-items: center;
         gap: 30px;
+        padding-bottom: 80px;
+        /* Space for nav */
+    }
+
+    .tarot-card-wrapper {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .tarot-card {
+        width: 120px;
+        aspect-ratio: 13 / 21;
+        height: auto;
+        flex-shrink: 0;
     }
 }
 

@@ -1523,30 +1523,57 @@ class App {
         if (!fan) return;
         fan.innerHTML = '';
 
-        // Use 78 cards for the "Premium" feel
         const cardCount = 78;
-        const radius = 550; // Radius of the arch
-        const arcSpread = 140; // Total degrees
+        const isMobile = window.innerWidth <= 768;
 
-        for (let i = 0; i < cardCount; i++) {
-            const card = document.createElement('div');
-            card.className = 'fan-card';
+        if (isMobile) {
+            // "Double Arch" for mobile to prevent overflow
+            const groupSize = 39;
+            const arcSpread = 120;
 
-            // Mathematical arch distribution
-            const angle = ((i / (cardCount - 1)) - 0.5) * arcSpread;
-            const radian = (angle - 90) * (Math.PI / 180);
+            for (let i = 0; i < cardCount; i++) {
+                const card = document.createElement('div');
+                card.className = 'fan-card';
 
-            const x = Math.cos(radian) * radius;
-            const y = Math.sin(radian) * radius + radius - 100; // Curve upwards
+                const isTopRow = i >= groupSize;
+                const localIdx = i % groupSize;
+                const radius = isTopRow ? 140 : 180;
+                const yShift = isTopRow ? 40 : 140;
 
-            card.style.setProperty('--base-x', `${x}px`);
-            card.style.setProperty('--base-y', `${y}px`);
-            card.style.setProperty('--base-angle', `${angle}deg`);
-            card.style.zIndex = i;
+                const angle = ((localIdx / (groupSize - 1)) - 0.5) * arcSpread;
+                const radian = (angle - 90) * (Math.PI / 180);
+                const x = Math.cos(radian) * radius;
+                const y = Math.sin(radian) * radius + radius + yShift;
 
-            // Pick based on original shuffled deck
-            card.onclick = () => this.handleTarotPickCard(card, i);
-            fan.appendChild(card);
+                card.style.setProperty('--base-x', `${x}px`);
+                card.style.setProperty('--base-y', `${y}px`);
+                card.style.setProperty('--base-angle', `${angle}deg`);
+                card.style.zIndex = i;
+
+                card.onclick = () => this.handleTarotPickCard(card, i);
+                fan.appendChild(card);
+            }
+        } else {
+            // Standard Single Arch for Desktop
+            const radius = 550;
+            const arcSpread = 140;
+
+            for (let i = 0; i < cardCount; i++) {
+                const card = document.createElement('div');
+                card.className = 'fan-card';
+                const angle = ((i / (cardCount - 1)) - 0.5) * arcSpread;
+                const radian = (angle - 90) * (Math.PI / 180);
+                const x = Math.cos(radian) * radius;
+                const y = Math.sin(radian) * radius + radius - 100;
+
+                card.style.setProperty('--base-x', `${x}px`);
+                card.style.setProperty('--base-y', `${y}px`);
+                card.style.setProperty('--base-angle', `${angle}deg`);
+                card.style.zIndex = i;
+
+                card.onclick = () => this.handleTarotPickCard(card, i);
+                fan.appendChild(card);
+            }
         }
     }
 
