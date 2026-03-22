@@ -1784,12 +1784,27 @@ canvas {
     vertical-align: middle;
 }
 
-.result-phonetic {
-    font-size: 0.9rem;
+.hex-name-wrap {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    white-space: nowrap;
+}
+
+.result-phonetic-inline {
+    font-size: 0.75rem;
     color: var(--accent-gold);
-    margin-bottom: 12px;
-    letter-spacing: 1.5px;
-    text-align: center;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+    white-space: nowrap;
+}
+
+.header-main-title {
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .t-detail-grid {

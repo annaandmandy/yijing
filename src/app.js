@@ -147,23 +147,31 @@ class App {
         const binaryEl = overlay.querySelector('.binary-display');
         const summaryEl = overlay.querySelector('.hex-summary');
 
-        const phonetics = HEXAGRAM_PHONETICS[original.id];
-        const phoneticStr = phonetics ? `<div class="result-phonetic">${phonetics.bopomofo} | ${phonetics.pinyin}</div>` : '';
+        const origPhonetics = HEXAGRAM_PHONETICS[original.id];
+        const origPhoneticStr = origPhonetics ? `<small class="result-phonetic-inline">${origPhonetics.bopomofo} ${origPhonetics.pinyin}</small>` : '';
+
+        const futurePhonetics = future ? HEXAGRAM_PHONETICS[future.id] : null;
+        const futurePhoneticStr = futurePhonetics ? `<small class="result-phonetic-inline">${futurePhonetics.bopomofo} ${futurePhonetics.pinyin}</small>` : '';
 
         nameEl.innerHTML = `
-            ${phoneticStr}
             <div class="result-hex-display">
                 <div class="hex-block original">
                     <span class="hex-label">本卦 (當前)</span>
                     ${this.renderMiniHexSymbol(original.binary)}
-                    <span class="hex-name-text">${original.name}</span>
+                    <div class="hex-name-wrap">
+                        <span class="hex-name-text">${original.name}</span>
+                        ${origPhoneticStr}
+                    </div>
                 </div>
                 ${meta.hasChange ? `
                 <div class="hex-arrow">→</div>
                 <div class="hex-block future">
                     <span class="hex-label">之卦 (演變)</span>
                     ${this.renderMiniHexSymbol(future.binary)}
-                    <span class="hex-name-text">${future.name}</span>
+                    <div class="hex-name-wrap">
+                        <span class="hex-name-text">${future.name}</span>
+                        ${futurePhoneticStr}
+                    </div>
                 </div>
                 ` : ''}
             </div>
@@ -775,10 +783,13 @@ class App {
 
         body.innerHTML = `
             <div class="modal-header">
-                <h2>${hex.name}卦 <small class="header-phonetic">${phoneticStr}</small></h2>
-                <div class="hex-badges">
-                    ${this.renderMiniHexSymbol(hex.binary)}
-                    <div class="card-id">#${hex.id}</div>
+                <div class="modal-header-flex">
+                    <div class="header-main-title">
+                        <h2>第${hex.id}卦 ${hex.name}卦 <small class="header-phonetic">${phoneticStr}</small></h2>
+                    </div>
+                    <div class="hex-badges">
+                        ${this.renderMiniHexSymbol(hex.binary)}
+                    </div>
                 </div>
             </div>
 
