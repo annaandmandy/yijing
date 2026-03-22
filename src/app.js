@@ -832,17 +832,19 @@ class App {
 
         // Tarot Step Visibility
         if (this.currentMode === 'tarot' && (this.currentView === 'tabletop' || this.currentView === 'tarot')) {
-            const intro = document.getElementById('tarot-intro');
+            const zone = document.getElementById('tarot-interaction-zone');
             const deck = document.getElementById('tarot-deck');
             const selection = document.getElementById('tarot-selection-container');
             const result = document.getElementById('tarot-result-container');
             const actions = document.getElementById('tarot-actions');
+            const controls = document.querySelector('.tarot-controls-row');
 
-            if (intro) intro.classList.toggle('hidden', this.tarotStep !== 'intro');
+            if (zone) zone.classList.toggle('hidden', this.tarotStep === 'intro' || this.tarotStep === 'result');
             if (deck) deck.classList.toggle('hidden', this.tarotStep !== 'shuffling');
             if (selection) selection.classList.toggle('hidden', this.tarotStep !== 'selection');
             if (result) result.classList.toggle('hidden', this.tarotStep !== 'result');
             if (actions) actions.classList.toggle('hidden', this.tarotStep !== 'result');
+            if (controls) controls.classList.toggle('hidden', this.tarotStep === 'shuffling' || this.tarotStep === 'selection');
         }
 
         if (this.currentView === 'library') {
@@ -1444,9 +1446,12 @@ class App {
 
     handleTarotStart() {
         this.tarotStep = 'shuffling';
-        document.getElementById('tarot-interaction-zone').classList.remove('hidden');
-        document.getElementById('tarot-intro').classList.add('hidden');
-        document.getElementById('tarot-deck').classList.remove('hidden');
+        const zone = document.getElementById('tarot-interaction-zone');
+        if (zone) zone.classList.remove('hidden');
+
+        const deck = document.getElementById('tarot-deck');
+        if (deck) deck.classList.remove('hidden');
+
         this.renderTarotDeck();
     }
 

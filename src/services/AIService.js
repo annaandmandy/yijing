@@ -1,22 +1,67 @@
 export class AIService {
     /**
+     * Non-streaming version of chat for quick insights.
+     */
+    static async ask(prompt) {
+        const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:8000").replace(/\/$/, "");
+        const apiUrl = `${backendBaseUrl}/chat`;
+
+        const isTarotMode = prompt.includes("塔羅") || prompt.includes("牌陣");
+        let persona = isTarotMode
+            ? "你現在是一位精通「塔羅牌」與「神祕學」的塔羅宗師。"
+            : "你現在是一位精通「六爻」與「術數」的易經導師。";
+
+        const systemInstruction = `${persona} 請以此身份提供精簡、專業且富有啟發性的解析（約 100 字）。請使用繁體中文。`;
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: [{ role: 'user', content: prompt }],
+                    system_instruction: systemInstruction
+                })
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let result = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                result += decoder.decode(value);
+            }
+            return result;
+        } catch (error) {
+            console.error("AIService.ask failed:", error);
+            throw error;
+        }
+    }
+
+    /**
      * Handles multi-turn streaming chat with the AI Mentor via Python Backend.
      * @param {Array} messages - Array of {role: 'user'|'assistant', content: string}
      * @param {Object} hexagramData - Static JSON data of the hexagram.
      * @param {Object} record - The specific divination record { question, date, changingLines, futureHexName, ... }
      * @yields {string} - Chunks of the AI generated response.
      */
-    static async *streamChat(messages, hexagramData, record = {}) {
+    static async * streamChat(messages, hexagramData, record = {}) {
         // Automatically switch between local and production backend
         const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:8000").replace(/\/$/, "");
         const apiUrl = `${backendBaseUrl}/chat`;
 
-        if (!hexagramData && !messages.some(m => m.content.includes("塔羅三牌陣"))) {
+        const isTarotMode = messages.some(m =>
+            m.content?.includes("塔羅") ||
+            m.content?.includes("牌陣") ||
+            m.content?.includes("西洋神祕學") ||
+            m.content?.toLowerCase().includes("tarot")
+        );
+
+        if (!hexagramData && !isTarotMode) {
             yield "導師目前不知您問的是哪一卦，請先選擇卦象。";
             return;
         }
-
-        const isTarotMode = messages.some(m => m.content.includes("塔羅三牌陣"));
         const isDivinationMode = !!record.question;
 
         // Dynamic System Instruction based on context

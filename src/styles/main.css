@@ -999,6 +999,35 @@ canvas {
 }
 
 /* Tarot Shuffling & Selection */
+.tarot-controls-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin: 0 auto 25px auto;
+    width: 100%;
+    max-width: 600px;
+    /* Constrain width for a more premium look */
+    z-index: 10;
+    position: relative;
+}
+
+.tarot-controls-row .glass-input {
+    flex: 1;
+    min-width: 0;
+    /* Prevent input from growing too large */
+}
+
+.tarot-controls-row .btn-primary {
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .tarot-controls-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
 .interaction-zone {
     display: flex;
     flex-direction: column;
@@ -1010,6 +1039,8 @@ canvas {
     margin: 20px 0;
     border: none !important;
     background: rgba(255, 255, 255, 0.03);
+    /* Allow cards to overflow on sides */
+    overflow: visible !important;
 }
 
 .shuffling-container {
@@ -1082,11 +1113,15 @@ canvas {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;
-    height: 350px;
-    padding: 0 50px;
+    width: 140%;
+    /* Slightly wider for the 78 cards */
+    height: 450px;
+    /* More height for the arch */
     position: relative;
-    perspective: 1000px;
+    perspective: 1500px;
+    margin-left: -20%;
+    /* Re-center */
+    overflow: visible !important;
 }
 
 .fan-card {
