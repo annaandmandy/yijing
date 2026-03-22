@@ -24,6 +24,11 @@ export class AIService {
 宮位：${hexagramData.najia_analysis?.palace}宮 [${hexagramData.najia_analysis?.palace_wuxing}]
 納甲數據：${JSON.stringify(hexagramData.najia_analysis?.lines)}
 
+[教學方針]
+1. 將學生視為「易學初學者」，語氣要平易近人、循循善誘。
+2. 避免過於晦澀的專業術語，若必須使用（如「勾陳」、「螣蛇」），請附帶簡單的白話解釋。
+3. 語氣保持導師的威嚴與慈愛感。
+
 ${isDivinationMode ? `
 [占卜占斷模式]
 學生提問：${record.question}
@@ -31,18 +36,17 @@ ${isDivinationMode ? `
 動爻狀態：${record.changingLines && record.changingLines.length > 0 ? `第 ${record.changingLines.join(', ')} 爻發動` : "靜卦無動爻"}
 之卦（變卦）：${record.futureHexName ? record.futureHexName + "卦" : "無變卦"}
 
-請以「占卜大師」的身份，針對具體問題、動爻演變與日辰生剋進行剖析，給予學生明確的趨吉避凶建議。`
+請以「占卜大師」的身份，針對具體問題、動爻演變與日辰生剋進行剖析，給予學生明確且白話的趨吉避凶建議。`
                 : `
 [學術研究模式]
 當前處於純卦象研究模式，無具體占卜問題。
 
-請以「儒家學者」與「術數教授」的身份，深入淺出地解說此卦的哲學意涵、卦序邏輯以及納甲基礎知識，啟發學生的智慧。`}
+請以「儒家學者」與「術數教授」的身份，深入淺出地為初學者解說此卦的哲學意涵、卦序邏輯以及基礎術語，啟發智慧。`}
 
 請注意：
-1. 保持導師的威嚴與慈愛感。
-2. 結合日辰與卦中五行的生剋進行專業演繹。
-3. 請務必使用「繁體中文」來解籤，確保學生能聽懂微言大義。
-4. 回覆必須精簡，總字數請嚴格限制在 500 字以內，直取核心。`;
+1. 結合日辰與卦中五行的生剋進行專業但易懂的演繹。
+2. 請務必使用「繁體中文」來回覆。
+3. 回覆必須精簡，總字數請嚴格限制在 500 字以內，直取核心。`;
 
         console.log(`AIService: Calling backend at ${apiUrl}...`);
 
