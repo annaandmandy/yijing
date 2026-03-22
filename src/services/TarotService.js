@@ -25,7 +25,32 @@ export class TarotService {
      * Gets the image URL for a card.
      */
     static getImageUrl(id) {
-        // Assuming images are named 00.png, 01.png, wands_01.png etc.
-        return `${this.IMAGE_PATH}${id}.png`;
+        const mapping = this.getCardImageMapping(id);
+        return `${this.IMAGE_PATH}${mapping}.jpg`;
+    }
+
+    /**
+     * Maps JSON IDs to renamed image IDs (00-78 skipping 01).
+     */
+    static getCardImageMapping(id) {
+        // Major Arcana: 00-21 -> Image 00, 02-22
+        if (!id.includes('_')) {
+            const num = parseInt(id);
+            if (num === 0) return "00";
+            return (num + 1).toString().padStart(2, '0');
+        }
+
+        // Minor Arcana: wands, cups, swords, pentacles
+        const suits = ['wands', 'cups', 'swords', 'pentacles'];
+        const parts = id.split('_');
+        const suit = parts[0];
+        const rank = parts[1];
+        const suitIdx = suits.indexOf(suit);
+        const rankNum = parseInt(rank);
+
+        // Base is 23 (after Major Arcana 0..22)
+        const base = 23 + (suitIdx * 14);
+        const finalNum = base + rankNum - 1;
+        return finalNum.toString().padStart(2, '0');
     }
 }

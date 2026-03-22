@@ -33,6 +33,17 @@ export class TarotEngine {
     }
 
     /**
+     * Draws a 1-card spread (Daily Insight).
+     * @param {Array} shuffledDeck 
+     */
+    static drawOneCardSpread(shuffledDeck) {
+        if (shuffledDeck.length < 1) throw new Error("Deck too small");
+        return {
+            daily: shuffledDeck[0]
+        };
+    }
+
+    /**
      * Draws a 3-card spread (Past, Present, Future).
      * @param {Array} shuffledDeck 
      */

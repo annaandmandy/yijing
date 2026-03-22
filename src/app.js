@@ -14,6 +14,7 @@ import { TimeService } from './services/TimeService.js';
 import { HEXAGRAM_ELEMENTS, HEXAGRAM_PHONETICS } from './constants.js';
 import { TarotEngine } from './engine/TarotEngine.js';
 import { TarotService } from './services/TarotService.js';
+import { SettingsService } from './services/SettingsService.js';
 
 class App {
     constructor() {
@@ -25,6 +26,9 @@ class App {
         this.currentRecordId = null;
         this.chatMessages = [];
 
+        // Load persisted settings
+        this.settings = SettingsService.getSettings();
+
         // Calendar State
         this.calendarDate = new Date();
         this.calendarMonth = this.calendarDate.getMonth();
@@ -32,8 +36,11 @@ class App {
         this.radarChart = null;
         this.resultSource = 'tabletop';
         this.librarySubpage = 'grid'; // Sub-view within library
-        this.currentMode = 'iching'; // 'iching' or 'tarot'
+        this.currentMode = this.settings.mode; // 'iching' or 'tarot'
         this.tarotSpread = null;
+        this.tarotStep = 'intro'; // 'intro', 'shuffling', 'selection', 'result'
+        this.tarotPickedCards = [];
+        this.tarotShuffleCount = 0;
 
         window.app = this; // Global reference for inline oncilcks
         this.init();
@@ -53,10 +60,14 @@ class App {
         this.setupCalendarNav();
         this.setupLibraryNav();
         this.setupModeSwitcher();
+        this.setupSettingsListeners();
         this.setupTarotEvents();
 
         // Initial view render
         this.renderView();
+
+        // Sync UI with settings
+        this.applySettingsToUI();
 
         this.showWelcomeMessage();
     }
@@ -450,12 +461,91 @@ class App {
             page.classList.toggle('active', page.id === `subpage-${subId}`);
         });
 
-        if (subId === 'grid') this.renderLibrary();
+        if (subId === 'grid') {
+            if (this.currentMode === 'tarot') this.renderTarotLibrary();
+            else this.renderLibrary();
+        }
         if (subId === 'bagua') this.renderBaguaDiagram();
         if (subId === 'lookup') this.renderLookupTables();
         if (subId === 'learn') this.renderLearnContent();
 
         console.log(`Switched Library to subpage: ${subId}`);
+    }
+
+    async renderTarotLibrary() {
+        const container = document.getElementById('hex-grid');
+        if (!container) return;
+
+        container.className = 'tarot-grid'; // Use dedicated grid
+        container.innerHTML = '加載卡片中...';
+
+        // Major Arcana 0-21
+        const major = Array.from({ length: 22 }, (_, i) => i.toString().padStart(2, '0'));
+        // Minor Arcana
+        const suits = ['wands', 'cups', 'swords', 'pentacles'];
+        const minor = suits.flatMap(suit =>
+            Array.from({ length: 14 }, (_, i) => `${suit}_${(i + 1).toString().padStart(2, '0')}`)
+        );
+
+        const allCards = [...major, ...minor];
+        container.innerHTML = '';
+
+        for (const id of allCards) {
+            const cardInfo = await TarotService.getCard(id);
+            const cardItem = document.createElement('div');
+            cardItem.className = 'tarot-card-item';
+            cardItem.innerHTML = `
+                <div class="tarot-card-thumb">
+                    <img src="${TarotService.getImageUrl(id)}" alt="${cardInfo?.name_zh}">
+                </div>
+                <span>${cardInfo?.name_zh || id}</span>
+            `;
+            cardItem.onclick = () => this.showTarotDetail(cardInfo, id);
+            container.appendChild(cardItem);
+        }
+    }
+
+    showTarotDetail(cardInfo, id) {
+        const modal = document.getElementById('detail-modal');
+        const body = modal.querySelector('.modal-body');
+
+        body.innerHTML = `
+            <div class="tarot-detail-view">
+                <div class="tarot-detail-header">
+                    <h2>${cardInfo.name_zh} <small>${cardInfo.name_en}</small></h2>
+                    <span class="arcana-badge">${cardInfo.arcana} Arcana</span>
+                </div>
+                <div class="tarot-detail-main">
+                    <div class="tarot-detail-img">
+                        <img src="${TarotService.getImageUrl(id)}" alt="${cardInfo.name_zh}" style="width:100%; border-radius:10px;">
+                    </div>
+                    <div class="tarot-detail-text">
+                        <p class="summary"><strong>概述：</strong>${cardInfo.summary}</p>
+                        <div class="meaning-section">
+                            <h4>正位牌義</h4>
+                            <p>${cardInfo.llm_analysis.general_upright}</p>
+                            <ul>
+                                ${cardInfo.meanings.upright.map(m => `<li>${m}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="meaning-section">
+                            <h4>逆位牌義</h4>
+                            <p>${cardInfo.llm_analysis.general_reversed}</p>
+                            <ul>
+                                ${cardInfo.meanings.reversed.map(m => `<li>${m}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <blockquote>${cardInfo.advice}</blockquote>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        modal.classList.add('active');
+
+        // Hide "Ask AI" button or adapt it
+        const askAiBtn = document.getElementById('ask-ai');
+        if (askAiBtn) askAiBtn.style.display = 'none';
     }
 
     renderBaguaDiagram() {
@@ -705,9 +795,16 @@ class App {
 
     setupModeSwitcher() {
         document.querySelectorAll('.mode-btn').forEach(btn => {
+            // Set active state initially
+            if (btn.dataset.mode === this.currentMode) btn.classList.add('active');
+            else btn.classList.remove('active');
+
             btn.onclick = (e) => {
                 const mode = e.target.dataset.mode;
                 this.currentMode = mode;
+
+                // Persist
+                SettingsService.setSetting('mode', mode);
 
                 // Update UI Active State
                 document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -725,131 +822,61 @@ class App {
                 this.renderView();
             };
         });
+
+        // Initial Theme Apply
+        if (this.currentMode === 'tarot') document.body.classList.add('tarot-mode');
     }
 
-    setupTarotEvents() {
-        const deck = document.getElementById('tarot-deck');
-        if (deck) deck.onclick = () => this.handleTarotShuffle();
-
-        const interpretBtn = document.getElementById('interpret-tarot');
-        if (interpretBtn) interpretBtn.onclick = () => this.handleTarotInterpret();
-
-        const resetBtn = document.getElementById('reset-tarot');
-        if (resetBtn) resetBtn.onclick = () => this.resetTarot();
-    }
-
-    async handleTarotShuffle() {
-        const deck = document.getElementById('tarot-deck');
-        const container = document.getElementById('tarot-canvas-container');
-
-        container.classList.add('shuffling');
-        deck.innerText = "正在洗牌...";
-
-        // Wait for animation
-        await new Promise(r => setTimeout(r, 2000));
-
-        const deckData = TarotEngine.shuffleDeck();
-        this.tarotSpread = TarotEngine.drawThreeCardSpread(deckData);
-
-        container.classList.remove('shuffling');
-        container.classList.add('hidden');
-
-        this.renderTarotSpread();
-    }
-
-    async renderTarotSpread() {
-        const spreadContainer = document.getElementById('tarot-spread-container');
-        const actions = document.getElementById('tarot-actions');
-        spreadContainer.classList.remove('hidden');
-        actions.classList.remove('hidden');
-
-        spreadContainer.innerHTML = '';
-        const positions = ['Past (過去)', 'Present (現在)', 'Future (未來)'];
-        const keys = ['past', 'present', 'future'];
-
-        for (let i = 0; i < 3; i++) {
-            const cardData = this.tarotSpread[keys[i]];
-            const cardInfo = await TarotService.getCard(cardData.id);
-
-            const wrapper = document.createElement('div');
-            wrapper.className = 'tarot-card-wrapper';
-            wrapper.innerHTML = `
-                <div class="tarot-card ${cardData.isReversed ? 'reversed' : ''}" id="card-${i}">
-                    <div class="tarot-card-back"></div>
-                    <div class="tarot-card-front">
-                        <img src="${TarotService.getImageUrl(cardData.id)}" alt="${cardInfo?.name_zh}">
-                    </div>
-                </div>
-                <div class="card-info">
-                    <span class="spread-label">${positions[i]}</span>
-                    <span class="tarot-card-name">${cardInfo?.name_zh || cardData.id}</span>
-                </div>
-            `;
-
-            spreadContainer.appendChild(wrapper);
-
-            // Sequential flip animation
-            setTimeout(() => {
-                document.getElementById(`card-${i}`).classList.add('flipped');
-            }, 500 * (i + 1));
+    setupSettingsListeners() {
+        const spreadSelect = document.getElementById('setting-tarot-spread');
+        if (spreadSelect) {
+            spreadSelect.value = this.settings.tarotSpread;
+            spreadSelect.onchange = (e) => {
+                SettingsService.setSetting('tarotSpread', e.target.value);
+                this.settings.tarotSpread = e.target.value;
+            };
         }
     }
 
-    resetTarot() {
-        this.tarotSpread = null;
-        document.getElementById('tarot-spread-container').classList.add('hidden');
-        document.getElementById('tarot-actions').classList.add('hidden');
-        document.getElementById('tarot-canvas-container').classList.remove('hidden');
-        document.getElementById('tarot-deck').innerText = "點擊洗牌並抽卡";
-    }
-
-    async handleTarotInterpret() {
-        if (!this.tarotSpread) return;
-
-        // Prepare context for AI
-        const spreadDetails = [];
-        for (const [pos, card] of Object.entries(this.tarotSpread)) {
-            const info = await TarotService.getCard(card.id);
-            spreadDetails.push({
-                position: pos,
-                name: info.name_zh,
-                isReversed: card.isReversed,
-                summary: info.summary,
-                meaning: card.isReversed ? info.meanings.reversed : info.meanings.upright
-            });
-        }
-
-        const question = document.getElementById('tarot-question').value || "隨喜抽牌";
-
-        // Save to Journal
-        const recordId = JournalService.saveRecord({
-            mode: 'tarot',
-            question: question,
-            tarotSpread: this.tarotSpread,
-            spreadDetails: spreadDetails
-        });
-
-        this.currentRecordId = recordId;
-        this.chatMessages = [];
-
-        // Switch to AI Mentor view and prepare it
-        this.switchView('ai-mentor');
-        this.prepareAIMentorView(null, recordId);
-
-        const prompt = `我抽到了塔羅三牌陣：\n${spreadDetails.map(c => `- ${c.position}: ${c.name} (${c.isReversed ? '逆位' : '正位'})`).join('\n')}\n\n我的問題是：${question}。請導師為我解牌。`;
-
-        // Trigger Chat
-        this.handleSendChat(prompt);
+    applySettingsToUI() {
+        // Mode buttons already handled in setupModeSwitcher
+        const spreadSelect = document.getElementById('setting-tarot-spread');
+        if (spreadSelect) spreadSelect.value = this.settings.tarotSpread;
     }
 
     renderView() {
+        // Dynamic Nav Labels
+        const navLibLink = document.getElementById('nav-library-link');
+        if (navLibLink) {
+            navLibLink.innerText = this.currentMode === 'tarot' ? '卡片圖鑑 Cards' : '圖書館 Library';
+        }
+
+        // Mode specific tabletop handling
+        const ichingTab = document.getElementById('canvas-container');
+        const tarotShuffleCont = document.getElementById('tarot-canvas-container');
+        if (ichingTab && tarotShuffleCont) {
+            if (this.currentMode === 'tarot') {
+                ichingTab.classList.add('hidden');
+                // Only show shuffle intro if we are in intro step
+                if (this.tarotStep === 'intro') {
+                    tarotShuffleCont.classList.remove('hidden');
+                    document.getElementById('tarot-intro')?.classList.remove('hidden');
+                    document.getElementById('tarot-deck')?.classList.add('hidden');
+                }
+            } else {
+                ichingTab.classList.remove('hidden');
+                tarotShuffleCont.classList.add('hidden');
+                document.getElementById('tarot-selection-container')?.classList.add('hidden');
+                document.getElementById('tarot-result-container')?.classList.add('hidden');
+                document.getElementById('tarot-actions')?.classList.add('hidden');
+            }
+        }
+
         if (this.currentView === 'library') {
             this.switchLibrarySubpage(this.librarySubpage); // This handles both grid and other subpages
         } else if (this.currentView === 'history') {
             this.renderCalendar(); // Call renderCalendar for history view
         } else if (this.currentView === 'ai-mentor') {
-            // If we are coming from a direct link (e.g., from history) and currentHexData is not set,
-            // but currentRecordId is, try to load the context from the record.
             if (this.currentRecordId && !this.currentHexData) {
                 const record = JournalService.getRecord(this.currentRecordId);
                 if (record && record.mode === 'iching' && record.originalId) {
@@ -859,24 +886,26 @@ class App {
                     this.prepareAIMentorView(null, this.currentRecordId);
                 } else {
                     const history = document.getElementById('chat-history-main');
+                    if (history) {
+                        history.innerHTML = `<div class="empty-state">
+                            <h3>尚未選擇卦象或塔羅牌陣</h3>
+                            <p>請先前往「全卦圖書館」選擇一卦，或從「每日紀錄」中開啟先前的對話。</p>
+                        </div>`;
+                        document.getElementById('mentor-current-hex').innerText = "等待導引...";
+                    }
+                }
+            } else if (this.currentHexData || this.currentRecordId) { // If hex data is already set (e.g., from result overlay)
+                this.prepareAIMentorView(this.currentHexData, this.currentRecordId);
+            } else {
+                const history = document.getElementById('chat-history-main');
+                if (history) {
                     history.innerHTML = `<div class="empty-state">
                         <h3>尚未選擇卦象或塔羅牌陣</h3>
                         <p>請先前往「全卦圖書館」選擇一卦，或從「每日紀錄」中開啟先前的對話。</p>
                     </div>`;
                     document.getElementById('mentor-current-hex').innerText = "等待導引...";
                 }
-            } else if (this.currentHexData || this.currentRecordId) { // If hex data is already set (e.g., from result overlay)
-                this.prepareAIMentorView(this.currentHexData, this.currentRecordId);
-            } else {
-                const history = document.getElementById('chat-history-main');
-                history.innerHTML = `<div class="empty-state">
-                    <h3>尚未選擇卦象或塔羅牌陣</h3>
-                    <p>請先前往「全卦圖書館」選擇一卦，或從「每日紀錄」中開啟先前的對話。</p>
-                </div>`;
-                document.getElementById('mentor-current-hex').innerText = "等待導引...";
             }
-        } else if (this.currentView === 'settings') {
-            console.log("Settings view active.");
         }
     }
 
@@ -1385,6 +1414,225 @@ class App {
     showHexagramDetailById(hexId, recordId) {
         const hex = this.library.find(h => h.id === parseInt(hexId));
         if (hex) this.showHexagramDetail(hex, false, recordId);
+    }
+
+    // --- Tarot Interactive Methods ---
+
+    setupTarotEvents() {
+        const startBtn = document.getElementById('start-tarot');
+        if (startBtn) startBtn.onclick = () => this.handleTarotStart();
+
+        const deck = document.getElementById('tarot-deck');
+        if (deck) {
+            deck.onmousedown = () => this.startTarotShuffle();
+            deck.onmousemove = (e) => this.handleTarotShuffling(e);
+            window.addEventListener('mouseup', () => this.stopTarotShuffle());
+
+            deck.ontouchstart = () => this.startTarotShuffle();
+            deck.ontouchmove = (e) => this.handleTarotShuffling(e);
+            window.addEventListener('touchend', () => this.stopTarotShuffle());
+        }
+
+        const interpretBtn = document.getElementById('interpret-tarot');
+        if (interpretBtn) interpretBtn.onclick = () => this.handleTarotInterpret();
+
+        const resetBtn = document.getElementById('reset-tarot');
+        if (resetBtn) resetBtn.onclick = () => this.resetTarot();
+    }
+
+    handleTarotStart() {
+        this.tarotStep = 'shuffling';
+        document.getElementById('tarot-intro').classList.add('hidden');
+        document.getElementById('tarot-deck').classList.remove('hidden');
+        this.renderTarotDeck();
+    }
+
+    renderTarotDeck() {
+        const container = document.querySelector('.deck-cards-logic');
+        if (!container) return;
+        container.innerHTML = '';
+        for (let i = 0; i < 5; i++) {
+            const card = document.createElement('div');
+            card.className = 'deck-card-visual';
+            card.style.transform = `translate(${i * 2}px, ${-i * 2}px)`;
+            container.appendChild(card);
+        }
+    }
+
+    startTarotShuffle() {
+        if (this.tarotStep !== 'shuffling') return;
+        this.isTarotShuffling = true;
+        document.querySelector('.deck-pile')?.classList.add('active');
+    }
+
+    handleTarotShuffling(e) {
+        if (!this.isTarotShuffling) return;
+        this.tarotShuffleCount++;
+
+        const cards = document.querySelectorAll('.deck-card-visual');
+        cards.forEach((card, i) => {
+            const offsetX = (Math.random() - 0.5) * 40;
+            const offsetY = (Math.random() - 0.5) * 40;
+            const rotate = (Math.random() - 0.5) * 20;
+            card.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(${rotate}deg)`;
+        });
+
+        if (this.tarotShuffleCount > 30) {
+            this.stopTarotShuffle();
+            this.finishTarotShuffle();
+        }
+    }
+
+    stopTarotShuffle() {
+        this.isTarotShuffling = false;
+        document.querySelector('.deck-pile')?.classList.remove('active');
+    }
+
+    async finishTarotShuffle() {
+        this.tarotStep = 'selection';
+        const deck = document.getElementById('tarot-deck');
+        if (deck) deck.classList.add('hidden');
+
+        const selectionCont = document.getElementById('tarot-selection-container');
+        if (selectionCont) selectionCont.classList.remove('hidden');
+
+        const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
+        const count = spreadType === 'one-card' ? 1 : 3;
+        const pickEl = document.getElementById('cards-to-pick');
+        if (pickEl) pickEl.innerText = count;
+
+        this.renderTarotFan();
+    }
+
+    renderTarotFan() {
+        const fan = document.getElementById('tarot-fan');
+        if (!fan) return;
+        fan.innerHTML = '';
+        const cardCount = 30;
+
+        for (let i = 0; i < cardCount; i++) {
+            const card = document.createElement('div');
+            card.className = 'fan-card';
+
+            const arcWidth = Math.min(window.innerWidth - 100, 600);
+            const angle = (i - (cardCount / 2)) * 4;
+            const x = (i - (cardCount / 2)) * (arcWidth / cardCount);
+            const y = Math.abs(i - (cardCount / 2)) * 3;
+
+            card.style.transform = `translateX(${x}px) translateY(${y}px) rotate(${angle}deg)`;
+            card.style.zIndex = i;
+            card.onclick = () => this.handleTarotPickCard(card, i);
+            fan.appendChild(card);
+        }
+    }
+
+    async handleTarotPickCard(cardEl, index) {
+        if (cardEl.classList.contains('picked')) return;
+
+        const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
+        const max = spreadType === 'one-card' ? 1 : 3;
+
+        if (this.tarotPickedCards.length >= max) return;
+
+        cardEl.classList.add('picked');
+
+        const deck = TarotEngine.shuffleDeck();
+        const cardData = deck[Math.floor(Math.random() * deck.length)];
+
+        this.tarotPickedCards.push(cardData);
+
+        if (this.tarotPickedCards.length === max) {
+            setTimeout(() => this.showTarotResults(), 800);
+        }
+    }
+
+    async showTarotResults() {
+        this.tarotStep = 'result';
+        document.getElementById('tarot-selection-container')?.classList.add('hidden');
+        document.getElementById('tarot-result-container')?.classList.remove('hidden');
+        document.getElementById('tarot-actions')?.classList.remove('hidden');
+
+        const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
+        if (spreadType === 'one-card') {
+            this.tarotSpread = { daily: this.tarotPickedCards[0] };
+        } else {
+            this.tarotSpread = {
+                past: this.tarotPickedCards[0],
+                present: this.tarotPickedCards[1],
+                future: this.tarotPickedCards[2]
+            };
+        }
+
+        this.renderTarotSpread();
+    }
+
+    async renderTarotLibrary() {
+        const container = document.getElementById('hex-grid');
+        if (!container) return;
+
+        container.className = 'tarot-grid';
+        container.innerHTML = '<div class="loading">加載卡片中...</div>';
+
+        // major 00-21, minor suit_01-14
+        const major = Array.from({ length: 22 }, (_, i) => i.toString().padStart(2, '0'));
+        const suits = ['wands', 'cups', 'swords', 'pentacles'];
+        const minor = suits.flatMap(suit =>
+            Array.from({ length: 14 }, (_, i) => `${suit}_${(i + 1).toString().padStart(2, '0')}`)
+        );
+
+        const allCards = [...major, ...minor];
+        container.innerHTML = '';
+
+        for (const id of allCards) {
+            const cardInfo = await TarotService.getCard(id);
+            const cardItem = document.createElement('div');
+            cardItem.className = 'tarot-card-item';
+            cardItem.innerHTML = `
+                <div class="tarot-card-thumb">
+                    <img src="${TarotService.getImageUrl(id)}" alt="${cardInfo?.name_zh}">
+                </div>
+                <span>${cardInfo?.name_zh || id}</span>
+            `;
+            cardItem.onclick = () => this.showTarotDetail(cardInfo, id);
+            container.appendChild(cardItem);
+        }
+    }
+
+    showTarotDetail(cardInfo, id) {
+        const modal = document.getElementById('detail-modal');
+        const body = modal.querySelector('.modal-body');
+
+        body.innerHTML = `
+            <div class="tarot-detail-view" style="padding: 20px;">
+                <div class="tarot-detail-header" style="margin-bottom: 20px; text-align: center;">
+                    <h2 style="color: var(--accent-gold);">${cardInfo.name_zh} <small style="color: var(--text-secondary); font-size: 1rem;">${cardInfo.name_en}</small></h2>
+                    <span class="arcana-badge" style="background: rgba(212,175,55,0.2); color: var(--accent-gold); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem;">${cardInfo.arcana} Arcana</span>
+                </div>
+                <div class="tarot-detail-main" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div class="tarot-detail-img" style="flex: 1; min-width: 200px;">
+                        <img src="${TarotService.getImageUrl(id)}" alt="${cardInfo.name_zh}" style="width:100%; border-radius:10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    </div>
+                    <div class="tarot-detail-text" style="flex: 2; min-width: 300px;">
+                        <p class="summary" style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;"><strong>概述：</strong>${cardInfo.summary}</p>
+                        <div class="meaning-section" style="margin-bottom: 15px;">
+                            <h4 style="color: var(--success); margin-bottom: 5px;">正位牌義</h4>
+                            <p style="font-size: 0.95rem; opacity: 0.9;">${cardInfo.llm_analysis.general_upright}</p>
+                        </div>
+                        <div class="meaning-section" style="margin-bottom: 15px;">
+                            <h4 style="color: var(--error); margin-bottom: 5px;">逆位牌義</h4>
+                            <p style="font-size: 0.95rem; opacity: 0.9;">${cardInfo.llm_analysis.general_reversed}</p>
+                        </div>
+                        <blockquote style="border-left: 4px solid var(--accent-gold); padding-left: 15px; font-style: italic; color: var(--text-secondary); margin: 20px 0;">
+                            ${cardInfo.advice}
+                        </blockquote>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        modal.classList.add('active');
+        const askAiBtn = document.getElementById('ask-ai');
+        if (askAiBtn) askAiBtn.style.display = 'none';
     }
 }
 

@@ -23,7 +23,7 @@
             <div class="nav-links">
                 <a href="#tabletop" class="active">抽爻 Tabletop</a>
                 <a href="#ai-mentor">導師 AI Mentor</a>
-                <a href="#library">圖書館 Library</a>
+                <a href="#library" id="nav-library-link">圖書館 Library</a>
                 <a href="#history">每日紀錄 Journal</a>
                 <a href="#settings">設定 Settings</a>
             </div>
@@ -49,13 +49,27 @@
                 </div>
 
                 <div id="tarot-canvas-container" class="shuffling-container">
-                    <div class="deck-pile" id="tarot-deck">
-                        <span>點擊洗牌並抽卡</span>
+                    <div class="tarot-intro" id="tarot-intro">
+                        <p>沉浸於神祕學的指引...</p>
+                        <button id="start-tarot" class="btn-primary gold-glow">開始占卜</button>
+                    </div>
+                    <div class="deck-pile hidden" id="tarot-deck">
+                        <div class="deck-cards-logic">
+                            <!-- Shuffling cards will be here -->
+                        </div>
+                        <div class="deck-instruction">按住手勢或點擊以洗牌</div>
                     </div>
                 </div>
 
-                <div id="tarot-spread-container" class="tarot-spread hidden">
-                    <!-- Cards will be injected here -->
+                <div id="tarot-selection-container" class="tarot-selection hidden">
+                    <div class="selection-instruction">請憑直覺點選 <span id="cards-to-pick">3</span> 張牌</div>
+                    <div id="tarot-fan" class="tarot-fan">
+                        <!-- Fan of cards will be here -->
+                    </div>
+                </div>
+
+                <div id="tarot-result-container" class="tarot-spread hidden">
+                    <!-- Selected cards will be shown here -->
                 </div>
 
                 <div class="tarot-actions hidden" id="tarot-actions">
@@ -162,38 +176,50 @@
                         </div>
                     </div>
                 </div>
-                <!-- Settings View -->
-                <section id="settings" class="view">
-                    <div class="settings-container glass-panel">
-                        <div class="settings-header">
-                            <h2>系統設定 Settings</h2>
-                            <p>調整您的個人化占卜體驗 ☯</p>
-                        </div>
+            </section>
+            <!-- Settings View -->
+            <section id="settings" class="view">
+                <div class="settings-container glass-panel">
+                    <div class="settings-header">
+                        <h2>系統設定 Settings</h2>
+                        <p>調整您的個人化占卜體驗 ☯</p>
+                    </div>
 
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-title">核心模式 Core Mode</span>
-                                <span class="setting-desc">切換易經與塔羅牌陣。</span>
-                            </div>
-                            <div id="settings-mode-switcher" class="mode-switcher-in-page">
-                                <button class="mode-btn active" data-mode="iching">易經 ☯</button>
-                                <button class="mode-btn" data-mode="tarot">塔羅 🃏</button>
-                            </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-title">核心模式 Core Mode</span>
+                            <span class="setting-desc">切換易經與塔羅牌陣。</span>
                         </div>
-
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <span class="setting-title">AI 導師風格 AI Persona</span>
-                                <span class="setting-desc">目前預設：專業導師</span>
-                            </div>
-                            <button class="btn-secondary" disabled>研發中...</button>
-                        </div>
-
-                        <div class="settings-footer">
-                            <small>I-Ching Lab v2.5 | 數位玄學實驗室</small>
+                        <div id="settings-mode-switcher" class="mode-switcher-in-page">
+                            <button class="mode-btn active" data-mode="iching">易經 ☯</button>
+                            <button class="mode-btn" data-mode="tarot">塔羅 🃏</button>
                         </div>
                     </div>
-                </section>
+
+                    <div class="setting-item" id="tarot-spread-setting">
+                        <div class="setting-info">
+                            <span class="setting-title">塔羅牌陣 Tarot Spread</span>
+                            <span class="setting-desc">選擇抽卡數量與牌陣。</span>
+                        </div>
+                        <select id="setting-tarot-spread" class="glass-select">
+                            <option value="one-card">單牌陣 (每日啟示)</option>
+                            <option value="three-card">三牌陣 (過去現在未來)</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-title">AI 導師風格 AI Persona</span>
+                            <span class="setting-desc">目前預設：專業導師</span>
+                        </div>
+                        <button class="btn-secondary" disabled>研發中...</button>
+                    </div>
+
+                    <div class="settings-footer">
+                        <small>I-Ching Lab v2.5 | 數位玄學實驗室</small>
+                    </div>
+                </div>
+            </section>
         </main>
 
         <!-- Global Result Overlay -->
