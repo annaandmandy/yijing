@@ -1446,12 +1446,7 @@ class App {
 
     handleTarotStart() {
         this.tarotStep = 'shuffling';
-        const zone = document.getElementById('tarot-interaction-zone');
-        if (zone) zone.classList.remove('hidden');
-
-        const deck = document.getElementById('tarot-deck');
-        if (deck) deck.classList.remove('hidden');
-
+        this.renderView();
         this.renderTarotDeck();
     }
 
