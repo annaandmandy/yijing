@@ -26,7 +26,7 @@ class App {
 
     async init() {
         console.log("Initializing I-Ching Lab...");
-        
+
         // Load data
         this.library = await ManifestService.loadAllHexagrams();
         console.log(`Loaded ${this.library.length} hexagrams.`);
@@ -35,9 +35,16 @@ class App {
         this.setupNavigation();
         this.setupCastingManager();
         this.setupEventListeners();
-        
+
         // Initial view render
         this.renderView();
+
+        this.showWelcomeMessage();
+    }
+
+    showWelcomeMessage() {
+        console.log("%c☯ I-Ching Lab ☯", "color: #d4af37; font-size: 20px; font-weight: bold;");
+        console.log("歡迎來到易經實驗室。請點擊畫面，開始您的第一卦。");
     }
 
     setupCastingManager() {
@@ -49,7 +56,7 @@ class App {
         this.currentTosses.push(sum);
         console.log(`Toss ${this.currentTosses.length}: Sum = ${sum}`);
         this.renderCastingProgress();
-        
+
         if (this.currentTosses.length < 6) {
             // Update UI to show progress
             this.updateTossProgress();
@@ -67,7 +74,7 @@ class App {
         const container = document.getElementById('casting-progress');
         if (!container) return;
         container.innerHTML = '';
-        
+
         this.currentTosses.forEach(sum => {
             const line = document.createElement('div');
             line.className = 'hex-line ' + this.getLineClass(sum);
@@ -95,7 +102,7 @@ class App {
         const futureHex = result.hasChange ? this.library.find(h => h.binary === result.futureBinary) : null;
 
         this.showResultOverlay(originalHex, futureHex, result);
-        
+
         // Save to Journal and keep ID for chat session
         this.currentRecordId = JournalService.saveRecord({
             question: document.getElementById('user-question')?.value || "隨喜求卦",
@@ -109,6 +116,12 @@ class App {
         });
 
         this.chatMessages = []; // Reset chat for new session
+
+        // Proactive: Ask AI for an initial summary if auto-talk is enabled
+        setTimeout(() => {
+            const detailBtn = document.getElementById('view-details');
+            if (detailBtn) detailBtn.classList.add('pulse-gold');
+        }, 1500);
     }
 
     showResultOverlay(original, future, meta, recordId = null) {
@@ -132,10 +145,10 @@ class App {
         if (original.najia_analysis) {
             najiaBox.classList.remove('hidden');
             najiaBox.querySelector('.palace-info').innerText = `${original.najia_analysis.palace}宮 [${original.najia_analysis.palace_wuxing}]`;
-            
+
             const linesContainer = najiaBox.querySelector('.lines-najia');
             linesContainer.innerHTML = '';
-            
+
             // Reversed to show lines from top (6) to bottom (1) or bottom-up?
             // Usually I-Ching UI is bottom-up, let's keep it bottom-up (1 to 6)
             original.najia_analysis.lines.forEach(line => {
@@ -171,11 +184,23 @@ class App {
         detailBtn.onclick = () => {
             this.showHexagramDetail(original, true, recordId);
         };
+
+        // Link Copy button
+        const copyBtn = overlay.querySelector('#copy-result');
+        copyBtn.onclick = () => {
+            const question = document.getElementById('user-question')?.value || "隨喜求卦";
+            const text = `【I-Ching Lab 卦象】\n問題：${question}\n本卦：${original.name}\n${meta.hasChange ? "之卦：" + future.name + "\n" : ""}${original.summary}\n#IChingLab`;
+            navigator.clipboard.writeText(text).then(() => {
+                const oldText = copyBtn.innerText;
+                copyBtn.innerText = "已複製！";
+                setTimeout(() => copyBtn.innerText = oldText, 2000);
+            });
+        };
     }
 
     highlightYongShen(type, hex) {
         if (!hex.najia_analysis) return;
-        
+
         // Define Target Six Relatives for each focus
         const targetMap = {
             "career": ["官鬼"],
@@ -185,11 +210,11 @@ class App {
 
         const targets = targetMap[type];
         const lines = document.querySelectorAll('.najia-line');
-        
+
         lines.forEach(line => {
             const isMatch = targets.includes(line.dataset.relative);
             line.classList.toggle('highlight', isMatch);
-            
+
             // Proactive: Highlight corresponding 3D/2D segments if possible
             // This would require CastingManager to support selective highlighting
             // For now, we highlight the UI list
@@ -242,7 +267,7 @@ class App {
 
     switchView(viewId) {
         this.currentView = viewId;
-        
+
         // Update Nav UI
         document.querySelectorAll('.nav-links a').forEach(link => {
             link.classList.toggle('active', link.getAttribute('href') === `#${viewId}`);
@@ -267,11 +292,11 @@ class App {
     renderLibrary() {
         const grid = document.getElementById('hex-grid');
         grid.innerHTML = '';
-        
+
         this.library.forEach(hex => {
             const card = document.createElement('div');
             card.className = 'hex-card glass-panel';
-            
+
             // Generate symbol for card
             let symbolHtml = '<div class="card-symbol">';
             // In our data, binary string "111000" where index 0 is line 1 (bottom).
@@ -296,7 +321,7 @@ class App {
         const historyList = document.querySelector('.history-list');
         const history = JournalService.getHistory();
         historyList.innerHTML = history.length === 0 ? '<p>尚無任何紀錄</p>' : '';
-        
+
         const relativeStats = { "官鬼": 0, "父母": 0, "兄弟": 0, "子孫": 0, "妻財": 0 };
         const groups = {};
 
@@ -323,7 +348,7 @@ class App {
             groups[date].forEach(item => {
                 const el = document.createElement('div');
                 el.className = 'history-item glass-panel';
-                
+
                 const lastMsg = item.messages?.length > 0 ? item.messages[item.messages.length - 1].content.substring(0, 40) + '...' : '點擊與導師深入對話';
 
                 el.innerHTML = `
@@ -334,7 +359,7 @@ class App {
                     </div>
                     <button class="result-action">查看當時卦象</button>
                 `;
-                
+
                 // Open Chat on main area click
                 el.onclick = (e) => {
                     if (e.target.closest('.result-action')) return;
@@ -356,7 +381,7 @@ class App {
                         }, item.id);
                     }
                 };
-                
+
                 historyList.appendChild(el);
             });
         });
@@ -407,13 +432,13 @@ class App {
             return;
         }
         console.log("Showing detail for hex:", hex.id, hex.name);
-        
+
         this.currentHexData = hex;
         this.currentRecordId = recordId;
-        
+
         const modal = document.getElementById('detail-modal');
         const body = modal.querySelector('.modal-body');
-        
+
         body.innerHTML = `
             <h2>${hex.name || '未知'}卦 (#${hex.id || '??'})</h2>
             <div class="detail-section">
@@ -444,7 +469,7 @@ class App {
         const chatContainer = document.getElementById('ai-chat-container');
         const chatHistory = document.getElementById('chat-history');
         const askAiBtn = document.getElementById('ask-ai');
-        
+
         chatContainer.classList.add('hidden');
         chatHistory.innerHTML = '';
         askAiBtn.classList.remove('hidden');
@@ -452,7 +477,7 @@ class App {
         // Load messages if they exist for this record
         const record = JournalService.getRecord(this.currentRecordId);
         this.chatMessages = record?.messages || [];
-        
+
         if (this.chatMessages.length > 0) {
             chatContainer.classList.remove('hidden');
             askAiBtn.classList.add('hidden');
@@ -460,7 +485,7 @@ class App {
         }
 
         modal.classList.add('active');
-        
+
         askAiBtn.onclick = () => {
             chatContainer.classList.remove('hidden');
             askAiBtn.classList.add('hidden');
@@ -473,7 +498,7 @@ class App {
         // Chat Input Event
         const sendBtn = document.getElementById('send-chat');
         const chatInput = document.getElementById('chat-input');
-        
+
         sendBtn.onclick = () => this.handleSendChat();
         chatInput.onkeypress = (e) => { if (e.key === 'Enter') this.handleSendChat(); };
 
@@ -497,11 +522,11 @@ class App {
         // User Message
         this.chatMessages.push({ role: 'user', content: text });
         this.appendMessageToUI('user', text);
-        
+
         // AI Response placeholder
         const status = document.querySelector('.chat-status');
         status.innerText = '感應中...';
-        
+
         // Create an empty AI message bubble for streaming
         const aiMsgEl = this.appendMessageToUI('ai', '');
         let fullResponse = '';
@@ -516,12 +541,12 @@ class App {
                 const history = document.getElementById('chat-history');
                 history.scrollTop = history.scrollHeight;
             }
-            
+
             console.log("App: Stream completed.");
             console.log("App: Full AI Answer:", fullResponse);
-            
+
             this.chatMessages.push({ role: 'assistant', content: fullResponse });
-            
+
             // Persist
             if (this.currentRecordId) {
                 JournalService.updateMessages(this.currentRecordId, this.chatMessages);
