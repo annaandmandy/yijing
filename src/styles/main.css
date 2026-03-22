@@ -202,24 +202,41 @@ canvas {
 /* Hexagram Symbols */
 #casting-progress {
     position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 60px;
-    height: 160px;
+    right: 30px;
+    bottom: 30px;
+    width: 130px;
+    /* Slightly wider to accommodate labels + lines */
+    height: 190px;
     display: flex;
     flex-direction: column-reverse;
-    /* Bottom up */
     justify-content: center;
-    gap: 8px;
-    padding: 10px;
+    gap: 12px;
+    padding: 12px;
+    /* Reduced side padding to allow wider lines */
     z-index: 10;
+    transition: var(--transition-smooth);
+    border: 1px solid var(--glass-border);
+}
+
+#casting-progress::before {
+    content: "當前進度";
+    position: absolute;
+    top: -25px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .hex-line {
-    height: 8px;
+    height: 10px;
+    /* Increased from 8px for more visual weight */
     width: 100%;
     position: relative;
+    border-radius: 2px;
 }
 
 .hex-line.yang {
@@ -244,19 +261,20 @@ canvas {
 .hex-line.old-yang::after {
     content: "○";
     position: absolute;
-    right: -20px;
+    right: -18px;
+    /* Slightly outside but fits in 130px box */
     color: var(--accent-gold);
-    font-size: 1rem;
-    top: -5px;
+    font-size: 1.3rem;
+    top: -10px;
 }
 
 .hex-line.old-yin::after {
-    content: "×";
+    content: "✕";
     position: absolute;
-    right: -20px;
+    right: -18px;
     color: var(--accent-gold);
-    font-size: 1rem;
-    top: -5px;
+    font-size: 1.1rem;
+    top: -8px;
 }
 
 /* Card Symbol */
@@ -1003,9 +1021,19 @@ canvas {
 
     #casting-progress {
         right: 15px;
-        width: 45px;
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 10px;
+        width: 80px;
+        /* Increased from 45px */
+        background: rgba(0, 0, 0, 0.4);
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+    }
+
+    #casting-progress .hex-line.old-yang::after,
+    #casting-progress .hex-line.old-yin::after {
+        right: -10px;
+        /* Adjust markers for mobile spacing */
+        font-size: 0.9rem;
     }
 
     /* Library Grid */
@@ -1386,21 +1414,34 @@ canvas {
     }
 
     .hex-block {
+        gap: 6px;
+        min-width: 80px;
+        /* Ensure a minimum width for the hexagram box */
+    }
+
+    .mini-hex-symbol {
+        width: 70px;
+        /* Increased from 40px */
         gap: 4px;
     }
 
+    .mini-hex-symbol .line {
+        height: 5px;
+        /* Slightly thicker lines */
+    }
+
     .hex-label {
-        font-size: 0.65rem;
-        padding: 1px 6px;
+        font-size: 0.7rem;
+        padding: 2px 8px;
     }
 
     .hex-name-text {
-        font-size: 1rem;
+        font-size: 1.1rem;
     }
 
     .hex-arrow {
         transform: rotate(0deg);
-        /* Horizontal arrow */
-        font-size: 1.2rem;
+        font-size: 1.4rem;
+        margin: 0 5px;
     }
 }
