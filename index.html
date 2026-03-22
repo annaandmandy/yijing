@@ -25,21 +25,42 @@
                 <a href="#ai-mentor">導師 AI Mentor</a>
                 <a href="#library">圖書館 Library</a>
                 <a href="#history">每日紀錄 Journal</a>
+                <a href="#settings">設定 Settings</a>
             </div>
         </nav>
 
         <!-- Main Content Area -->
         <main id="view-container">
-            <!-- 3D Tabletop View -->
+            <!-- 3D Tabletop View (I-Ching) -->
             <section id="tabletop" class="view active">
                 <div class="question-container">
                     <input type="text" id="user-question" placeholder="輸入你想問的事（今日運勢、創業建議）..." class="glass-input">
                 </div>
                 <div id="canvas-container">
-                    <!-- Three.js Canvas will be injected here -->
                     <div class="instruction">震動手機或按住拖拽以投擲</div>
-                    <!-- Real-time Hexagram Progress -->
                     <div id="casting-progress" class="glass-panel"></div>
+                </div>
+            </section>
+
+            <!-- Tarot Tabletop View -->
+            <section id="tarot" class="view tarot-view">
+                <div class="question-container">
+                    <input type="text" id="tarot-question" placeholder="輸入你想請教塔羅的事..." class="glass-input">
+                </div>
+
+                <div id="tarot-canvas-container" class="shuffling-container">
+                    <div class="deck-pile" id="tarot-deck">
+                        <span>點擊洗牌並抽卡</span>
+                    </div>
+                </div>
+
+                <div id="tarot-spread-container" class="tarot-spread hidden">
+                    <!-- Cards will be injected here -->
+                </div>
+
+                <div class="tarot-actions hidden" id="tarot-actions">
+                    <button id="interpret-tarot" class="btn-primary">請導師解牌</button>
+                    <button id="reset-tarot" class="btn-secondary">重新抽卡</button>
                 </div>
             </section>
 
@@ -141,10 +162,41 @@
                         </div>
                     </div>
                 </div>
-            </section>
+                <!-- Settings View -->
+                <section id="settings" class="view">
+                    <div class="settings-container glass-panel">
+                        <div class="settings-header">
+                            <h2>系統設定 Settings</h2>
+                            <p>調整您的個人化占卜體驗 ☯</p>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-title">核心模式 Core Mode</span>
+                                <span class="setting-desc">切換易經與塔羅牌陣。</span>
+                            </div>
+                            <div id="settings-mode-switcher" class="mode-switcher-in-page">
+                                <button class="mode-btn active" data-mode="iching">易經 ☯</button>
+                                <button class="mode-btn" data-mode="tarot">塔羅 🃏</button>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-title">AI 導師風格 AI Persona</span>
+                                <span class="setting-desc">目前預設：專業導師</span>
+                            </div>
+                            <button class="btn-secondary" disabled>研發中...</button>
+                        </div>
+
+                        <div class="settings-footer">
+                            <small>I-Ching Lab v2.5 | 數位玄學實驗室</small>
+                        </div>
+                    </div>
+                </section>
         </main>
 
-        <!-- Global Result Overlay (Fixed for stability) -->
+        <!-- Global Result Overlay -->
         <div id="result-overlay" class="hidden glass-panel">
             <button class="close-btn" id="close-result-overlay">×</button>
             <div class="binary-display"></div>

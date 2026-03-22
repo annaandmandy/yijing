@@ -12,6 +12,8 @@ import { AIService } from './services/AIService.js';
 import { TimeService } from './services/TimeService.js';
 
 import { HEXAGRAM_ELEMENTS, HEXAGRAM_PHONETICS } from './constants.js';
+import { TarotEngine } from './engine/TarotEngine.js';
+import { TarotService } from './services/TarotService.js';
 
 class App {
     constructor() {
@@ -30,6 +32,8 @@ class App {
         this.radarChart = null;
         this.resultSource = 'tabletop';
         this.librarySubpage = 'grid'; // Sub-view within library
+        this.currentMode = 'iching'; // 'iching' or 'tarot'
+        this.tarotSpread = null;
 
         window.app = this; // Global reference for inline oncilcks
         this.init();
@@ -48,6 +52,8 @@ class App {
         this.setupEventListeners();
         this.setupCalendarNav();
         this.setupLibraryNav();
+        this.setupModeSwitcher();
+        this.setupTarotEvents();
 
         // Initial view render
         this.renderView();
@@ -697,22 +703,180 @@ class App {
         this.renderView();
     }
 
+    setupModeSwitcher() {
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                const mode = e.target.dataset.mode;
+                this.currentMode = mode;
+
+                // Update UI Active State
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+
+                // Toggle Body Class for Theme
+                if (mode === 'tarot') {
+                    document.body.classList.add('tarot-mode');
+                } else {
+                    document.body.classList.remove('tarot-mode');
+                }
+
+                // Force switch to Tabletop view when changing mode
+                this.currentView = 'tabletop';
+                this.renderView();
+            };
+        });
+    }
+
+    setupTarotEvents() {
+        const deck = document.getElementById('tarot-deck');
+        if (deck) deck.onclick = () => this.handleTarotShuffle();
+
+        const interpretBtn = document.getElementById('interpret-tarot');
+        if (interpretBtn) interpretBtn.onclick = () => this.handleTarotInterpret();
+
+        const resetBtn = document.getElementById('reset-tarot');
+        if (resetBtn) resetBtn.onclick = () => this.resetTarot();
+    }
+
+    async handleTarotShuffle() {
+        const deck = document.getElementById('tarot-deck');
+        const container = document.getElementById('tarot-canvas-container');
+
+        container.classList.add('shuffling');
+        deck.innerText = "正在洗牌...";
+
+        // Wait for animation
+        await new Promise(r => setTimeout(r, 2000));
+
+        const deckData = TarotEngine.shuffleDeck();
+        this.tarotSpread = TarotEngine.drawThreeCardSpread(deckData);
+
+        container.classList.remove('shuffling');
+        container.classList.add('hidden');
+
+        this.renderTarotSpread();
+    }
+
+    async renderTarotSpread() {
+        const spreadContainer = document.getElementById('tarot-spread-container');
+        const actions = document.getElementById('tarot-actions');
+        spreadContainer.classList.remove('hidden');
+        actions.classList.remove('hidden');
+
+        spreadContainer.innerHTML = '';
+        const positions = ['Past (過去)', 'Present (現在)', 'Future (未來)'];
+        const keys = ['past', 'present', 'future'];
+
+        for (let i = 0; i < 3; i++) {
+            const cardData = this.tarotSpread[keys[i]];
+            const cardInfo = await TarotService.getCard(cardData.id);
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'tarot-card-wrapper';
+            wrapper.innerHTML = `
+                <div class="tarot-card ${cardData.isReversed ? 'reversed' : ''}" id="card-${i}">
+                    <div class="tarot-card-back"></div>
+                    <div class="tarot-card-front">
+                        <img src="${TarotService.getImageUrl(cardData.id)}" alt="${cardInfo?.name_zh}">
+                    </div>
+                </div>
+                <div class="card-info">
+                    <span class="spread-label">${positions[i]}</span>
+                    <span class="tarot-card-name">${cardInfo?.name_zh || cardData.id}</span>
+                </div>
+            `;
+
+            spreadContainer.appendChild(wrapper);
+
+            // Sequential flip animation
+            setTimeout(() => {
+                document.getElementById(`card-${i}`).classList.add('flipped');
+            }, 500 * (i + 1));
+        }
+    }
+
+    resetTarot() {
+        this.tarotSpread = null;
+        document.getElementById('tarot-spread-container').classList.add('hidden');
+        document.getElementById('tarot-actions').classList.add('hidden');
+        document.getElementById('tarot-canvas-container').classList.remove('hidden');
+        document.getElementById('tarot-deck').innerText = "點擊洗牌並抽卡";
+    }
+
+    async handleTarotInterpret() {
+        if (!this.tarotSpread) return;
+
+        // Prepare context for AI
+        const spreadDetails = [];
+        for (const [pos, card] of Object.entries(this.tarotSpread)) {
+            const info = await TarotService.getCard(card.id);
+            spreadDetails.push({
+                position: pos,
+                name: info.name_zh,
+                isReversed: card.isReversed,
+                summary: info.summary,
+                meaning: card.isReversed ? info.meanings.reversed : info.meanings.upright
+            });
+        }
+
+        const question = document.getElementById('tarot-question').value || "隨喜抽牌";
+
+        // Save to Journal
+        const recordId = JournalService.saveRecord({
+            mode: 'tarot',
+            question: question,
+            tarotSpread: this.tarotSpread,
+            spreadDetails: spreadDetails
+        });
+
+        this.currentRecordId = recordId;
+        this.chatMessages = [];
+
+        // Switch to AI Mentor view and prepare it
+        this.switchView('ai-mentor');
+        this.prepareAIMentorView(null, recordId);
+
+        const prompt = `我抽到了塔羅三牌陣：\n${spreadDetails.map(c => `- ${c.position}: ${c.name} (${c.isReversed ? '逆位' : '正位'})`).join('\n')}\n\n我的問題是：${question}。請導師為我解牌。`;
+
+        // Trigger Chat
+        this.handleSendChat(prompt);
+    }
+
     renderView() {
         if (this.currentView === 'library') {
             this.switchLibrarySubpage(this.librarySubpage); // This handles both grid and other subpages
         } else if (this.currentView === 'history') {
             this.renderCalendar(); // Call renderCalendar for history view
         } else if (this.currentView === 'ai-mentor') {
-            if (this.currentHexData) {
+            // If we are coming from a direct link (e.g., from history) and currentHexData is not set,
+            // but currentRecordId is, try to load the context from the record.
+            if (this.currentRecordId && !this.currentHexData) {
+                const record = JournalService.getRecord(this.currentRecordId);
+                if (record && record.mode === 'iching' && record.originalId) {
+                    const hex = this.library.find(h => h.id === record.originalId);
+                    this.prepareAIMentorView(hex, this.currentRecordId);
+                } else if (record && record.mode === 'tarot') {
+                    this.prepareAIMentorView(null, this.currentRecordId);
+                } else {
+                    const history = document.getElementById('chat-history-main');
+                    history.innerHTML = `<div class="empty-state">
+                        <h3>尚未選擇卦象或塔羅牌陣</h3>
+                        <p>請先前往「全卦圖書館」選擇一卦，或從「每日紀錄」中開啟先前的對話。</p>
+                    </div>`;
+                    document.getElementById('mentor-current-hex').innerText = "等待導引...";
+                }
+            } else if (this.currentHexData || this.currentRecordId) { // If hex data is already set (e.g., from result overlay)
                 this.prepareAIMentorView(this.currentHexData, this.currentRecordId);
             } else {
                 const history = document.getElementById('chat-history-main');
                 history.innerHTML = `<div class="empty-state">
-                    <h3>尚未選擇卦象</h3>
+                    <h3>尚未選擇卦象或塔羅牌陣</h3>
                     <p>請先前往「全卦圖書館」選擇一卦，或從「每日紀錄」中開啟先前的對話。</p>
                 </div>`;
                 document.getElementById('mentor-current-hex').innerText = "等待導引...";
             }
+        } else if (this.currentView === 'settings') {
+            console.log("Settings view active.");
         }
     }
 
@@ -986,8 +1150,7 @@ class App {
                             </div>
                         `).join('') || '<p>正在整理爻辭中...</p>'}
                     </div>
-                </div>
-            </details>
+                </details>
 
             <details class="detail-section">
                 <summary>現代解析 (事業/感情/財運)</summary>
@@ -1042,14 +1205,36 @@ class App {
 
     prepareAIMentorView(hex, recordId) {
         const header = document.getElementById('mentor-current-hex');
-        header.innerText = `${hex.name}卦 (#${hex.id}) - 導師對話中`;
-
         const chatHistory = document.getElementById('chat-history-main');
-        chatHistory.innerHTML = '';
+        chatHistory.innerHTML = ''; // Clear history
+
+        const currentRecord = JournalService.getRecord(recordId || this.currentRecordId);
+
+        if (currentRecord && currentRecord.mode === 'tarot') {
+            const cardNames = currentRecord.spreadDetails.map(c => c.name).join(' + ');
+            header.innerText = `塔羅占：${cardNames}`;
+            this.currentHexData = null; // Clear hex data for tarot readings
+        } else if (hex) { // This is for I-Ching hexagrams passed directly
+            header.innerText = `${hex.name}卦 (#${hex.id})`;
+            this.currentHexData = hex;
+        } else if (currentRecord && currentRecord.mode === 'iching' && currentRecord.originalId) { // If record is I-Ching but hex wasn't passed directly
+            const recordHex = this.library.find(h => h.id === currentRecord.originalId);
+            if (recordHex) {
+                header.innerText = `${recordHex.name}卦 (#${recordHex.id})`;
+                this.currentHexData = recordHex;
+            } else {
+                header.innerText = "未知卦象 - 導師對話中";
+                this.currentHexData = null;
+            }
+        } else {
+            header.innerText = "等待導引...";
+            this.currentHexData = null;
+        }
+
+        this.currentRecordId = recordId;
 
         // Load messages if they exist
-        const record = JournalService.getRecord(recordId || this.currentRecordId);
-        this.chatMessages = record?.messages || [];
+        this.chatMessages = currentRecord?.messages || [];
 
         if (this.chatMessages.length > 0) {
             this.chatMessages.forEach(msg => this.appendMessageToUI(msg.role, msg.content));

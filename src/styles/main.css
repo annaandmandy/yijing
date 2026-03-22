@@ -10,6 +10,15 @@
     --transition-smooth: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     --safe-top: env(safe-area-inset-top);
     --safe-bottom: env(safe-area-inset-bottom);
+
+    /* Tarot Mode Theme (Default is I-Ching) */
+    --accent-purple: #9c27b0;
+    --purple-glow: rgba(156, 39, 176, 0.4);
+}
+
+.tarot-mode {
+    --accent-gold: var(--accent-purple);
+    --accent-blue: #e040fb;
 }
 
 * {
@@ -923,6 +932,275 @@ canvas {
 .t-detail-grid span strong {
     color: var(--accent-gold);
     margin-right: 4px;
+}
+
+/* Tarot Tabletop & 3-Card Spread */
+.tarot-view {
+    display: none;
+    /* Controlled by app.js */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    padding-bottom: 100px;
+    position: relative;
+    z-index: 10;
+}
+
+.view.active.tarot-view {
+    display: flex;
+}
+
+.tarot-spread {
+    display: flex;
+    gap: 30px;
+    margin-top: 60px;
+    perspective: 2000px;
+}
+
+.tarot-card-wrapper {
+    width: 160px;
+    height: 280px;
+    transition: var(--transition-smooth);
+}
+
+.tarot-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+}
+
+.tarot-card.flipped {
+    transform: rotateY(180deg);
+}
+
+.tarot-card.reversed .tarot-card-front {
+    transform: rotateY(180deg) rotateZ(180deg);
+}
+
+.tarot-card-front,
+.tarot-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+}
+
+.tarot-card-back {
+    background: linear-gradient(135deg, #1a002a 0%, #000 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(156, 39, 176, 0.3);
+}
+
+.tarot-card-back::before {
+    content: "";
+    position: absolute;
+    width: 80%;
+    height: 80%;
+    border: 1px solid rgba(156, 39, 176, 0.2);
+    border-radius: 8px;
+}
+
+.tarot-card-back::after {
+    content: "✨";
+    font-size: 2.5rem;
+    filter: drop-shadow(0 0 10px var(--accent-purple));
+}
+
+.tarot-card-front {
+    background: #0a0a0a;
+    transform: rotateY(180deg);
+}
+
+.tarot-card-front img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-info {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.spread-label {
+    font-size: 0.75rem;
+    color: var(--accent-purple);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.tarot-card-name {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Shuffling State */
+.shuffling-container {
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.deck-pile {
+    width: 160px;
+    height: 280px;
+    background: var(--glass-bg);
+    border-radius: 12px;
+    border: 2px dashed var(--accent-purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    position: relative;
+    cursor: pointer;
+}
+
+@keyframes fan-out {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(var(--angle));
+    }
+}
+
+/* Mode Switcher Tooltip-like or Tab */
+.mode-switcher {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    z-index: 2500;
+    display: flex;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 30px;
+    padding: 5px;
+}
+
+.mode-btn {
+    padding: 8px 15px;
+    border-radius: 25px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.mode-btn.active {
+    background: var(--accent-gold);
+    color: #000;
+    font-weight: 600;
+}
+
+.tarot-mode .mode-btn.active {
+    background: var(--accent-purple);
+    box-shadow: 0 0 15px var(--purple-glow);
+}
+
+/* Settings View Styles */
+#settings {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 100px 20px;
+}
+
+#settings.active {
+    display: flex;
+}
+
+.settings-container {
+    width: 100%;
+    max-width: 600px;
+    padding: 40px;
+    border-radius: 20px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+}
+
+.settings-header {
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 20px;
+}
+
+.settings-header h2 {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.8rem;
+    color: var(--accent-gold);
+}
+
+.settings-header p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.setting-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+}
+
+.setting-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* In-page Mode Switcher */
+.mode-switcher-in-page {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 5px;
+    border-radius: 40px;
+    border: 1px solid var(--glass-border);
+}
+
+.mode-switcher-in-page .mode-btn {
+    padding: 10px 20px;
+}
+
+.settings-footer {
+    margin-top: 40px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 0.75rem;
 }
 
 /* Advanced Insights Panel */

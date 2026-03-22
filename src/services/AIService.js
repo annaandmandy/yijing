@@ -11,14 +11,25 @@ export class AIService {
         const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:8000").replace(/\/$/, "");
         const apiUrl = `${backendBaseUrl}/chat`;
 
-        if (!hexagramData) {
+        if (!hexagramData && !messages.some(m => m.content.includes("塔羅三牌陣"))) {
             yield "導師目前不知您問的是哪一卦，請先選擇卦象。";
             return;
         }
 
+        const isTarotMode = messages.some(m => m.content.includes("塔羅三牌陣"));
         const isDivinationMode = !!record.question;
 
         // Dynamic System Instruction based on context
+        let persona = `你現在是一位精通「六爻」與「術數」的易經導師。
+當前卦象：${hexagramData?.name}卦 (#${hexagramData?.id})
+宮位：${hexagramData?.najia_analysis?.palace}宮 [${hexagramData?.najia_analysis?.palace_wuxing}]
+納甲數據：${JSON.stringify(hexagramData?.najia_analysis?.lines)}`;
+
+        if (isTarotMode) {
+            persona = `你現在是一位精通「塔羅牌」與「神祕學」的塔羅宗師。
+你擅長從托特或偉特牌義中，為學生解讀內在的潛意識連結與未來的啟示，並深入剖析「過去、現在、未來」三牌陣的轉折。`;
+        }
+
         const adv = record.advancedTheory || {};
         const relations = adv.relations ? `
 - 互卦 (Nuclear)：${adv.relations.nuclear}卦
@@ -28,20 +39,18 @@ export class AIService {
         const beasts = adv.beasts ? `由初爻至上爻分別為：${adv.beasts.join('、')}` : "待分析";
         const strength = adv.chronoEnergy ? `日辰：${adv.chronoEnergy.ganzhi}，當前五行旺衰：${JSON.stringify(adv.chronoEnergy.strength)}` : "待分析";
 
-        const systemInstruction = `你現在是一位精通「六爻」與「術數」的易經導師。
-當前卦象：${hexagramData.name}卦 (#${hexagramData.id})
-宮位：${hexagramData.najia_analysis?.palace}宮 [${hexagramData.najia_analysis?.palace_wuxing}]
-納甲數據：${JSON.stringify(hexagramData.najia_analysis?.lines)}
+        const systemInstruction = `${persona}
 
-[進階分析數據 (Advanced Insights)]
+${!isTarotMode ? `[進階分析數據 (Advanced Insights)]
 1. 卦象關係：${relations}
 2. 六神配置：${beasts}
-3. 時空能量：${strength}
+3. 時空能量：${strength}` : ""}
 
 [教學方針]
-1. 將學生視為「易學初學者」，語氣要平易近人、循循善誘。
-2. 避免過於晦澀的專業術語，若必須使用（如「勾陳」、「螣蛇」），請附帶簡單的白話解釋。
+1. 將學生視為「初學者」，語氣要平易近人、循循善誘。
+2. 避免過於晦澀的專業術語，若必須使用，請附帶簡單的白話解釋。
 3. 語氣保持導師的威嚴與慈愛感。
+4. ${isTarotMode ? '著重於「正位」與「逆位」的身心靈啟示，風格要帶一點神祕學色彩。' : '結合五行生剋與納甲理論進行語義演繹。'}
 
 ${isDivinationMode ? `
 [占卜占斷模式]
