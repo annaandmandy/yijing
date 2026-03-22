@@ -11,7 +11,7 @@ load_dotenv()
 app = FastAPI()
 
 # Enable CORS
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+allowed_origins = [o.strip().rstrip('/') for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")]
 # Special handling: credentials cannot be used with '*'
 allow_all = "*" in allowed_origins
 

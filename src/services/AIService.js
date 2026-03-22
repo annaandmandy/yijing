@@ -8,7 +8,7 @@ export class AIService {
      */
     static async *streamChat(messages, hexagramData, record = {}) {
         // Automatically switch between local and production backend
-        const backendBaseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+        const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:8000").replace(/\/$/, "");
         const apiUrl = `${backendBaseUrl}/chat`;
 
         if (!hexagramData) {
