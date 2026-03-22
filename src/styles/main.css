@@ -800,6 +800,10 @@ canvas {
     box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
 }
 
+.modal.history-mode #ask-ai {
+    display: none !important;
+}
+
 #ask-ai:hover {
     background: var(--accent-gold);
     color: #000;

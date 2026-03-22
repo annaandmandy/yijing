@@ -278,11 +278,11 @@ class App {
                 <div class="insight-col">
                     <h4><i class="fas fa-link"></i> 關聯卦象</h4>
                     <div class="related-hexes">
-                        <div class="rel-item" onclick="app.showHexagramDetail(app.library.find(h=>h.id==='${nuclearHex?.id}'))">
+                        <div class="rel-item" onclick="app.showHexagramDetail(app.library.find(h=>h.id==='${nuclearHex?.id}'), false, '${recordId || ''}')">
                             <span class="rel-label">互卦 (內在)</span>
                             <span class="rel-name">${nuclearHex?.name || "無"}卦</span>
                         </div>
-                        <div class="rel-item" onclick="app.showHexagramDetail(app.library.find(h=>h.id==='${invertedHex?.id}'))">
+                        <div class="rel-item" onclick="app.showHexagramDetail(app.library.find(h=>h.id==='${invertedHex?.id}'), false, '${recordId || ''}')">
                             <span class="rel-label">綜卦 (視角)</span>
                             <span class="rel-name">${invertedHex?.name || "無"}卦</span>
                         </div>
@@ -1026,8 +1026,9 @@ class App {
         // Switch button logic to point to main AI View (Defensive check for missing button)
         const askAiBtn = document.getElementById('ask-ai');
         if (askAiBtn) {
-            // Hide if viewing from history (recordId exists)
-            askAiBtn.style.display = recordId ? 'none' : 'block';
+            // Toggle history-mode class to hide button via CSS
+            const isHistory = recordId && recordId !== "null" && recordId !== "";
+            modal.classList.toggle('history-mode', !!isHistory);
 
             askAiBtn.onclick = () => {
                 modal.classList.remove('active');
