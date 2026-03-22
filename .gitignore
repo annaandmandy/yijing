@@ -5,7 +5,7 @@ __pycache__/
 !package.json
 !package-lock.json
 !vercel.json
-!yi_data_enhanced/*.json
-!yi_data_library/*.json
+!public/yi_data_enhanced/*.json
+!public/yi_data_library/*.json
 node_modules
 src/config.js

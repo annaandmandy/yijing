@@ -4,7 +4,7 @@
  */
 
 export class ManifestService {
-  static DATA_PATH = "./yi_data_enhanced/";
+  static DATA_PATH = "/yi_data_enhanced/";
   static HEXAGRAM_COUNT = 64;
 
   /**
@@ -14,7 +14,7 @@ export class ManifestService {
   static async loadAllHexagrams() {
     const promises = [];
     for (let i = 1; i <= this.HEXAGRAM_COUNT; i++) {
-        // Assuming file format is hexagram_{id}.json
+      // Assuming file format is hexagram_{id}.json
       promises.push(
         fetch(`${this.DATA_PATH}hexagram_${i}.json`)
           .then(res => res.json())

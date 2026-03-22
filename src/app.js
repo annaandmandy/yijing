@@ -114,6 +114,12 @@ class App {
         const originalHex = this.library.find(h => h.binary === result.originalBinary);
         const futureHex = result.hasChange ? this.library.find(h => h.binary === result.futureBinary) : null;
 
+        if (!originalHex) {
+            console.error("Critical Error: Hexagram data not found in library for binary", result.originalBinary);
+            alert("抱歉，卦象資料載入失敗，請重新整理頁面。");
+            return;
+        }
+
         // Save to Journal first to get ID for chat session
         const recordId = JournalService.saveRecord({
             question: document.getElementById('user-question')?.value || "隨喜求卦",
