@@ -703,7 +703,7 @@ canvas {
 }
 
 .mini-hex-symbol .line.yin {
-    background: linear-gradient(90deg, var(--gold) 40%, transparent 40%, transparent 60%, var(--gold) 60%);
+    background: linear-gradient(90deg, var(--accent-gold) 40%, transparent 40%, transparent 60%, var(--accent-gold) 60%);
 }
 
 .close-btn {
@@ -1029,4 +1029,37 @@ canvas {
     .modal-header-flex h2 {
         font-size: 1.4rem;
     }
+}
+
+/* Analysis Grid inside Modal */
+.analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 5px;
+}
+
+.analysis-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.9rem;
+}
+
+.analysis-item strong {
+    color: var(--accent-gold);
+    display: inline-block;
+    margin-right: 5px;
+}
+
+@media (max-width: 600px) {
+    .analysis-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Animations for Details */
+.detail-section[open] .detail-content {
+    animation: fadeIn 0.4s ease-out;
 }

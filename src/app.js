@@ -133,12 +133,24 @@ class App {
         const binaryEl = overlay.querySelector('.binary-display');
         const summaryEl = overlay.querySelector('.hex-summary');
 
-        nameEl.innerText = original.name;
+        nameEl.innerHTML = `
+            <div style="display:flex; align-items:center; gap:15px; justify-content:center; margin-bottom:10px;">
+                ${this.renderMiniHexSymbol(original.binary)}
+                <span>${original.name}</span>
+            </div>
+        `;
+
         binaryEl.innerText = meta.originalBinary;
         summaryEl.innerText = original.summary;
 
         if (meta.hasChange) {
-            nameEl.innerText += ` 之 ${future.name}`;
+            nameEl.innerHTML += `
+                <div style="font-size: 0.9rem; opacity: 0.6; margin-top:5px; display:flex; align-items:center; gap:10px; justify-content:center;">
+                    <span>之</span>
+                    ${this.renderMiniHexSymbol(future.binary)}
+                    <span>${future.name}</span>
+                </div>
+            `;
             summaryEl.innerText = `本卦：${original.name}\n之卦：${future.name}\n${original.summary}`;
         }
 
