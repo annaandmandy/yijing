@@ -42,13 +42,14 @@ export class AIService {
     /**
      * Handles multi-turn streaming chat with the AI Mentor via Python Backend.
      * @param {Array} messages - Array of {role: 'user'|'assistant', content: string}
-     * @param {Object} hexagramData - Static JSON data of the hexagram.
-     * @param {Object} record - The specific divination record { question, date, changingLines, futureHexName, ... }
+     * @param {Object} hexagramData - Static JSON data of the hexagram (Original).
+     * @param {Object} record - The specific divination record { question, date, changingLines ... }
      * @param {Function} onChunk - Callback for streaming chunks.
      * @param {Object} tarotCard - Optional single tarot card data for library study.
+     * @param {Object} futureHexData - Optional static JSON data of the Future hexagram (變卦).
      * @yields {string} - Chunks of the AI generated response.
      */
-    static async * streamChat(messages, hexagramData, record = {}, onChunk, tarotCard = null) {
+    static async * streamChat(messages, hexagramData, record = {}, onChunk, tarotCard = null, futureHexData = null) {
         // Automatically switch between local and production backend
         const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:8000").replace(/\/$/, "");
         const apiUrl = `${backendBaseUrl}/chat`;
@@ -68,9 +69,14 @@ export class AIService {
 
         // Dynamic System Instruction based on context
         let persona = `你現在是一位精通「六爻」與「術數」的易經導師。
-當前卦象：${hexagramData?.name}卦 (#${hexagramData?.id})
+當前卦象（本卦）：${hexagramData?.name}卦 (#${hexagramData?.id})
 ${hexagramData?.structure?.upper_trigram_attr ? `上卦：${hexagramData.structure.upper_trigram_attr.split('（')[0]} (屬性：${hexagramData.structure.upper_trigram_attr})` : ""}
 ${hexagramData?.structure?.lower_trigram_attr ? `下卦：${hexagramData.structure.lower_trigram_attr.split('（')[0]} (屬性：${hexagramData.structure.lower_trigram_attr})` : ""}
+${futureHexData ? `
+之卦（變卦）：${futureHexData.name}卦 (#${futureHexData.id})
+${futureHexData.structure?.upper_trigram_attr ? `變卦上卦：${futureHexData.structure.upper_trigram_attr.split('（')[0]} (${futureHexData.structure.upper_trigram_attr})` : ""}
+${futureHexData.structure?.lower_trigram_attr ? `變卦下卦：${futureHexData.structure.lower_trigram_attr.split('（')[0]} (${futureHexData.structure.lower_trigram_attr})` : ""}
+` : ""}
 宮位：${hexagramData?.najia_analysis?.palace}宮 [${hexagramData?.najia_analysis?.palace_wuxing}]
 納甲數據：${JSON.stringify(hexagramData?.najia_analysis?.lines)}
 
@@ -114,7 +120,13 @@ ${spreadStrs.length > 0 ? `\n當前探討的牌為：${spreadStrs.join(', ')}。
 ${!isTarotMode ? `[進階分析數據 (Advanced Insights)]
 1. 卦象關係：${relations}
 2. 六神配置：${beasts}
-3. 時空能量：${strength}` : ""}
+3. 時空能量：${strength}
+${record.isPlum ? `
+4. 梅花易數 (Plum Blossom)：
+   - 體卦 (Body)：${record.plumResult.analysis.bodyTrigram.name} (${record.plumResult.analysis.bodyTrigram.wuxing})
+   - 用卦 (Guest)：${record.plumResult.analysis.guestTrigram.name} (${record.plumResult.analysis.guestTrigram.wuxing})
+   - 體用生剋：${record.plumResult.analysis.interaction} (${record.plumResult.analysis.result})
+` : ""}` : ""}
 
 [教學方針]
 1. 將學生視為「初學者」，語氣要平易近人、循循善誘。

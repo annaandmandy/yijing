@@ -1611,12 +1611,20 @@ class App {
         try {
             // Get the full record context for the AI
             const record = JournalService.getRecord(this.currentRecordId);
+            
+            // Determine if there is a future hexagram to include
+            let futureHex = null;
+            if (record && record.futureId) {
+                futureHex = this.library.find(h => h.id === record.futureId);
+            }
+
             const stream = AIService.streamChat(
                 this.chatMessages,
                 this.currentHexData,
                 record || {},
                 null,
-                this.currentTarotCard
+                this.currentTarotCard,
+                futureHex
             );
 
             for await (const chunk of stream) {
