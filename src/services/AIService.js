@@ -69,10 +69,20 @@ export class AIService {
         // Dynamic System Instruction based on context
         let persona = `你現在是一位精通「六爻」與「術數」的易經導師。
 當前卦象：${hexagramData?.name}卦 (#${hexagramData?.id})
-${hexagramData?.structure?.upper_trigram_attr ? `上卦：${hexagramData.structure.upper_trigram_attr.split('（')[0]}` : ""}
-${hexagramData?.structure?.lower_trigram_attr ? `下卦：${hexagramData.structure.lower_trigram_attr.split('（')[0]}` : ""}
+${hexagramData?.structure?.upper_trigram_attr ? `上卦：${hexagramData.structure.upper_trigram_attr.split('（')[0]} (屬性：${hexagramData.structure.upper_trigram_attr})` : ""}
+${hexagramData?.structure?.lower_trigram_attr ? `下卦：${hexagramData.structure.lower_trigram_attr.split('（')[0]} (屬性：${hexagramData.structure.lower_trigram_attr})` : ""}
 宮位：${hexagramData?.najia_analysis?.palace}宮 [${hexagramData?.najia_analysis?.palace_wuxing}]
-納甲數據：${JSON.stringify(hexagramData?.najia_analysis?.lines)}`;
+納甲數據：${JSON.stringify(hexagramData?.najia_analysis?.lines)}
+
+八卦與爻象基準 (從上至下，1為陽，0為陰)：
+1. 乾 (天)：111 (陽陽陽)
+2. 兌 (澤)：011 (陰陽陽)
+3. 離 (火)：101 (陽陰陽)
+4. 震 (雷)：001 (陰陰陽)
+5. 巽 (風)：110 (陽陽陰) -> 注意：此為巽卦標準結構
+6. 坎 (水)：010 (陰陽陰)
+7. 艮 (山)：100 (陽陰陰)
+8. 坤 (地)：000 (陰陰陰)`;
 
         if (isTarotMode) {
             const spreadStrs = [];
