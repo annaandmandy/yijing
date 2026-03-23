@@ -257,6 +257,22 @@ canvas {
     border: 1px solid var(--glass-border);
 }
 
+.result-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.result-actions button {
+    display: block; /* Ensure buttons are block by default */
+}
+
+#ask-mentor-result, #re-toss, #copy-result {
+    min-width: 120px;
+}
+
 #casting-progress::before {
     content: "當前進度";
     position: absolute;

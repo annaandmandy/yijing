@@ -184,10 +184,20 @@ class App {
         return new Date().toLocaleString('zh-TW', { timeZone: 'America/New_York' }) + " (波士頓真太陽時)";
     }
 
-    showResultOverlay(original, future, meta, recordId = null) {
+    showResultOverlay(original, future, meta, recordId = null, isHistoricalView = false) {
         this.currentRecordId = recordId || this.currentRecordId;
+        const isHistory = isHistoricalView || this.resultSource === 'history';
         // Don't override resultSource if it's already 'history'
         if (this.currentRecordId && !this.resultSource) this.resultSource = 'history';
+
+        // Get AI insight if available
+        let quickInsight = "";
+        if (this.currentRecordId) {
+            const record = JournalService.getRecord(this.currentRecordId);
+            if (record && record.quickInsight) {
+                quickInsight = record.quickInsight;
+            }
+        }
 
         const overlay = document.getElementById('result-overlay');
         const nameEl = overlay.querySelector('.hex-name');
@@ -328,6 +338,12 @@ class App {
                     </div>
                 </div>
             </div>
+            ${quickInsight ? `
+                <div class="ai-quick-insight glass-panel" style="margin-top: 20px; padding: 15px; border: 1px solid var(--accent-gold);">
+                    <h4 style="color: var(--accent-gold); margin-bottom: 10px;"><i class="fas fa-magic"></i> AI 初步解析</h4>
+                    <div style="font-size: 0.95rem; line-height: 1.6;">${quickInsight}</div>
+                </div>
+            ` : ""}
         `;
 
         const existingPanel = overlay.querySelector('.advanced-insights-panel');
@@ -363,25 +379,32 @@ class App {
             };
         });
 
+        overlay.classList.remove('history-mode'); 
+
         // Link Consult Mentor button directly to AI view with record
         const askAiBtn = overlay.querySelector('#ask-mentor-result');
         const reTossBtn = overlay.querySelector('#re-toss');
-        const isHistory = !!recordId;
 
-        if (askAiBtn) askAiBtn.style.display = isHistory ? 'none' : 'block';
-        if (reTossBtn) reTossBtn.style.display = isHistory ? 'none' : 'block';
+        // USER CLARIFICATION: Always show buttons in the result overlay.
+        // They are only hidden in the "Day Selection" list view.
+        if (askAiBtn) {
+            askAiBtn.style.setProperty('display', 'block', 'important');
+        }
+        if (reTossBtn) {
+            reTossBtn.style.setProperty('display', isHistory ? 'none' : 'block', 'important');
+        }
 
-        if (askAiBtn && !isHistory) {
+        if (askAiBtn) {
             askAiBtn.onclick = () => {
                 const question = document.getElementById('user-question')?.value || "隨喜求卦";
                 overlay.classList.add('hidden');
 
                 // CRITICAL: Set state before switching/sending
                 this.currentHexData = original;
-                this.currentRecordId = recordId;
+                this.currentRecordId = recordId || this.currentRecordId;
 
                 this.switchView('ai-mentor');
-                this.prepareAIMentorView(original, recordId);
+                this.prepareAIMentorView(original, this.currentRecordId);
 
                 // Auto-send first message if empty
                 if (this.chatMessages.length === 0) {
@@ -412,7 +435,8 @@ class App {
                 `本卦：${original.name}${meta.hasChange ? " 之 " + future.name : ""}\n` +
                 `二进制：${meta.originalBinary}\n\n` +
                 `[納甲資訊]\n${original.najia_analysis?.palace}宮 [${original.najia_analysis?.palace_wuxing}]\n${linesText}\n\n` +
-                `解義：${original.summary}\n` +
+                `解義：${original.summary}\n\n` +
+                (quickInsight ? `[AI 初步解析]\n${quickInsight.replace(/<[^>]*>/g, '')}\n\n` : "") +
                 `#IChingLab #易經 #術數`;
 
             navigator.clipboard.writeText(text).then(() => {
@@ -1731,7 +1755,7 @@ class App {
             originalBinary: record.originalBinary || "000000",
             hasChange: record.hasChange,
             changingLines: record.changingLines || []
-        }, recordId);
+        }, recordId, true);
     }
 
     showHexagramDetailById(hexId, recordId) {
@@ -2183,4 +2207,5 @@ class App {
 // Start the app
 window.addEventListener('DOMContentLoaded', () => {
     window.ichingApp = new App();
+    window.app = window.ichingApp; // Compatibility for inline onclick
 });
