@@ -828,6 +828,12 @@ class App {
             view.classList.toggle('active', view.id === activeViewId);
         });
 
+        // Update History Title based on Mode
+        const historyTitle = document.getElementById('history-main-title');
+        if (historyTitle) {
+            historyTitle.innerText = this.currentMode === 'tarot' ? '每日抽卡紀錄' : '每日抽爻紀錄';
+        }
+
         this.renderView();
     }
 
@@ -1514,7 +1520,7 @@ class App {
         body.innerHTML = `
             <div class="modal-header-flex">
                 <div class="calendar-icon-header" style="font-size: 1.5rem;">📅</div>
-                <h2>${this.calendarYear}年${this.calendarMonth + 1}月${day}日 的占卜紀錄</h2>
+                <h2>${this.calendarYear}年${this.calendarMonth + 1}月${day}日 的每日抽卡紀錄</h2>
             </div>
             
             <div class="day-selection-list" style="margin-top: 20px; display: flex; flex-direction: column; gap: 15px;">
@@ -1565,9 +1571,9 @@ class App {
                         <div class="item-info" style="flex: 1;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                                 <span style="font-size: 0.8rem; background: rgba(212, 175, 55, 0.2); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px;">${time}</span>
-                                <strong style="color: var(--text-primary);">塔羅占卜 (${cardCount} 牌)</strong>
+                                <strong style="color: var(--text-primary);">每日抽卡紀錄 (${cardCount} 牌)</strong>
                             </div>
-                            <div style="font-size: 0.9rem; color: var(--text-secondary);">${record.question || '塔羅占卜'}</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">${record.question || '每日抽卡紀錄'}</div>
                             ${cardsDisplayStr}
                         </div>
                         <div class="item-actions" style="display: flex; gap: 8px;">
