@@ -365,22 +365,30 @@ class App {
 
         // Link Consult Mentor button directly to AI view with record
         const askAiBtn = overlay.querySelector('#ask-mentor-result');
-        askAiBtn.onclick = () => {
-            const question = document.getElementById('user-question')?.value || "隨喜求卦";
-            overlay.classList.add('hidden');
+        const reTossBtn = overlay.querySelector('#re-toss');
+        const isHistory = !!recordId;
 
-            // CRITICAL: Set state before switching/sending
-            this.currentHexData = original;
-            this.currentRecordId = recordId;
+        if (askAiBtn) askAiBtn.style.display = isHistory ? 'none' : 'block';
+        if (reTossBtn) reTossBtn.style.display = isHistory ? 'none' : 'block';
 
-            this.switchView('ai-mentor');
-            this.prepareAIMentorView(original, recordId);
+        if (askAiBtn && !isHistory) {
+            askAiBtn.onclick = () => {
+                const question = document.getElementById('user-question')?.value || "隨喜求卦";
+                overlay.classList.add('hidden');
 
-            // Auto-send first message if empty
-            if (this.chatMessages.length === 0) {
-                this.handleSendChat(`針對在此次「${question}」的占卜中，請導師為我開示此卦。`);
-            }
-        };
+                // CRITICAL: Set state before switching/sending
+                this.currentHexData = original;
+                this.currentRecordId = recordId;
+
+                this.switchView('ai-mentor');
+                this.prepareAIMentorView(original, recordId);
+
+                // Auto-send first message if empty
+                if (this.chatMessages.length === 0) {
+                    this.handleSendChat(`針對在此次「${question}」的占卜中，請導師為我開示此卦。`);
+                }
+            };
+        }
 
         // Link Copy button
         const copyBtn = overlay.querySelector('#copy-result');
@@ -412,6 +420,23 @@ class App {
                 copyBtn.innerText = "已複製資訊！";
                 setTimeout(() => copyBtn.innerText = oldText, 2000);
             });
+        };
+
+        const closeOverlayBtn = overlay.querySelector('#close-result-overlay');
+        if (closeOverlayBtn) {
+            closeOverlayBtn.onclick = (e) => {
+                if (e) e.stopPropagation();
+                overlay.classList.add('hidden');
+                this.resultSource = null;
+            };
+        }
+
+        // Failsafe: Background click to close overlay
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                overlay.classList.add('hidden');
+                this.resultSource = null;
+            }
         };
     }
 
@@ -1323,27 +1348,23 @@ class App {
             </details>
         `;
 
-        // Switch button logic to point to main AI View (Defensive check for missing button)
+        // Switch button logic to point to main AI View
         const askAiBtn = document.getElementById('ask-ai');
+        const isHistory = !!(recordId && recordId !== "null" && recordId !== "");
+        
         if (askAiBtn) {
-            // Toggle history-mode class to hide button via CSS
-            const isHistory = recordId && recordId !== "null" && recordId !== "";
-            modal.classList.toggle('history-mode', !!isHistory);
+            modal.classList.toggle('history-mode', isHistory);
+            askAiBtn.style.display = isHistory ? 'none' : 'block';
 
-            askAiBtn.onclick = () => {
-                modal.classList.remove('active');
-                this.switchView('ai-mentor');
-            };
+            if (!isHistory) {
+                askAiBtn.onclick = () => {
+                    modal.classList.remove('active');
+                    this.switchView('ai-mentor');
+                };
+            }
         }
 
-        // Consistent close button handling
-        const closeBtn = modal.querySelector('.close-modal') || modal.querySelector('.close-btn');
-        if (closeBtn) {
-            closeBtn.onclick = () => {
-                modal.classList.remove('active');
-                document.body.style.overflow = '';
-            };
-        }
+        this.bindModalEvents(modal);
 
         modal.classList.add('active');
         document.body.style.overflow = 'hidden'; // Stop background scroll
@@ -1484,6 +1505,10 @@ class App {
 
     showDaySelectionModal(day, records) {
         const modal = document.getElementById('detail-modal');
+        modal.classList.add('history-mode');
+        const askAiBtn = document.getElementById('ask-ai');
+        if (askAiBtn) askAiBtn.style.display = 'none';
+
         const body = modal.querySelector('.modal-body');
 
         body.innerHTML = `
@@ -1572,7 +1597,26 @@ class App {
             </div>
         `;
 
+        this.bindModalEvents(modal);
         modal.classList.add('active');
+    }
+
+    bindModalEvents(modal) {
+        const closeBtns = modal.querySelectorAll('.close-modal, .close-btn');
+        closeBtns.forEach(btn => {
+            btn.onclick = (e) => {
+                if (e) e.preventDefault();
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            };
+        });
+
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        };
     }
 
     async showHistoryTarotResult(recordId) {
@@ -1588,6 +1632,11 @@ class App {
 
     async renderTarotHistoryDetail(record) {
         const modal = document.getElementById('detail-modal');
+        modal.classList.add('history-mode'); // Hide floating Ask AI button
+        
+        const askAiBtn = document.getElementById('ask-ai');
+        if (askAiBtn) askAiBtn.style.display = 'none';
+
         const body = modal.querySelector('.modal-body');
         
         const spreadCards = record.spread || [];
@@ -1653,13 +1702,7 @@ class App {
             };
         }
 
-        const closeBtn = body.querySelector('.close-modal');
-        if (closeBtn) {
-            closeBtn.onclick = () => {
-                modal.classList.remove('active');
-                document.body.style.overflow = '';
-            };
-        }
+        this.bindModalEvents(modal);
     }
 
     showHistoryResultOverlay(recordId) {

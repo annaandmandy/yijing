@@ -2866,3 +2866,13 @@ canvas {
     box-shadow: 0 0 20px var(--purple-glow) !important;
     transform: translateY(-2px);
 }
+
+/* Hide scrollbars globally while allowing scrolling */
+* {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
