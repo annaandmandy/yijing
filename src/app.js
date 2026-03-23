@@ -1928,7 +1928,8 @@ class App {
         }
 
         const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
-        const count = spreadType === 'one-card' ? 1 : 3;
+        const config = this.getTarotSpreadConfig(spreadType);
+        const count = config.count;
         const pickEl = document.getElementById('cards-to-pick');
         if (pickEl) pickEl.innerText = count;
 
@@ -1995,15 +1996,21 @@ class App {
                 };
 
                 card.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); // Prevent ghost clicks
                     // Start tracking on fan container to avoid event bubbling issues
                     fan.addEventListener('touchmove', handleTouchMove, { passive: true });
                     fan.addEventListener('touchend', handleTouchEnd, { once: true });
                     
+                    // Clear other hovers first
+                    fan.querySelectorAll('.fan-card').forEach(c => c.classList.remove('hover-touch'));
                     card.classList.add('hover-touch');
                     this.lastTouchedCard = card;
                 });
 
-                card.onclick = () => this.handleTarotPickCard(card, i);
+                card.onclick = (e) => {
+                    if (e.pointerType === 'touch') return; // Handled by touchend
+                    this.handleTarotPickCard(card, i);
+                };
                 fan.appendChild(card);
             }
         } else {
@@ -2036,7 +2043,8 @@ class App {
         if (cardEl.classList.contains('picked')) return;
 
         const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
-        const max = spreadType === 'one-card' ? 1 : 3;
+        const config = this.getTarotSpreadConfig(spreadType);
+        const max = config.count;
 
         if (this.tarotPickedCards.length >= max) return;
 
@@ -2044,9 +2052,12 @@ class App {
         cardEl.classList.add('picked');
 
         // Pick card from the pre-shuffled deck using the fan index
-        // This ensures every card in the fan corresponds to a unique card in the deck
         const cardData = this.tarotDeck[index];
         this.tarotPickedCards.push(cardData);
+
+        // Update UI counter
+        const pickEl = document.getElementById('cards-to-pick');
+        if (pickEl) pickEl.innerText = max - this.tarotPickedCards.length;
 
         if (this.tarotPickedCards.length === max) {
             setTimeout(() => this.showTarotResults(), 800);
