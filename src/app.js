@@ -1104,8 +1104,8 @@ class App {
             // Generate symbol for card
             let symbolHtml = '<div class="card-symbol">';
             // In our data, binary string "111000" where index 0 is line 1 (bottom).
-            // Our CSS uses flex-direction: column-reverse, so appending lines in order 0-5 will show them 1-6 from bottom up.
-            hex.binary.split('').forEach(char => {
+            // We reverse it to render from top to bottom visually (6th line at top, 1st line at bottom).
+            hex.binary.split('').reverse().forEach(char => {
                 symbolHtml += `<div class="hex-line ${char === '1' ? 'yang' : 'yin'}"></div>`;
             });
             symbolHtml += '</div>';
@@ -1318,9 +1318,12 @@ class App {
 
     renderMiniHexSymbol(binary) {
         if (!binary || binary.length !== 6) return '';
+        // I-Ching lines are read from bottom to top. 
+        // Our binary is index 0 = line 1 (bottom).
+        // So we reverse it before rendering to stack from top-down visually.
         return `
             <div class="mini-hex-symbol">
-                ${binary.split('').map(b => `<div class="line ${b === '0' ? 'yin' : 'yang'}"></div>`).join('')}
+                ${binary.split('').reverse().map(b => `<div class="line ${b === '0' ? 'yin' : 'yang'}"></div>`).join('')}
             </div>
         `;
     }
