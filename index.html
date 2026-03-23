@@ -35,7 +35,24 @@
             <section id="tabletop" class="view active">
                 <div class="question-container">
                     <input type="text" id="user-question" placeholder="輸入你想問的事（今日運勢、創業建議）..." class="glass-input">
+                    <div class="casting-mode-switcher mini-row">
+                        <button class="mode-btn active" data-mode="coin">金錢卦 (投擲)</button>
+                        <button class="mode-btn" data-mode="plum">梅花易數 (數字)</button>
+                    </div>
                 </div>
+
+                <div id="plum-blossom-input" class="plum-input-zone hidden">
+                    <div class="plum-form glass-panel">
+                        <h3>輸入三個數字（或時間、顏色、景物轉化）</h3>
+                        <div class="input-row">
+                            <input type="number" id="plum-n1" placeholder="數字一" class="glass-input">
+                            <input type="number" id="plum-n2" placeholder="數字二" class="glass-input">
+                            <input type="number" id="plum-n3" placeholder="數字三" class="glass-input">
+                        </div>
+                        <button id="plum-submit" class="btn-primary gold-glow">生成梅花卦</button>
+                    </div>
+                </div>
+
                 <div id="canvas-container">
                     <div class="instruction">震動手機或按住拖拽以投擲</div>
                     <div id="casting-progress" class="glass-panel"></div>

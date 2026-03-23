@@ -34,13 +34,81 @@
 .question-container {
     position: absolute;
     top: calc(70px + 20px + var(--safe-top));
-    /* Elevated to top, but below nav */
     left: 50%;
     transform: translateX(-50%);
-    z-index: 500;
-    /* Below result but above canvas */
+    z-index: 1500;
     width: 90%;
     max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.casting-mode-switcher {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05); /* Even subtler */
+}
+
+.casting-mode-switcher .mode-btn {
+    background: transparent;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 15px;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition-smooth);
+}
+
+.casting-mode-switcher .mode-btn.active {
+    background: var(--accent-gold);
+    color: #000;
+    font-weight: 600;
+}
+
+.plum-input-zone {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1500;
+    width: 90%;
+    max-width: 420px;
+}
+
+.plum-form {
+    text-align: center;
+    padding: 25px !important;
+}
+
+.plum-form h3 {
+    font-size: 1rem;
+    color: var(--accent-gold);
+    margin-bottom: 15px;
+}
+
+.plum-form .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.plum-form .glass-input {
+    text-align: center;
+    padding: 15px;
+    font-size: 1.1rem;
+    border-radius: 12px;
+}
+
+#plum-submit {
+    padding: 12px 30px;
+    font-size: 1rem;
+    border-radius: 30px;
 }
 
 .glass-input {
@@ -224,7 +292,7 @@ canvas {
     max-width: 450px;
     text-align: center;
     transition: var(--transition-smooth);
-    z-index: 1100;
+    z-index: 3000;
     max-height: 85vh;
     overflow-y: auto;
     scrollbar-width: thin;

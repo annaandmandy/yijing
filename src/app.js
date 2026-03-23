@@ -15,6 +15,7 @@ import { HEXAGRAM_ELEMENTS, HEXAGRAM_PHONETICS } from './constants.js';
 import { TarotEngine } from './engine/TarotEngine.js';
 import { TarotService } from './services/TarotService.js';
 import { SettingsService } from './services/SettingsService.js';
+import { PlumBlossomEngine } from './engine/PlumBlossomEngine.js';
 
 class App {
     constructor() {
@@ -41,6 +42,7 @@ class App {
         this.tarotStep = 'intro'; // 'intro', 'shuffling', 'selection', 'result'
         this.tarotPickedCards = [];
         this.tarotShuffleCount = 0;
+        this.ichingMode = 'coin'; // 'coin' or 'plum'
 
         window.app = this; // Global reference for inline oncilcks
         this.init();
@@ -62,6 +64,7 @@ class App {
         this.setupModeSwitcher();
         this.setupSettingsListeners();
         this.setupTarotEvents();
+        this.setupPlumBlossomEvents();
 
         this.updateNavLabels();
 
@@ -95,7 +98,9 @@ class App {
             // Allow next toss after a short delay
             setTimeout(() => {
                 const instruction = document.querySelector('.instruction');
-                instruction.innerText = `第 ${this.currentTosses.length + 1} 次投擲 (已完成 ${this.currentTosses.length}/6)`;
+                if (instruction) {
+                    instruction.innerText = `第 ${this.currentTosses.length + 1} 次投擲 (已完成 ${this.currentTosses.length}/6)`;
+                }
             }, 1000);
         } else {
             this.finishDivination();
@@ -200,6 +205,13 @@ class App {
         }
 
         const overlay = document.getElementById('result-overlay');
+        
+        // Hide inputs to prevent overlap/distraction
+        const qContainer = document.querySelector('.question-container');
+        const plumZone = document.getElementById('plum-blossom-input');
+        if (qContainer) qContainer.style.display = 'none';
+        if (plumZone) plumZone.style.display = 'none';
+
         const nameEl = overlay.querySelector('.hex-name');
         const binaryEl = overlay.querySelector('.binary-display');
         const summaryEl = overlay.querySelector('.hex-summary');
@@ -255,6 +267,20 @@ class App {
                 </div>
                 ` : ''}
             </div>
+
+            ${meta.isPlum && meta.plumResult ? `
+            <div class="plum-analysis-box glass-panel" style="margin: 20px 0; border: 1px solid var(--accent-gold);">
+                <h4 style="color: var(--accent-gold); margin-bottom: 10px;">梅花易數：體用分析</h4>
+                <div style="display: flex; justify-content: space-around; margin-bottom: 10px; font-size: 0.9rem;">
+                    <div><strong>體卦：</strong>${meta.plumResult.analysis.bodyTrigram.name} (${meta.plumResult.analysis.bodyTrigram.wuxing})</div>
+                    <div><strong>用卦：</strong>${meta.plumResult.analysis.guestTrigram.name} (${meta.plumResult.analysis.guestTrigram.wuxing})</div>
+                </div>
+                <div style="padding: 10px; background: rgba(212, 175, 55, 0.1); border-radius: 10px;">
+                    <div style="font-weight: bold; margin-bottom: 5px;">關係：${meta.plumResult.analysis.interaction}</div>
+                    <p style="font-size: 0.9rem; margin: 0;">${meta.plumResult.analysis.result}</p>
+                </div>
+            </div>
+            ` : ''}
         `;
 
         binaryEl.innerText = meta.originalBinary;
@@ -397,14 +423,11 @@ class App {
         if (askAiBtn) {
             askAiBtn.onclick = () => {
                 const question = document.getElementById('user-question')?.value || "隨喜求卦";
-                overlay.classList.add('hidden');
-
-                // CRITICAL: Set state before switching/sending
-                this.currentHexData = original;
-                this.currentRecordId = recordId || this.currentRecordId;
-
                 this.switchView('ai-mentor');
                 this.prepareAIMentorView(original, this.currentRecordId);
+
+                // Hide overlay and restore inputs if needed (though switching view hides it too)
+                this.hideResultOverlay();
 
                 // Auto-send first message if empty
                 if (this.chatMessages.length === 0) {
@@ -450,18 +473,34 @@ class App {
         if (closeOverlayBtn) {
             closeOverlayBtn.onclick = (e) => {
                 if (e) e.stopPropagation();
-                overlay.classList.add('hidden');
-                this.resultSource = null;
+                this.hideResultOverlay();
             };
         }
 
         // Failsafe: Background click to close overlay
         overlay.onclick = (e) => {
             if (e.target === overlay) {
-                overlay.classList.add('hidden');
-                this.resultSource = null;
+                this.hideResultOverlay();
             }
         };
+    }
+
+    hideResultOverlay() {
+        const overlay = document.getElementById('result-overlay');
+        if (overlay) overlay.classList.add('hidden');
+        
+        // Restore input and mode switcher
+        const qContainer = document.querySelector('.question-container');
+        const plumZone = document.getElementById('plum-blossom-input');
+        
+        if (qContainer) qContainer.style.display = 'flex';
+        // Only show plum zone if we are in plum mode
+        if (this.ichingMode === 'plum' && plumZone) {
+            plumZone.style.display = 'block';
+        }
+
+        this.resultSource = null;
+        document.querySelector('.instruction').classList.remove('hidden');
     }
 
     highlightYongShen(type, hex) {
@@ -2296,6 +2335,83 @@ class App {
             console.error("Auto interpretation failed:", error);
             analysisText.innerText = "星象觀測受阻，請點選「詳細解牌」按鈕。";
         }
+    }
+    setupPlumBlossomEvents() {
+        const modeBtns = document.querySelectorAll('.casting-mode-switcher .mode-btn');
+        const coinZone = document.getElementById('canvas-container');
+        const plumZone = document.getElementById('plum-blossom-input');
+
+        modeBtns.forEach(btn => {
+            btn.onclick = () => {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.ichingMode = btn.dataset.mode;
+
+                if (this.ichingMode === 'plum') {
+                    if (coinZone) coinZone.classList.add('hidden');
+                    if (plumZone) plumZone.classList.remove('hidden');
+                } else {
+                    if (plumZone) plumZone.classList.add('hidden');
+                    if (coinZone) coinZone.classList.remove('hidden');
+                }
+            };
+        });
+
+        const submitBtn = document.getElementById('plum-submit');
+        if (submitBtn) {
+            submitBtn.onclick = () => this.handlePlumBlossomSubmit();
+        }
+    }
+
+    async handlePlumBlossomSubmit() {
+        const n1 = parseInt(document.getElementById('plum-n1').value);
+        const n2 = parseInt(document.getElementById('plum-n2').value);
+        const n3 = parseInt(document.getElementById('plum-n3').value);
+
+        if (isNaN(n1) || isNaN(n2) || isNaN(n3)) {
+            alert('請輸入三個有效的數字');
+            return;
+        }
+
+        console.log(`Generating Plum Blossom for: ${n1}, ${n2}, ${n3}`);
+        const result = PlumBlossomEngine.calculateFromNumbers(n1, n2, n3);
+        
+        // Match with library to get hexagram details
+        const hex = this.library.find(h => h.binary === result.binary);
+        if (!hex) {
+            console.error("Could not find hexagram for binary:", result.binary);
+            return;
+        }
+
+        this.currentHexData = hex;
+        // Inject Plum Blossom analysis for AI context
+        this.currentHexData.plumAnalysis = result;
+
+        // Save to Journal
+        const recordId = JournalService.saveRecord({
+            question: document.getElementById('user-question')?.value || "梅花易數求卦",
+            originalId: hex.id,
+            originalBinary: result.binary,
+            originalName: hex.name,
+            movingLine: result.movingLine,
+            isPlum: true,
+            plumResult: result,
+            advancedTheory: {
+                relations: PlumBlossomEngine.calculateFromNumbers(n1, n2, n3), // Reuse for theory
+                plum: result
+            }
+        });
+        this.currentRecordId = recordId;
+        this.chatMessages = [];
+
+        // Show result overlay (reusing Iching result UI)
+        this.showResultOverlay(hex, null, {
+            originalBinary: result.binary,
+            hasChange: false, 
+            movingLine: result.movingLine,
+            isPlum: true,
+            plumResult: result
+        }, recordId);
     }
 }
 
