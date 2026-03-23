@@ -63,6 +63,8 @@ class App {
         this.setupSettingsListeners();
         this.setupTarotEvents();
 
+        this.updateNavLabels();
+
         // Initial view render
         this.switchView(this.currentView);
 
@@ -777,7 +779,16 @@ class App {
             // Set active state initially
             if (btn.dataset.mode === this.currentMode) btn.classList.add('active');
             else btn.classList.remove('active');
+        });
 
+        // Restore initial tarot-mode class if applicable
+        if (this.currentMode === 'tarot') {
+            document.body.classList.add('tarot-mode');
+        } else {
+            document.body.classList.remove('tarot-mode');
+        }
+
+        document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.onclick = (e) => {
                 const mode = e.target.dataset.mode;
                 this.currentMode = mode;
@@ -796,14 +807,31 @@ class App {
                     document.body.classList.remove('tarot-mode');
                 }
 
+                this.updateNavLabels();
+
                 // Force switch to Tabletop view when changing mode
                 this.currentView = 'tabletop';
-                this.switchView('tabletop'); // Use switchView to handle mapping
+                this.switchView('tabletop');
             };
         });
+    }
 
-        // Initial Theme Apply
-        if (this.currentMode === 'tarot') document.body.classList.add('tarot-mode');
+    updateNavLabels() {
+        const isTarot = this.currentMode === 'tarot';
+        const navMap = {
+            'tabletop': isTarot ? '抽牌 Tabletop' : '抽爻 Tabletop',
+            'ai-mentor': '導師 AI Mentor',
+            'library': isTarot ? '塔羅牌大全' : '圖書館 Library',
+            'history': '每日紀錄 Journal',
+            'settings': '設定 Settings'
+        };
+
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            const href = link.getAttribute('href').substring(1);
+            if (navMap[href]) {
+                link.innerText = navMap[href];
+            }
+        });
     }
 
     setupSettingsListeners() {
@@ -825,10 +853,11 @@ class App {
 
     renderView() {
         // Dynamic Nav Labels
-        const navLibLink = document.getElementById('nav-library-link');
-        if (navLibLink) {
-            navLibLink.innerText = this.currentMode === 'tarot' ? '卡片圖鑑 Cards' : '圖書館 Library';
-        }
+        // This is now handled by updateNavLabels()
+        // const navLibLink = document.getElementById('nav-library-link');
+        // if (navLibLink) {
+        //     navLibLink.innerText = this.currentMode === 'tarot' ? '卡片圖鑑 Cards' : '圖書館 Library';
+        // }
 
         // Tarot Step Visibility
         if (this.currentMode === 'tarot' && (this.currentView === 'tabletop' || this.currentView === 'tarot')) {

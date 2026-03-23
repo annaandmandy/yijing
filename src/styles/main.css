@@ -1784,6 +1784,27 @@ canvas {
         content: "✍";
     }
 
+    /* Tarot Mode Icons */
+    .tarot-mode .nav-links a[href="#tabletop"]::before {
+        content: "🃏";
+    }
+
+    .tarot-mode .nav-links a[href="#ai-mentor"]::before {
+        content: "🔮";
+    }
+
+    .tarot-mode .nav-links a[href="#library"]::before {
+        content: "🎴";
+    }
+
+    .tarot-mode .nav-links a[href="#history"]::before {
+        content: "📓";
+    }
+
+    .tarot-mode .nav-links a[href="#settings"]::before {
+        content: "⚙️";
+    }
+
     #view-container {
         padding-top: var(--safe-top);
         padding-bottom: calc(75px + var(--safe-bottom));

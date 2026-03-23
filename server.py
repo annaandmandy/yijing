@@ -61,29 +61,33 @@ async def chat_endpoint(request: Request):
     current_prompt = formatted_messages.pop()["parts"][0]
 
     async def event_generator():
-        try:
-            # We use start_chat to maintain context if the SDK supports it, 
-            # or just pass the history to generate_content.
-            chat = model.start_chat(history=formatted_messages)
-            
-            # Use the system instruction by prefixing it if not already handled
-            # (Simplified for now: prefix the first prompt or use a special turn)
-            # Better: use model = genai.GenerativeModel(..., system_instruction=...)
-            
-            # Re-initialize model with system instruction if provided
-            local_model = genai.GenerativeModel(
-                model_name="gemini-2.5-flash",
-                system_instruction=system_instruction
-            )
-            local_chat = local_model.start_chat(history=formatted_messages)
-            
-            response = local_chat.send_message(current_prompt, stream=True)
-            
-            for chunk in response:
-                if chunk.text:
-                    yield chunk.text
-        except Exception as e:
-            yield f"Error: {str(e)}"
+        import time
+        max_retries = 2
+        
+        for attempt in range(max_retries):
+            try:
+                local_model = genai.GenerativeModel(
+                    model_name="gemini-2.5-flash",
+                    system_instruction=system_instruction
+                )
+                local_chat = local_model.start_chat(history=formatted_messages)
+                
+                response = local_chat.send_message(current_prompt, stream=True)
+                
+                for chunk in response:
+                    if chunk.text:
+                        yield chunk.text
+                break # Success, exit retry loop
+            except Exception as e:
+                error_msg = str(e)
+                if attempt < max_retries - 1 and "socket.send" in error_msg:
+                    time.sleep(1) # Wait before retry on socket errors
+                    continue
+                
+                if "socket.send" in error_msg:
+                    yield f"\n\n[導師感應中斷 (Network Error): 請再試一次]"
+                else:
+                    yield f"\n\n[Error: {error_msg}]"
 
     return StreamingResponse(event_generator(), media_type="text/plain")
 
