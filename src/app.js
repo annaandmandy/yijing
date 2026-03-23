@@ -463,13 +463,45 @@ class App {
             page.classList.toggle('active', page.id === `subpage-${subId}`);
         });
 
+        const isTarot = this.currentMode === 'tarot';
+
         if (subId === 'grid') {
-            if (this.currentMode === 'tarot') this.renderTarotLibrary();
+            if (isTarot) this.renderTarotLibrary();
             else this.renderLibrary();
         }
-        if (subId === 'bagua') this.renderBaguaDiagram();
-        if (subId === 'lookup') this.renderLookupTables();
-        if (subId === 'learn') this.renderLearnContent();
+        if (subId === 'bagua') {
+            if (isTarot) {
+                const container = document.getElementById('bagua-diagram-container');
+                if (container) {
+                    container.innerHTML = '<div id="tarot-bagua-content"></div>';
+                    this.fetchAndRenderMarkdown('/tarot_data/study/four_elements.md', 'tarot-bagua-content');
+                }
+            } else {
+                this.renderBaguaDiagram();
+            }
+        }
+        if (subId === 'lookup') {
+            if (isTarot) {
+                const container = document.querySelector('#subpage-lookup .lookup-tables');
+                if (container) {
+                    container.innerHTML = '<div id="tarot-lookup-content" class="glass-panel"></div>';
+                    this.fetchAndRenderMarkdown('/tarot_data/study/astrology_correspondences.md', 'tarot-lookup-content');
+                }
+            } else {
+                this.renderLookupTables();
+            }
+        }
+        if (subId === 'learn') {
+            if (isTarot) {
+                const container = document.querySelector('#subpage-learn .learn-content');
+                if (container) {
+                    container.innerHTML = '<div id="tarot-learn-content"></div>';
+                    this.fetchAndRenderMarkdown('/tarot_data/study/mysticism_intro.md', 'tarot-learn-content');
+                }
+            } else {
+                this.renderLearnContent();
+            }
+        }
 
         console.log(`Switched Library to subpage: ${subId}`);
     }
@@ -832,6 +864,54 @@ class App {
                 link.innerText = navMap[href];
             }
         });
+
+        this.updateLibraryLabels();
+    }
+
+    updateLibraryLabels() {
+        const isTarot = this.currentMode === 'tarot';
+        const selectors = [
+            { sub: 'grid', iching: '卦象', tarot: '牌卡圖鑑' },
+            { sub: 'bagua', iching: '八卦圖', tarot: '四大元素' },
+            { sub: 'lookup', iching: '進階', tarot: '占星對應' },
+            { sub: 'learn', iching: '自學', tarot: '神祕學入門' }
+        ];
+
+        selectors.forEach(sel => {
+            const btn = document.querySelector(`.sub-nav-btn[data-sub="${sel.sub}"]`);
+            if (btn) btn.innerText = isTarot ? sel.tarot : sel.iching;
+        });
+
+        const gridH2 = document.querySelector('#subpage-grid .header h2');
+        if (gridH2) gridH2.innerText = isTarot ? '塔羅牌卡圖鑑' : '全卦圖書館';
+
+        const baguaH2 = document.querySelector('#subpage-bagua .header h2');
+        if (baguaH2) baguaH2.innerText = isTarot ? '四大元素對應' : '八卦示意圖';
+
+        const lookupH2 = document.querySelector('#subpage-lookup .header h2');
+        if (lookupH2) lookupH2.innerText = isTarot ? '牌卡占星對應' : '進階對照工具';
+
+        const learnH2 = document.querySelector('#subpage-learn .header h2');
+        if (learnH2) learnH2.innerText = isTarot ? '神祕學入門指南' : '自學與導航';
+    }
+
+    async fetchAndRenderMarkdown(url, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '<div class="loading" style="padding: 20px; text-align: center; color: var(--accent-gold);">加載知識庫中...</div>';
+        try {
+            // Append timestamp to prevent caching during dev
+            const res = await fetch(`${url}?t=${new Date().getTime()}`);
+            if (!res.ok) throw new Error('無法讀取知識庫文件');
+            const text = await res.text();
+            if (window.marked) {
+                container.innerHTML = `<div class="markdown-body learn-article" style="line-height: 1.6; color: var(--text-primary); padding: 15px;">${window.marked.parse(text)}</div>`;
+            } else {
+                container.innerText = text;
+            }
+        } catch (e) {
+            container.innerHTML = `<div class="error" style="color: red; padding: 20px; text-align: center;">加載失敗：${e.message}</div>`;
+        }
     }
 
     setupSettingsListeners() {
@@ -883,10 +963,10 @@ class App {
         } else if (this.currentView === 'ai-mentor') {
             if (this.currentRecordId && !this.currentHexData) {
                 const record = JournalService.getRecord(this.currentRecordId);
-                if (record && record.mode === 'iching' && record.originalId) {
+                if (record && (!record.type || record.type === 'iching') && record.originalId) {
                     const hex = this.library.find(h => h.id === record.originalId);
                     this.prepareAIMentorView(hex, this.currentRecordId);
-                } else if (record && record.mode === 'tarot') {
+                } else if (record && record.type === 'tarot') {
                     this.prepareAIMentorView(null, this.currentRecordId);
                 } else {
                     const history = document.getElementById('chat-history-main');
@@ -993,8 +1073,9 @@ class App {
         const daysInMonth = new Date(this.calendarYear, this.calendarMonth + 1, 0).getDate();
         const prevMonthDays = new Date(this.calendarYear, this.calendarMonth, 0).getDate();
 
-        // Get Records for the month
-        const records = JournalService.getMonthlyHistory(this.calendarYear, this.calendarMonth);
+        // Get Records for the month based on current mode
+        const currentMode = this.currentMode || 'iching';
+        const records = JournalService.getMonthlyHistory(this.calendarYear, this.calendarMonth, currentMode);
         const recordMap = {};
         records.forEach(r => {
             const day = new Date(r.date).getDate();
@@ -1038,7 +1119,8 @@ class App {
     }
 
     updateMonthlyStats() {
-        const stats = JournalService.getMonthlyStats(this.calendarYear, this.calendarMonth, this.library);
+        const currentMode = this.currentMode || 'iching';
+        const stats = JournalService.getMonthlyStats(this.calendarYear, this.calendarMonth, this.library, currentMode);
         const ctx = document.getElementById('radar-chart').getContext('2d');
         const summaryEl = document.getElementById('stats-summary');
 
@@ -1048,11 +1130,16 @@ class App {
         if (this.radarChart) this.radarChart.destroy();
 
         if (stats.total === 0) {
-            summaryEl.innerHTML = "<p>本月尚無紀錄，快去開啟您的易經探索吧！</p>";
+            summaryEl.innerHTML = currentMode === 'tarot' 
+                ? "<p>本月尚無紀錄，快去開啟您的塔羅探索吧！</p>"
+                : "<p>本月尚無紀錄，快去開啟您的易經探索吧！</p>";
             // Empty Chart
             this.radarChart = new Chart(ctx, {
                 type: 'radar',
-                data: { labels: ['金', '木', '水', '火', '土'], datasets: [] },
+                data: { 
+                    labels: currentMode === 'tarot' ? ['權杖(火)', '聖杯(水)', '寶劍(風)', '金幣(土)', '大序'] : ['金', '木', '水', '火', '土'], 
+                    datasets: [] 
+                },
                 options: { scales: { r: { display: false } } }
             });
             return;
@@ -1068,17 +1155,25 @@ class App {
             }
         }
 
-        const descriptions = {
-            "木": "木氣充盈，代表本月您的能量集中在「成長」與「開拓」上。適合啟動新計畫或自我提升。",
-            "火": "火氣旺盛，顯示本月生活節奏快且充滿熱情。注意情緒管理，轉化衝動為行動力。",
-            "土": "土氣沈穩，象徵著安定與收穫。本月適合守成、反思或處理與家庭、根基相關的事宜。",
-            "金": "金氣銳利，代表果斷與原則。本月您的決策力和執行力極佳，適合解決積壓已久的難題。",
-            "水": "水氣靈動，象徵智慧與變化。本月您的直覺敏銳，適合深度思考與人際交流的柔性處理。"
+        const ichingDesc = {
+            "木": "木氣充盈，代表本月您的能量集中在「成長」與「開拓」上。",
+            "火": "火氣旺盛，顯示本月生活節奏快且充滿熱情。注意情緒管理。",
+            "土": "土氣沈穩，象徵著安定與收穫。適合守成、反思。",
+            "金": "金氣銳利，代表果斷與原則。決策力和執行力極佳。",
+            "水": "水氣靈動，象徵智慧與變化。直覺敏銳，適合深度思考。"
         };
+        const tarotDesc = {
+            "權杖(火)": "火元素豐盛，充滿創造力與行動力，是適合衝刺與展現熱情的時期。",
+            "聖杯(水)": "水元素豐盛，情感與直覺強烈，適合關注內心世界與人際關係。",
+            "寶劍(風)": "風元素豐盛，理智與思考主導，可能會面臨決策或溝通上的挑戰與突破。",
+            "金幣(土)": "土元素豐盛，關注現實與基礎，適合累積財富、規劃事業或享受生活。",
+            "大序": "大阿爾克那出現頻繁，代表本月面臨重大的靈魂課題或人生轉折點。"
+        };
+        const descriptions = currentMode === 'tarot' ? tarotDesc : ichingDesc;
 
         summaryEl.innerHTML = `
-            <p>本月共計 <strong>${stats.total}</strong> 次占卜。</p>
-            <p>主導能量：<strong>${dominant}</strong> 元素</p>
+            <p>本月共計 <strong>${stats.total}</strong> 次${currentMode === 'tarot' ? '塔羅占卜' : '易經占卜'}。</p>
+            <p>主導能量：<strong>${dominant}</strong></p>
             <p>${descriptions[dominant] || ''}</p>
         `;
 
@@ -1087,7 +1182,7 @@ class App {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: '五行強度',
+                    label: currentMode === 'tarot' ? '塔羅牌元素' : '五行強度',
                     data: values,
                     backgroundColor: 'rgba(212, 175, 55, 0.2)',
                     borderColor: '#d4af37',
@@ -1255,14 +1350,13 @@ class App {
 
         const currentRecord = JournalService.getRecord(recordId || this.currentRecordId);
 
-        if (currentRecord && currentRecord.mode === 'tarot') {
-            const cardNames = currentRecord.spreadDetails.map(c => c.name).join(' + ');
-            header.innerText = `塔羅占：${cardNames}`;
+        if (currentRecord && currentRecord.type === 'tarot') {
+            header.innerText = `塔羅占卜紀錄`;
             this.currentHexData = null; // Clear hex data for tarot readings
         } else if (hex) { // This is for I-Ching hexagrams passed directly
             header.innerText = `${hex.name}卦 (#${hex.id})`;
             this.currentHexData = hex;
-        } else if (currentRecord && currentRecord.mode === 'iching' && currentRecord.originalId) { // If record is I-Ching but hex wasn't passed directly
+        } else if (currentRecord && (currentRecord.type === 'iching' || !currentRecord.type) && currentRecord.originalId) { // If record is I-Ching but hex wasn't passed directly
             const recordHex = this.library.find(h => h.id === currentRecord.originalId);
             if (recordHex) {
                 header.innerText = `${recordHex.name}卦 (#${recordHex.id})`;
@@ -1284,7 +1378,8 @@ class App {
         if (this.chatMessages.length > 0) {
             this.chatMessages.forEach(msg => this.appendMessageToUI(msg.role, msg.content));
         } else {
-            chatHistory.innerHTML = `<p class="empty-state">點擊發送按鈕或輸入疑問，與導師探討「${hex.name}卦」的深層意涵。</p>`;
+            const emptyHint = currentRecord?.type === 'tarot' ? '點擊發送按鈕或輸入疑問，與導師探討此次塔羅占卜的深層意涵。' : `點擊發送按鈕或輸入疑問，與導師探討「${hex?.name || ''}卦」的深層意涵。`;
+            chatHistory.innerHTML = `<p class="empty-state">${emptyHint}</p>`;
         }
 
         // Setup send click
@@ -1374,8 +1469,28 @@ class App {
             <div class="day-selection-list" style="margin-top: 20px; display: flex; flex-direction: column; gap: 15px;">
                 <p class="selection-hint" style="color: var(--text-secondary); font-size: 0.9rem;">當天共有 ${records.length} 筆紀錄，請選擇欲查看的項目：</p>
                 ${records.map(record => {
-            const hex = this.library.find(h => h.id === record.originalId);
             const time = new Date(record.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (record.type === 'tarot') {
+                const spreadCards = record.spread || [];
+                const cardCount = Array.isArray(spreadCards) ? spreadCards.length : spreadCards.split(',').length;
+                return `
+                    <div class="selection-item glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                        <div class="item-info" style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                                <span style="font-size: 0.8rem; background: rgba(212, 175, 55, 0.2); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px;">${time}</span>
+                                <strong style="color: var(--text-primary);">塔羅占卜 (${cardCount} 牌)</strong>
+                            </div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">${record.question || '塔羅占卜'}</div>
+                        </div>
+                        <div class="item-actions" style="display: flex; gap: 8px;">
+                            <button class="nav-btn gold" onclick="window.app.showHistoryTarotResult('${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">查看斷語</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const hex = this.library.find(h => h.id === record.originalId);
             return `
                         <div class="selection-item glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; gap: 15px;">
                             <div class="item-info" style="flex: 1;">
@@ -1396,6 +1511,14 @@ class App {
         `;
 
         modal.classList.add('active');
+    }
+
+    showHistoryTarotResult(recordId) {
+        const modal = document.getElementById('detail-modal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        this.switchView('ai-mentor');
+        this.prepareAIMentorView(null, recordId);
     }
 
     showHistoryResultOverlay(recordId) {
@@ -1466,8 +1589,11 @@ class App {
             `${pos}: ${card.id} (${card.isReversed ? '逆位' : '正位'})`
         ).join(', ');
 
-        const prompt = `你是一位精通西洋神祕學的塔羅導師。我剛在${context}中抽到了：${cardsStr}。
-        請以神祕、優雅且富有深度洞察力的語氣，為我揭示這些卡片背後的宇宙訊息與心靈啟示。`;
+        const questionEl = document.getElementById('tarot-question');
+        const question = questionEl ? questionEl.value.trim() : '';
+        const questionText = question ? `我的問題是：「${question}」。\n` : '';
+
+        const prompt = `你是一位精通西洋神祕學的塔羅導師。我剛在${context}中抽到了：${cardsStr}。\n${questionText}請以神祕、優雅且富有深度洞察力的語氣，為我揭示這些卡片背後的宇宙訊息與心靈啟示。`;
 
         this.switchView('ai-mentor');
         this.handleSendChat(prompt);
@@ -1666,6 +1792,16 @@ class App {
             }
 
             await this.renderTarotSpread();
+
+            const recordId = JournalService.saveRecord({
+                type: 'tarot',
+                question: document.getElementById('tarot-question')?.value || "塔羅占卜",
+                spread: Object.values(this.tarotSpread).map(c => c.id),
+                spreadType: spreadType
+            });
+            this.currentRecordId = recordId;
+            this.chatMessages = [];
+
             this.autoInterpretTarot();
         }, 600);
     }
@@ -1821,9 +1957,13 @@ class App {
                 `${pos}: ${card.id} (${card.isReversed ? '逆位' : '正位'})`
             ).join(', ');
 
+            const questionEl = document.getElementById('tarot-question');
+            const question = questionEl ? questionEl.value.trim() : '';
+            const questionText = question ? `\n            用戶提問：${question}` : '';
+
             const prompt = `你是一位神祕的塔羅占卜導師。請根據以下抽牌結果提供一段簡短（約 100 字）、充滿靈性且精確的初步解析。
             占卜情境：${context}
-            牌面：${cardsStr}
+            牌面：${cardsStr}${questionText}
             請直接開始解析，語氣要富有神祕感與詩意，精準點出核心能量。不要有開場白或自我介紹。`;
 
             const interpretation = await AIService.ask(prompt);

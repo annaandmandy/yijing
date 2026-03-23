@@ -16,6 +16,7 @@ export class JournalService {
       id: Date.now().toString(),
       date: new Date().toISOString(),
       messages: [], // Initialize empty chat
+      type: record.type || 'iching', // Default to iching for legacy
       ...record
     };
     history.unshift(newRecord);
@@ -63,19 +64,40 @@ export class JournalService {
   /**
    * Gets records for a specific month.
    */
-  static getMonthlyHistory(year, month) {
+  static getMonthlyHistory(year, month, type = null) {
     const history = this.getHistory();
     return history.filter(record => {
       const d = new Date(record.date);
-      return d.getFullYear() === year && d.getMonth() === month;
+      const isMonthMatch = d.getFullYear() === year && d.getMonth() === month;
+      const recType = record.type || 'iching'; // Legacy records are iching
+      return isMonthMatch && (type ? recType === type : true);
     });
   }
 
   /**
    * Gets statistics for a specific month (Five Elements distribution).
    */
-  static getMonthlyStats(year, month, library) {
-    const records = this.getMonthlyHistory(year, month);
+  static getMonthlyStats(year, month, library, type = 'iching') {
+    const records = this.getMonthlyHistory(year, month, type);
+
+    if (type === 'tarot') {
+      const suits = { "權杖(火)": 0, "聖杯(水)": 0, "寶劍(風)": 0, "金幣(土)": 0, "大序": 0 };
+      records.forEach(r => {
+        if (r.spread) {
+          const cardsStr = typeof r.spread === 'string' ? r.spread : r.spread.join(',');
+          const cardIds = cardsStr.split(',').map(s => parseInt(s));
+          cardIds.forEach(id => {
+            if (id >= 0 && id <= 21) suits['大序']++;
+            else if (id >= 22 && id <= 35) suits['權杖(火)']++;
+            else if (id >= 36 && id <= 49) suits['聖杯(水)']++;
+            else if (id >= 50 && id <= 63) suits['寶劍(風)']++;
+            else if (id >= 64 && id <= 77) suits['金幣(土)']++;
+          });
+        }
+      });
+      return { total: records.length, wuxing: suits };
+    }
+
     const wuxingCounters = { "金": 0, "木": 0, "水": 0, "火": 0, "土": 0 };
 
     records.forEach(record => {
