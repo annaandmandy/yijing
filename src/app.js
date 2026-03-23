@@ -279,6 +279,11 @@ class App {
                     <div style="font-weight: bold; margin-bottom: 5px;">關係：${meta.plumResult.analysis.interaction}</div>
                     <p style="font-size: 0.9rem; margin: 0;">${meta.plumResult.analysis.result}</p>
                 </div>
+                <div style="margin-top: 10px; text-align: center;">
+                    <button class="btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="window.app.showPlumTheory()">
+                        <i class="fas fa-book-open"></i> 進階說明：梅花易數原理
+                    </button>
+                </div>
             </div>
             ` : ''}
         `;
@@ -694,7 +699,16 @@ class App {
                     </tbody>
                 </table>
             </div>
+            <div class="lookup-card glass-panel" id="plum-theory-section">
+                <h3>梅花易數原理 (Plum Blossom Theory)</h3>
+                <div id="plum-theory-library-content" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary);">
+                    正在載入理論資料...
+                </div>
+            </div>
         `;
+        
+        // Auto-load the theory content
+        this.fetchAndRenderMarkdown('/yi_data_library/plum_blossom_theory.md', 'plum-theory-library-content');
     }
 
     renderLearnContent() {
@@ -853,7 +867,36 @@ class App {
             historyTitle.innerText = this.currentMode === 'tarot' ? '每日抽卡紀錄' : '每日抽爻紀錄';
         }
 
+        if (activeViewId === 'tabletop') {
+            this.restoreCastingInputs();
+        }
+
         this.renderView();
+    }
+
+    restoreCastingInputs() {
+        const qContainer = document.querySelector('.question-container');
+        const plumZone = document.getElementById('plum-blossom-input');
+        const coinZone = document.getElementById('canvas-container');
+        const instruction = document.querySelector('.instruction');
+
+        if (qContainer) qContainer.style.display = 'flex';
+        
+        if (this.ichingMode === 'plum') {
+            if (plumZone) {
+                plumZone.style.display = 'block';
+                plumZone.classList.remove('hidden');
+            }
+            if (coinZone) coinZone.classList.add('hidden');
+        } else {
+            if (plumZone) {
+                plumZone.classList.add('hidden');
+                plumZone.style.display = 'none';
+            }
+            if (coinZone) coinZone.classList.remove('hidden');
+        }
+
+        if (instruction) instruction.classList.remove('hidden');
     }
 
     setupModeSwitcher() {
@@ -2412,6 +2455,25 @@ class App {
             isPlum: true,
             plumResult: result
         }, recordId);
+    }
+    showPlumTheory() {
+        // Switch to library view
+        this.switchView('library');
+        // Switch to lookup/theory subpage
+        this.switchLibrarySubpage('lookup');
+        
+        // Wait for render, then fetch specific markdown
+        setTimeout(() => {
+            const container = document.getElementById('tarot-lookup-content') || 
+                            document.querySelector('#subpage-lookup .lookup-tables');
+            if (container) {
+                container.innerHTML = '<div id="plum-theory-content" class="glass-panel"></div>';
+                this.fetchAndRenderMarkdown('/yi_data_library/plum_blossom_theory.md', 'plum-theory-content');
+            }
+        }, 100);
+
+        // Hide overlay
+        this.hideResultOverlay();
     }
 }
 
