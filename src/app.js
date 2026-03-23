@@ -1995,15 +1995,13 @@ class App {
             document.getElementById('tarot-actions')?.classList.remove('hidden');
 
             const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
-            if (spreadType === 'one-card') {
-                this.tarotSpread = { daily: this.tarotPickedCards[0] };
-            } else {
-                this.tarotSpread = {
-                    past: this.tarotPickedCards[0],
-                    present: this.tarotPickedCards[1],
-                    future: this.tarotPickedCards[2]
-                };
-            }
+            const config = this.getTarotSpreadConfig(spreadType);
+            this.tarotSpread = {};
+            config.keys.forEach((key, index) => {
+                if (this.tarotPickedCards[index]) {
+                    this.tarotSpread[key] = this.tarotPickedCards[index];
+                }
+            });
 
             await this.renderTarotSpread();
 
@@ -2085,6 +2083,8 @@ class App {
         `;
 
         modal.classList.add('active');
+        modal.style.display = 'flex'; // Explicitly show if hidden by other logic
+        modal.scrollTop = 0; // Reset scroll
         document.body.style.overflow = 'hidden'; // Stop background scroll
 
         // Ensure close button works
@@ -2092,17 +2092,29 @@ class App {
         if (closeBtn) {
             closeBtn.onclick = () => {
                 modal.classList.remove('active');
+                modal.style.display = 'none';
                 document.body.style.overflow = '';
             };
         }
 
+        // Background click to close
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        };
+
         const askAiBtn = document.getElementById('ask-ai');
         if (askAiBtn) {
-            askAiBtn.style.display = 'block';
+            askAiBtn.style.setProperty('display', 'block', 'important');
             modal.classList.remove('history-mode'); // Ensure button is visible
 
             askAiBtn.onclick = () => {
                 modal.classList.remove('active');
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
                 this.currentTarotCard = { ...cardInfo, id: id };
                 this.switchView('ai-mentor');
                 this.prepareAIMentorView(null, null);
