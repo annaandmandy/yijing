@@ -555,50 +555,6 @@ class App {
         console.log(`Switched Library to subpage: ${subId}`);
     }
 
-
-    showTarotDetail(cardInfo, id) {
-        const modal = document.getElementById('detail-modal');
-        const body = modal.querySelector('.modal-body');
-
-        body.innerHTML = `
-            <div class="tarot-detail-view">
-                <div class="tarot-detail-header">
-                    <h2>${cardInfo.name_zh} <small>${cardInfo.name_en}</small></h2>
-                    <span class="arcana-badge">${cardInfo.arcana} Arcana</span>
-                </div>
-                <div class="tarot-detail-main">
-                    <div class="tarot-detail-img">
-                        <img src="${TarotService.getImageUrl(id)}" alt="${cardInfo.name_zh}" style="width:100%; border-radius:10px;">
-                    </div>
-                    <div class="tarot-detail-text">
-                        <p class="summary"><strong>概述：</strong>${cardInfo.summary}</p>
-                        <div class="meaning-section">
-                            <h4>正位牌義</h4>
-                            <p>${cardInfo.llm_analysis.general_upright}</p>
-                            <ul>
-                                ${cardInfo.meanings.upright.map(m => `<li>${m}</li>`).join('')}
-                            </ul>
-                        </div>
-                        <div class="meaning-section">
-                            <h4>逆位牌義</h4>
-                            <p>${cardInfo.llm_analysis.general_reversed}</p>
-                            <ul>
-                                ${cardInfo.meanings.reversed.map(m => `<li>${m}</li>`).join('')}
-                            </ul>
-                        </div>
-                        <blockquote>${cardInfo.advice}</blockquote>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        modal.classList.add('active');
-
-        // Hide "Ask AI" button or adapt it
-        const askAiBtn = document.getElementById('ask-ai');
-        if (askAiBtn) askAiBtn.style.display = 'none';
-    }
-
     renderBaguaDiagram() {
         const container = document.getElementById('bagua-diagram-container');
         if (!container) return;
