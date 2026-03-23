@@ -1120,6 +1120,15 @@ class App {
 
     updateMonthlyStats() {
         const currentMode = this.currentMode || 'iching';
+        
+        const statsCard = document.querySelector('.stats-card');
+        if (currentMode === 'tarot') {
+            if (statsCard) statsCard.style.display = 'none';
+            return;
+        } else {
+            if (statsCard) statsCard.style.display = 'block';
+        }
+
         const stats = JournalService.getMonthlyStats(this.calendarYear, this.calendarMonth, this.library, currentMode);
         const ctx = document.getElementById('radar-chart').getContext('2d');
         const summaryEl = document.getElementById('stats-summary');
@@ -1473,7 +1482,42 @@ class App {
             
             if (record.type === 'tarot') {
                 const spreadCards = record.spread || [];
-                const cardCount = Array.isArray(spreadCards) ? spreadCards.length : spreadCards.split(',').length;
+                let cardCount = 0;
+                let cardsDisplayStr = '';
+                
+                if (Array.isArray(spreadCards)) {
+                    cardCount = spreadCards.length;
+                    const majorMap = {
+                        "00": "愚者", "01": "魔術師", "02": "女祭司", "03": "皇后", "04": "皇帝",
+                        "05": "教宗", "06": "戀人", "07": "戰車", "08": "力量", "09": "隱者",
+                        "10": "命運之輪", "11": "正義", "12": "倒吊人", "13": "死神", "14": "節制",
+                        "15": "惡魔", "16": "塔", "17": "星星", "18": "月亮", "19": "太陽",
+                        "20": "審判", "21": "世界"
+                    };
+                    const suitsMap = { wands: '權杖', cups: '聖杯', swords: '寶劍', pentacles: '金幣' };
+                    const rankMap = { "01": "王牌", "11": "侍者", "12": "騎士", "13": "皇后", "14": "國王" };
+
+                    const cardNames = spreadCards.map(c => {
+                        const id = typeof c === 'string' ? c : c.id;
+                        const reversed = typeof c === 'string' ? false : c.isReversed;
+                        
+                        let name = id;
+                        if (!id.includes('_')) {
+                            name = majorMap[id] || id;
+                        } else {
+                            const parts = id.split('_');
+                            const suit = suitsMap[parts[0]] || parts[0];
+                            const rankNum = parts[1];
+                            const rank = rankMap[rankNum] || parseInt(rankNum).toString();
+                            name = suit + rank;
+                        }
+                        return name + (reversed ? '(逆)' : '(正)');
+                    }).join(', ');
+                    cardsDisplayStr = `<div style="font-size: 0.8rem; color: var(--accent-gold); margin-top: 5px;">${cardNames}</div>`;
+                } else {
+                    cardCount = spreadCards.split(',').length;
+                }
+
                 return `
                     <div class="selection-item glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; gap: 15px;">
                         <div class="item-info" style="flex: 1;">
@@ -1482,9 +1526,10 @@ class App {
                                 <strong style="color: var(--text-primary);">塔羅占卜 (${cardCount} 牌)</strong>
                             </div>
                             <div style="font-size: 0.9rem; color: var(--text-secondary);">${record.question || '塔羅占卜'}</div>
+                            ${cardsDisplayStr}
                         </div>
                         <div class="item-actions" style="display: flex; gap: 8px;">
-                            <button class="nav-btn gold" onclick="window.app.showHistoryTarotResult('${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">查看斷語</button>
+                            <button class="nav-btn gold" onclick="window.app.showHistoryTarotResult('${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">查看解析</button>
                         </div>
                     </div>
                 `;
@@ -1796,7 +1841,7 @@ class App {
             const recordId = JournalService.saveRecord({
                 type: 'tarot',
                 question: document.getElementById('tarot-question')?.value || "塔羅占卜",
-                spread: Object.values(this.tarotSpread).map(c => c.id),
+                spread: Object.values(this.tarotSpread).map(c => ({ id: c.id, isReversed: c.isReversed })),
                 spreadType: spreadType
             });
             this.currentRecordId = recordId;

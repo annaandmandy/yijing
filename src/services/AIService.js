@@ -51,7 +51,7 @@ export class AIService {
         const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:8000").replace(/\/$/, "");
         const apiUrl = `${backendBaseUrl}/chat`;
 
-        const isTarotMode = messages.some(m =>
+        const isTarotMode = record?.type === 'tarot' || messages.some(m =>
             m.content?.includes("塔羅") ||
             m.content?.includes("牌陣") ||
             m.content?.includes("西洋神祕學") ||
@@ -71,8 +71,17 @@ export class AIService {
 納甲數據：${JSON.stringify(hexagramData?.najia_analysis?.lines)}`;
 
         if (isTarotMode) {
+            const spreadStrs = [];
+            if (record && record.spread) {
+                const spreadCards = Array.isArray(record.spread) ? record.spread : record.spread.split(',');
+                spreadCards.forEach(c => {
+                    if (typeof c === 'string') spreadStrs.push(c);
+                    else spreadStrs.push(`${c.id} (${c.isReversed ? '逆位' : '正位'})`);
+                });
+            }
             persona = `你現在是一位精通「塔羅牌」與「神祕學」的塔羅宗師。
-你擅長從托特或偉特牌義中，為學生解讀內在的潛意識連結與未來的啟示，並深入剖析「過去、現在、未來」三牌陣的轉折。`;
+你擅長從托特或偉特牌義中，為學生解讀內在的潛意識連結與未來的啟示，並深入剖析牌陣的轉折。
+${spreadStrs.length > 0 ? `\n本次占卜抽出的牌為：${spreadStrs.join(', ')}。請隨時銘記這些牌來回答學生的問題。` : ''}`;
         }
 
         const adv = record.advancedTheory || {};
@@ -100,11 +109,13 @@ ${!isTarotMode ? `[進階分析數據 (Advanced Insights)]
 ${isDivinationMode ? `
 [占卜占斷模式]
 學生提問：${record.question}
-占卜時間：${record.date} (真太陽時)
-動爻狀態：${record.changingLines && record.changingLines.length > 0 ? `第 ${record.changingLines.join(', ')} 爻發動` : "靜卦無動爻"}
+占卜時間：${record.date} ${isTarotMode ? "" : "(真太陽時)"}
+${isTarotMode ? `
+請以「塔羅宗師」的身份，結合本次抽出的牌卡（包含正逆位），針對學生的具體問題進行深度剖析。特別是當學生「隨喜占卜」時，請主動解釋這些牌卡對當前局勢的啟示。` : `動爻狀態：${record.changingLines && record.changingLines.length > 0 ? `第 ${record.changingLines.join(', ')} 爻發動` : "靜卦無動爻"}
 之卦（變卦）：${record.futureHexName ? record.futureHexName + "卦" : "無變卦"}
 
-請以「占卜大師」的身份，結合「進階分析數據」中提到的「綜卦/錯卦」演變、當前「五行旺衰」以及「六神」的含義，針對具體問題進行深度剖析。特別是當學生「隨喜求卦」時，請主動解釋這些進階數據對當前局勢的啟示。`
+請以「占卜大師」的身份，結合「進階分析數據」中提到的「綜卦/錯卦」演變、當前「五行旺衰」以及「六神」的含義，針對具體問題進行深度剖析。`}
+`
                 : `
 [學術研究模式]
 當前處於純卦象研究模式，無具體占卜問題。
