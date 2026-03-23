@@ -707,6 +707,33 @@ canvas {
     margin-bottom: 10px;
 }
 
+.mentor-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-mini {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid var(--accent-gold);
+    color: var(--accent-gold);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.btn-mini:hover {
+    background: var(--accent-gold);
+    color: black;
+    box-shadow: 0 0 10px var(--accent-gold);
+}
+
 .chat-status {
     font-size: 0.75rem;
     color: var(--accent-gold);

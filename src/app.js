@@ -173,6 +173,7 @@ class App {
             futureName: futureHex?.name,
             changingLines: result.changingLines,
             hasChange: result.hasChange,
+            isPlum: false,
             advancedTheory: advancedTheory
         });
         this.currentRecordId = recordId;
@@ -268,7 +269,7 @@ class App {
                 ` : ''}
             </div>
 
-            ${meta.isPlum && meta.plumResult ? `
+            ${(meta.isPlum || meta.plumResult) ? `
             <div class="plum-analysis-box glass-panel" style="margin: 20px 0; border: 1px solid var(--accent-gold);">
                 <h4 style="color: var(--accent-gold); margin-bottom: 10px;">梅花易數：體用分析</h4>
                 <div style="display: flex; justify-content: space-around; margin-bottom: 10px; font-size: 0.9rem;">
@@ -338,11 +339,11 @@ class App {
                 <div class="insight-col">
                     <h4><i class="fas fa-link"></i> 關聯卦象</h4>
                     <div class="related-hexes">
-                        <div class="rel-item" onclick="app.showHexagramDetail(app.library.find(h=>h.id==='${nuclearHex?.id}'), false, '${recordId || ''}')">
+                        <div class="rel-item" onclick="app.showHexDetail(app.library.find(h=>h.id==='${nuclearHex?.id}'), false, '${recordId || ''}')">
                             <span class="rel-label">互卦 (內在)</span>
                             <span class="rel-name">${nuclearHex?.name || "無"}卦</span>
                         </div>
-                        <div class="rel-item" onclick="app.showHexagramDetail(app.library.find(h=>h.id==='${invertedHex?.id}'), false, '${recordId || ''}')">
+                        <div class="rel-item" onclick="app.showHexDetail(app.library.find(h=>h.id==='${invertedHex?.id}'), false, '${recordId || ''}')">
                             <span class="rel-label">綜卦 (視角)</span>
                             <span class="rel-name">${invertedHex?.name || "無"}卦</span>
                         </div>
@@ -506,6 +507,12 @@ class App {
 
         this.resultSource = null;
         document.querySelector('.instruction').classList.remove('hidden');
+
+        // If we came from AI Mentor, return there instead of being on Tabletop
+        if (this.previousView === 'ai-mentor') {
+            this.switchView('ai-mentor');
+            this.previousView = null; // Reset
+        }
     }
 
     highlightYongShen(type, hex) {
@@ -781,7 +788,7 @@ class App {
         const hex = this.library.find(h => h.binary === finalBinary);
         const resEl = document.getElementById('pb-result');
         if (hex) {
-            resEl.innerHTML = `卦象結果：<strong>${hex.name}卦</strong> <button class="nav-btn" onclick="app.showHexagramDetail(app.library.find(h=>h.id===${hex.id}))">查看詳解</button>`;
+            resEl.innerHTML = `卦象結果：<strong>${hex.name}卦</strong> <button class="nav-btn" onclick="app.showHexDetail(app.library.find(h=>h.id===${hex.id}))">查看詳解</button>`;
         }
     }
 
@@ -1118,7 +1125,7 @@ class App {
                 ${phoneticHtml}
                 <div class="card-binary">${hex.binary}</div>
             `;
-            card.onclick = () => this.showHexagramDetail(hex);
+            card.onclick = () => this.showHexDetail(hex);
             grid.appendChild(card);
         });
     }
@@ -1318,15 +1325,17 @@ class App {
         `;
     }
 
-    showHexagramDetail(hex, isAutoAsk = false, recordId = null) {
+    showHexDetail(hex, isAutoAsk = false, recordId = null, skipContextUpdate = false) {
         if (!hex) {
-            console.error("showHexagramDetail: hex is undefined");
+            console.error("showHexDetail: hex is undefined");
             return;
         }
         console.log("Showing detail for hex:", hex.id, hex.name);
 
-        this.currentHexData = hex;
-        this.currentRecordId = recordId;
+        if (!skipContextUpdate) {
+            this.currentHexData = hex;
+            this.currentRecordId = recordId;
+        }
 
         const modal = document.getElementById('detail-modal');
         const body = modal.querySelector('.modal-body');
@@ -1424,11 +1433,14 @@ class App {
             modal.classList.toggle('history-mode', isHistory);
             askAiBtn.style.display = isHistory ? 'none' : 'block';
 
-            if (!isHistory) {
+            if (!isHistory && !skipContextUpdate) {
                 askAiBtn.onclick = () => {
                     modal.classList.remove('active');
+                    document.body.style.overflow = '';
                     this.switchView('ai-mentor');
                 };
+            } else {
+                askAiBtn.style.display = 'none';
             }
         }
 
@@ -1437,8 +1449,10 @@ class App {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden'; // Stop background scroll
 
-        // Automatically prepare AI view with this hex
-        this.prepareAIMentorView(hex, recordId);
+        // Automatically prepare AI view with this hex ONLY if not in skip mode
+        if (!skipContextUpdate) {
+            this.prepareAIMentorView(hex, recordId);
+        }
     }
 
     prepareAIMentorView(hex, recordId) {
@@ -1449,20 +1463,20 @@ class App {
         const currentRecord = JournalService.getRecord(recordId || this.currentRecordId);
 
         if (currentRecord && currentRecord.type === 'tarot') {
-            header.innerText = `塔羅占卜紀錄`;
+            header.innerText = `塔羅占卜回顧`;
             this.currentHexData = null;
             this.currentTarotCard = null;
         } else if (this.currentTarotCard) {
-            header.innerText = `${this.currentTarotCard.name_zh} (${this.currentTarotCard.name_en})`;
+            header.innerHTML = `${this.currentTarotCard.name_zh} (${this.currentTarotCard.name_en}) <a href="#" class="view-detail-link" style="font-size: 0.75rem; margin-left: 10px; color: var(--accent-gold); text-decoration: underline;" onclick="event.preventDefault(); ichingApp.previousView = 'ai-mentor'; ichingApp.showTarotDetail(ichingApp.currentTarotCard, ichingApp.currentTarotCard.id, true)">🔎 查看詳解</a>`;
             this.currentHexData = null;
         } else if (hex) {
-            header.innerText = `${hex.name}卦 (#${hex.id})`;
+            header.innerHTML = `${hex.name}卦 (#${hex.id}) <a href="#" class="view-detail-link" style="font-size: 0.75rem; margin-left: 10px; color: var(--accent-gold); text-decoration: underline;" onclick="event.preventDefault(); ichingApp.previousView = 'ai-mentor'; ichingApp.showHexDetail(ichingApp.library.find(h => h.id === ${hex.id}), false, null, true)">🔎 查看詳解</a>`;
             this.currentHexData = hex;
             this.currentTarotCard = null;
         } else if (currentRecord && (currentRecord.type === 'iching' || !currentRecord.type) && currentRecord.originalId) {
             const recordHex = this.library.find(h => h.id === currentRecord.originalId);
             if (recordHex) {
-                header.innerText = `${recordHex.name}卦 (#${recordHex.id})`;
+                header.innerHTML = `${recordHex.name}卦 (#${recordHex.id}) <a href="#" class="view-detail-link" style="font-size: 0.75rem; margin-left: 10px; color: var(--accent-gold); text-decoration: underline;" onclick="event.preventDefault(); ichingApp.previousView = 'ai-mentor'; ichingApp.showHexDetail(ichingApp.library.find(h => h.id === ${recordHex.id}), false, null, true)">🔎 查看詳解</a>`;
                 this.currentHexData = recordHex;
             } else {
                 header.innerText = "未知卦象 - 導師對話中";
@@ -1476,6 +1490,40 @@ class App {
         }
 
         this.currentRecordId = recordId;
+
+        // Add "Check Result" button to header if record exists
+        const actionContainer = document.getElementById('mentor-result-action');
+        if (actionContainer) {
+            actionContainer.innerHTML = '';
+            if (this.currentRecordId) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-mini gold-glow';
+                btn.innerHTML = '<i class="fas fa-eye"></i> 顯示結果';
+                btn.onclick = () => {
+                    const record = JournalService.getRecord(this.currentRecordId);
+                    if (record) {
+                        this.previousView = 'ai-mentor'; // Remember where we came from
+                        this.resultSource = 'history';
+                        if (record.type === 'tarot') {
+                            this.showTarotResultOverlay(record); // Pop up modal for Tarot
+                        } else {
+                            this.previousView = 'ai-mentor';
+                            this.switchView('tabletop');
+                            const hex = this.library.find(h => h.id === record.originalId);
+                            const future = record.futureId ? this.library.find(h => h.id === record.futureId) : null;
+                            this.showResultOverlay(hex, future, {
+                                originalBinary: record.originalBinary,
+                                hasChange: record.hasChange,
+                                changingLines: record.changingLines,
+                                isPlum: record.isPlum,
+                                plumResult: record.plumResult
+                            }, record.id);
+                        }
+                    }
+                };
+                actionContainer.appendChild(btn);
+            }
+        }
 
         // Load messages if they exist
         this.chatMessages = currentRecord?.messages || [];
@@ -1657,7 +1705,7 @@ class App {
                             </div>
                             <div class="item-actions" style="display: flex; gap: 8px;">
                                 <button class="nav-btn" onclick="window.app.showHistoryResultOverlay('${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">查看斷語</button>
-                                <button class="nav-btn gold" onclick="window.app.showHexagramDetailById('${hex?.id}', '${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">詳解</button>
+                                <button class="nav-btn gold" onclick="window.app.showHexDetailById('${hex?.id}', '${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">詳解</button>
                             </div>
                         </div>
                     `;
@@ -1669,20 +1717,32 @@ class App {
         modal.classList.add('active');
     }
 
+    showModal(modal) {
+        if (!modal) return;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
     bindModalEvents(modal) {
         const closeBtns = modal.querySelectorAll('.close-modal, .close-btn');
+        const handleClose = (e) => {
+            if (e) e.preventDefault();
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            
+            if (this.previousView === 'ai-mentor') {
+                this.switchView('ai-mentor');
+                this.previousView = null;
+            }
+        };
+
         closeBtns.forEach(btn => {
-            btn.onclick = (e) => {
-                if (e) e.preventDefault();
-                modal.classList.remove('active');
-                document.body.style.overflow = '';
-            };
+            btn.onclick = handleClose;
         });
 
         modal.onclick = (e) => {
             if (e.target === modal) {
-                modal.classList.remove('active');
-                document.body.style.overflow = '';
+                handleClose(e);
             }
         };
     }
@@ -1796,9 +1856,9 @@ class App {
         }, recordId, true);
     }
 
-    showHexagramDetailById(hexId, recordId) {
+    showHexDetailById(hexId, recordId) {
         const hex = this.library.find(h => h.id === parseInt(hexId));
-        if (hex) this.showHexagramDetail(hex, false, recordId);
+        if (hex) this.showHexDetail(hex, false, recordId);
     }
 
     // --- Tarot Interactive Methods ---
@@ -2102,8 +2162,9 @@ class App {
         }
     }
 
-    async showTarotResults() {
+    async showTarotResults(manualSpread = null, manualPickedCards = null, recordId = null) {
         this.tarotStep = 'result';
+        if (recordId) this.currentRecordId = recordId;
 
         // Hide interaction zone and show results
         document.getElementById('tarot-interaction-zone').classList.add('hidden');
@@ -2113,33 +2174,55 @@ class App {
             resultCont.scrollIntoView({ behavior: 'smooth' });
         }
 
-        setTimeout(async () => {
+        const renderLogic = async () => {
             document.getElementById('tarot-selection-container')?.classList.add('hidden');
             document.getElementById('tarot-result-container')?.classList.remove('hidden');
             document.getElementById('tarot-actions')?.classList.remove('hidden');
 
-            const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
-            const config = this.getTarotSpreadConfig(spreadType);
-            this.tarotSpread = {};
-            config.keys.forEach((key, index) => {
-                if (this.tarotPickedCards[index]) {
-                    this.tarotSpread[key] = this.tarotPickedCards[index];
-                }
-            });
+            if (manualSpread && Array.isArray(manualSpread)) {
+                // If we get an array from history, we need to map it back to a spread object
+                const count = manualSpread.length;
+                let spreadType = 'three-card';
+                if (count === 1) spreadType = 'one-card';
+                else if (count === 7) spreadType = 'relationship';
+                else if (count === 10) spreadType = 'celtic-cross';
+
+                const config = this.getTarotSpreadConfig(spreadType);
+                this.tarotSpread = {};
+                config.keys.forEach((key, index) => {
+                    if (manualSpread[index]) {
+                        this.tarotSpread[key] = manualSpread[index];
+                    }
+                });
+            } else {
+                const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
+                const config = this.getTarotSpreadConfig(spreadType);
+                this.tarotSpread = {};
+                config.keys.forEach((key, index) => {
+                    if (this.tarotPickedCards[index]) {
+                        this.tarotSpread[key] = this.tarotPickedCards[index];
+                    }
+                });
+            }
 
             await this.renderTarotSpread();
 
-            const recordId = JournalService.saveRecord({
-                type: 'tarot',
-                question: document.getElementById('tarot-question')?.value || "塔羅占卜",
-                spread: Object.values(this.tarotSpread).map(c => ({ id: c.id, isReversed: c.isReversed })),
-                spreadType: spreadType
-            });
-            this.currentRecordId = recordId;
-            this.chatMessages = [];
+            if (!recordId) {
+                // Save only if it's a new reading
+                const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
+                const recordId = JournalService.saveRecord({
+                    type: 'tarot',
+                    question: document.getElementById('tarot-question')?.value || "塔羅占卜",
+                    spread: Object.values(this.tarotSpread).map(c => ({ id: c.id, isReversed: c.isReversed })),
+                    spreadType: spreadType
+                });
+                this.currentRecordId = recordId;
+                this.chatMessages = [];
+            }
+        };
 
-            this.autoInterpretTarot();
-        }, 600);
+        if (manualSpread) await renderLogic();
+        else setTimeout(async () => await renderLogic(), 800);
     }
 
     showTarotDetail(cardInfo, id) {
@@ -2210,10 +2293,13 @@ class App {
         }
     }
 
-    showTarotDetail(cardInfo, id) {
+    showTarotDetail(cardInfo, id, skipContextUpdate = false) {
         if (!cardInfo) {
             console.error(`Cannot show detail for card ${id}: data is null`);
             return;
+        }
+        if (!skipContextUpdate) {
+            this.currentTarotCard = { ...cardInfo, id: id };
         }
         const modal = document.getElementById('detail-modal');
         const body = modal.querySelector('.modal-body');
@@ -2285,6 +2371,40 @@ class App {
             };
         }
     }
+
+    async showTarotResultOverlay(record) {
+        if (!record || !record.spread) return;
+        const modal = document.getElementById('detail-modal');
+        const body = modal.querySelector('.modal-body');
+        
+        let cardsHtml = '';
+        for (const card of record.spread) {
+            const cardInfo = await TarotService.getCard(card.id);
+            cardsHtml += `
+                <div class="tarot-result-card-mini" style="text-align: center; margin-bottom: 20px;">
+                    <img src="${TarotService.getImageUrl(card.id)}" alt="${cardInfo?.name_zh}" style="width: 100px; border-radius: 5px; ${card.isReversed ? 'transform: rotate(180deg);' : ''}">
+                    <div style="font-size: 0.9rem; margin-top: 5px; color: var(--accent-gold);">${cardInfo?.name_zh || card.id} ${card.isReversed ? '(逆位)' : '(正位)'}</div>
+                </div>
+            `;
+        }
+
+        body.innerHTML = `
+            <div class="tarot-history-popup" style="padding: 20px;">
+                <h3 style="color: var(--accent-gold); margin-bottom: 20px; text-align: center;">塔羅牌陣回顧</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; justify-items: center;">
+                    ${cardsHtml}
+                </div>
+                ${record.quickInsight ? `
+                <div class="ai-insight-box" style="margin-top: 20px; padding: 15px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--accent-gold); border-radius: 10px;">
+                    <h4 style="color: var(--accent-gold); margin-bottom: 5px;"><i class="fas fa-sparkles"></i> 導師初解</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.6;">${record.quickInsight}</p>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        
+        this.showModal(modal);
+    }
     async renderTarotSpread() {
         const spreadContainer = document.getElementById('tarot-result-container');
         const actions = document.getElementById('tarot-actions');
@@ -2295,14 +2415,17 @@ class App {
 
         spreadContainer.innerHTML = '';
 
-        const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
-        const config = spreadType === 'one-card' ? {
-            labels: ['今日啟示 Daily Insight'],
-            keys: ['daily']
-        } : {
-            labels: ['過去 Past', '現在 Present', '未來 Future'],
-            keys: ['past', 'present', 'future']
-        };
+        const count = Object.keys(this.tarotSpread).length;
+        let spreadType = 'three-card';
+        if (count === 1) spreadType = 'one-card';
+        else if (count === 7) spreadType = 'relationship';
+        else if (count === 10) spreadType = 'celtic-cross';
+        else {
+            // Fallback to setting if count is 0 or unknown
+            spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
+        }
+
+        const config = this.getTarotSpreadConfig(spreadType);
 
         for (let i = 0; i < config.keys.length; i++) {
             const cardData = this.tarotSpread[config.keys[i]];
