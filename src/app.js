@@ -715,16 +715,23 @@ class App {
                     </tbody>
                 </table>
             </div>
-            <div class="lookup-card glass-panel" id="plum-theory-section">
-                <h3>梅花易數原理 (Plum Blossom Theory)</h3>
-                <div id="plum-theory-library-content" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary);">
-                    正在載入理論資料...
+            <div class="lookup-card glass-panel" id="theoretical-knowledge-section" style="margin-top: 20px;">
+                <h3>易學深研 (Advance Theory)</h3>
+                <div class="theory-links" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; padding: 10px;">
+                    <button class="btn-secondary" style="font-size: 0.85rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/plum_blossom_theory.md', 'theory-detail-content')">梅花易數原理</button>
+                    <button class="btn-secondary" style="font-size: 0.85rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/wuxing_energy.md', 'theory-detail-content')">五行生剋與旺衰 (圖)</button>
+                    <button class="btn-secondary" style="font-size: 0.85rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/plum_blossom_practice.md', 'theory-detail-content')">十應與外應 (梅花)</button>
+                    <button class="btn-secondary" style="font-size: 0.85rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/najia_six_relatives.md', 'theory-detail-content')">納甲與六親解析</button>
+                    <button class="btn-secondary" style="font-size: 0.85rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/yi_history.md', 'theory-detail-content')">易經傳承簡史</button>
+                </div>
+            </div>
+            
+            <div class="lookup-card glass-panel" id="theory-detail-panel" style="margin-top: 20px;">
+                <div id="theory-detail-content" style="font-size: 0.93rem; line-height: 1.7; color: var(--text-primary); padding: 15px; border: 1px dashed var(--glass-border); border-radius: 8px;">
+                    請由上方選擇感興趣的深度主題
                 </div>
             </div>
         `;
-
-        // Auto-load the theory content
-        this.fetchAndRenderMarkdown('/yi_data_library/plum_blossom_theory.md', 'plum-theory-library-content');
     }
 
     renderLearnContent() {
@@ -1018,9 +1025,46 @@ class App {
             } else {
                 container.innerText = text;
             }
+
+            // After rendering markdown, check if we need to inject the Wuxing diagram
+            if (document.getElementById('wuxing-diagram-container')) {
+                this.renderWuxingDiagram();
+            }
         } catch (e) {
             container.innerHTML = `<div class="error" style="color: red; padding: 20px; text-align: center;">加載失敗：${e.message}</div>`;
         }
+    }
+
+    renderWuxingDiagram() {
+        const container = document.getElementById('wuxing-diagram-container');
+        if (!container) return;
+
+        const elements = [
+            { name: '木', class: 'wood', x: 0, y: -90, desc: '生火 / 剋土' },
+            { name: '火', class: 'fire', x: 86, y: -28, desc: '生土 / 剋金' },
+            { name: '土', class: 'earth', x: 53, y: 72, desc: '生金 / 剋水' },
+            { name: '金', class: 'metal', x: -53, y: 72, desc: '生水 / 剋木' },
+            { name: '水', class: 'water', x: -86, y: -28, desc: '生木 / 剋火' }
+        ];
+
+        container.innerHTML = `
+            <div class="wuxing-layout">
+                <div class="wuxing-container">
+                    <div class="wuxing-center-core">☯</div>
+                    ${elements.map(e => `
+                        <div class="wuxing-node ${e.class}" style="left: calc(50% + ${e.x}px); top: calc(50% + ${e.y}px);">
+                            <div class="w-circle">${e.name}</div>
+                            <div class="w-label">${e.desc}</div>
+                        </div>
+                    `).join('')}
+                    <!-- Connecting SVG for cycle lines could be added here if needed -->
+                </div>
+                <div class="wuxing-legend-strip">
+                    <span>相生：木→火→土→金→水</span>
+                    <span>相剋：木→土→水→火→金</span>
+                </div>
+            </div>
+        `;
     }
 
     setupSettingsListeners() {

@@ -3011,3 +3011,239 @@ canvas {
     display: none;
     /* Chrome, Safari, Opera */
 }
+/* Library Mobile Optimization */
+.lookup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .lookup-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .theory-links {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .lookup-tables {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .data-table {
+        min-width: 600px; /* Ensure table doesn't squish too much */
+        font-size: 0.8rem;
+    }
+    
+    .lookup-card h3 {
+        font-size: 1.1rem;
+    }
+    
+    #theory-detail-content {
+        font-size: 0.85rem !important;
+        padding: 10px !important;
+    }
+}
+
+.trigram-info-panel {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+}
+
+.t-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+@media (max-width: 480px) {
+    .t-detail-grid {
+        grid-template-columns: 1fr 1fr;
+        font-size: 0.85rem;
+    }
+    
+    .bagua-circle {
+        transform: scale(0.8);
+        margin: -20px auto;
+    }
+}
+
+/* Wuxing CSS Diagram */
+.wuxing-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 0;
+    background: rgba(0,0,0,0.2);
+    border-radius: 16px;
+    margin: 20px 0;
+}
+
+.wuxing-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin-bottom: 20px;
+}
+
+.wuxing-center-core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    color: var(--accent-gold);
+    opacity: 0.3;
+}
+
+.wuxing-node {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translate(-50%, -50%);
+    width: 80px;
+}
+
+.w-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    border: 2px solid;
+    background: var(--glass-bg);
+    box-shadow: 0 0 15px currentColor;
+    transition: all 0.3s ease;
+}
+
+.wuxing-node:hover .w-circle {
+    transform: scale(1.1);
+    box-shadow: 0 0 25px currentColor;
+}
+
+.wood .w-circle { color: #4caf50; border-color: #4caf50; }
+.fire .w-circle { color: #f44336; border-color: #f44336; }
+.earth .w-circle { color: #ffeb3b; border-color: #ffeb3b; }
+.metal .w-circle { color: #e0e0e0; border-color: #e0e0e0; }
+.water .w-circle { color: #2196f3; border-color: #2196f3; }
+
+.w-label {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.wuxing-legend-strip {
+    display: flex;
+    gap: 20px;
+    font-size: 0.85rem;
+    color: var(--accent-gold);
+}
+
+@media (max-width: 480px) {
+    .wuxing-container {
+        width: 220px;
+        height: 220px;
+    }
+    .w-circle {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+}
+
+/* Enhanced Table Responsiveness 📱 */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.data-table th, .data-table td {
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.data-table th {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--accent-gold);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.data-table tr:hover {
+    background: rgba(212, 175, 55, 0.05);
+}
+
+/* Mobile-Specific Table Refinements */
+@media (max-width: 600px) {
+    .lookup-card {
+        padding: 10px !important;
+    }
+    
+    .data-table {
+        font-size: 0.75rem;
+        display: block; /* Force block for horizontal scroll */
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 10px 15px; /* More horizontal room for tapping */
+    }
+    
+    /* Make the Najia table readable but compact */
+    #subpage-lookup .data-table {
+        min-width: 450px;
+    }
+}
+
+/* Absolute Stability for Mobile Tables 📱🧹 */
+@media (max-width: 600px) {
+    .data-table {
+        display: table !important; /* Restore normal table layout */
+        overflow-x: hidden !important; /* Completely disable horizontal scroll */
+        white-space: normal !important; /* Allow text wrapping */
+        min-width: 0 !important; /* Let it shrink to container */
+        table-layout: fixed; /* Force rigid columns */
+    }
+    
+    .data-table th, .data-table td {
+        padding: 8px 4px;
+        font-size: 0.7rem;
+        word-break: break-all;
+    }
+    
+    /* Center text for narrow cells */
+    .data-table td {
+        text-align: center;
+    }
+}
