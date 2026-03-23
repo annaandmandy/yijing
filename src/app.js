@@ -1560,7 +1560,7 @@ class App {
         const msg = document.createElement('div');
         msg.className = `chat-msg ${role === 'user' ? 'user' : 'ai'}`;
 
-        if (role === 'ai' && window.marked && content !== '導師思考中...') {
+        if (window.marked && content !== '導師思考中...') {
             msg.innerHTML = window.marked.parse(content);
         } else {
             msg.innerText = content;
