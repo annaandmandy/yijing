@@ -44,14 +44,16 @@ export class AIService {
      * @param {Array} messages - Array of {role: 'user'|'assistant', content: string}
      * @param {Object} hexagramData - Static JSON data of the hexagram.
      * @param {Object} record - The specific divination record { question, date, changingLines, futureHexName, ... }
+     * @param {Function} onChunk - Callback for streaming chunks.
+     * @param {Object} tarotCard - Optional single tarot card data for library study.
      * @yields {string} - Chunks of the AI generated response.
      */
-    static async * streamChat(messages, hexagramData, record = {}) {
+    static async * streamChat(messages, hexagramData, record = {}, onChunk, tarotCard = null) {
         // Automatically switch between local and production backend
         const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:8000").replace(/\/$/, "");
         const apiUrl = `${backendBaseUrl}/chat`;
 
-        const isTarotMode = record?.type === 'tarot' || messages.some(m =>
+        const isTarotMode = !!tarotCard || record?.type === 'tarot' || messages.some(m =>
             m.content?.includes("塔羅") ||
             m.content?.includes("牌陣") ||
             m.content?.includes("西洋神祕學") ||
@@ -78,10 +80,12 @@ export class AIService {
                     if (typeof c === 'string') spreadStrs.push(c);
                     else spreadStrs.push(`${c.id} (${c.isReversed ? '逆位' : '正位'})`);
                 });
+            } else if (tarotCard) {
+                spreadStrs.push(`${tarotCard.name_zh} (${tarotCard.name_en})`);
             }
             persona = `你現在是一位精通「塔羅牌」與「神祕學」的塔羅宗師。
 你擅長從托特或偉特牌義中，為學生解讀內在的潛意識連結與未來的啟示，並深入剖析牌陣的轉折。
-${spreadStrs.length > 0 ? `\n本次占卜抽出的牌為：${spreadStrs.join(', ')}。請隨時銘記這些牌來回答學生的問題。` : ''}`;
+${spreadStrs.length > 0 ? `\n當前探討的牌為：${spreadStrs.join(', ')}。請隨時銘記這些內容來回答學生的問題。` : ''}`;
         }
 
         const adv = record.advancedTheory || {};
@@ -111,16 +115,16 @@ ${isDivinationMode ? `
 學生提問：${record.question}
 占卜時間：${record.date} ${isTarotMode ? "" : "(真太陽時)"}
 ${isTarotMode ? `
-請以「塔羅宗師」的身份，結合本次抽出的牌卡（包含正逆位），針對學生的具體問題進行深度剖析。特別是當學生「隨喜占卜」時，請主動解釋這些牌卡對當前局勢的啟示。` : `動爻狀態：${record.changingLines && record.changingLines.length > 0 ? `第 ${record.changingLines.join(', ')} 爻發動` : "靜卦無動爻"}
+請以「塔羅宗師」的身份，針對學生的具體問題進行深度剖析。${record.spread ? '特別是當學生「隨喜占卜」時，請主動解釋這些牌卡對當前局勢的啟示。' : ''}` : `動爻狀態：${record.changingLines && record.changingLines.length > 0 ? `第 ${record.changingLines.join(', ')} 爻發動` : "靜卦無動爻"}
 之卦（變卦）：${record.futureHexName ? record.futureHexName + "卦" : "無變卦"}
 
 請以「占卜大師」的身份，結合「進階分析數據」中提到的「綜卦/錯卦」演變、當前「五行旺衰」以及「六神」的含義，針對具體問題進行深度剖析。`}
 `
                 : `
 [學術研究模式]
-當前處於純卦象研究模式，無具體占卜問題。
+當前處於純${isTarotMode ? '牌面' : '卦象'}研究模式，無具體占卜問題。
 
-請以「儒家學者」與「術數教授」的身份，結合卦象關係（互綜錯），深入淺出地為初學者解說此卦的哲學意涵、卦序邏輯以及基礎術語，啟發智慧。`}
+請以「${isTarotMode ? '塔羅研究者' : '儒家學者'}」與「${isTarotMode ? '象徵學大師' : '術數教授'}」的身份，深入淺出地為初學者解說此${isTarotMode ? '塔羅牌' : '卦'}的${isTarotMode ? '象徵符號、神話原型' : '哲學意涵、卦序邏輯'}以及基礎術語，啟發智慧。`}
 
 請注意：
 1. ${isTarotMode ? '專注於塔羅牌義與神祕學。' : '結合日辰與卦中五行的生剋進行專業但易懂的演繹。'}

@@ -1361,11 +1361,16 @@ class App {
 
         if (currentRecord && currentRecord.type === 'tarot') {
             header.innerText = `塔羅占卜紀錄`;
-            this.currentHexData = null; // Clear hex data for tarot readings
-        } else if (hex) { // This is for I-Ching hexagrams passed directly
+            this.currentHexData = null;
+            this.currentTarotCard = null;
+        } else if (this.currentTarotCard) {
+            header.innerText = `${this.currentTarotCard.name_zh} (${this.currentTarotCard.name_en})`;
+            this.currentHexData = null;
+        } else if (hex) { 
             header.innerText = `${hex.name}卦 (#${hex.id})`;
             this.currentHexData = hex;
-        } else if (currentRecord && (currentRecord.type === 'iching' || !currentRecord.type) && currentRecord.originalId) { // If record is I-Ching but hex wasn't passed directly
+            this.currentTarotCard = null;
+        } else if (currentRecord && (currentRecord.type === 'iching' || !currentRecord.type) && currentRecord.originalId) {
             const recordHex = this.library.find(h => h.id === currentRecord.originalId);
             if (recordHex) {
                 header.innerText = `${recordHex.name}卦 (#${recordHex.id})`;
@@ -1374,9 +1379,11 @@ class App {
                 header.innerText = "未知卦象 - 導師對話中";
                 this.currentHexData = null;
             }
+            this.currentTarotCard = null;
         } else {
             header.innerText = "等待導引...";
             this.currentHexData = null;
+            this.currentTarotCard = null;
         }
 
         this.currentRecordId = recordId;
@@ -1387,7 +1394,11 @@ class App {
         if (this.chatMessages.length > 0) {
             this.chatMessages.forEach(msg => this.appendMessageToUI(msg.role, msg.content));
         } else {
-            const emptyHint = currentRecord?.type === 'tarot' ? '點擊發送按鈕或輸入疑問，與導師探討此次塔羅占卜的深層意涵。' : `點擊發送按鈕或輸入疑問，與導師探討「${hex?.name || ''}卦」的深層意涵。`;
+            let emptyHint = '點擊發送按鈕或輸入疑問。';
+            if (currentRecord?.type === 'tarot') emptyHint = '與導師探討此次塔羅占卜的深層意涵。';
+            else if (this.currentTarotCard) emptyHint = `與導師深度探討「${this.currentTarotCard.name_zh}」牌的象徵意涵與啟示。`;
+            else if (hex || this.currentHexData) emptyHint = `與導師探討「${(hex || this.currentHexData).name}卦」的深層意涵。`;
+            
             chatHistory.innerHTML = `<p class="empty-state">${emptyHint}</p>`;
         }
 
@@ -1422,7 +1433,13 @@ class App {
         try {
             // Get the full record context for the AI
             const record = JournalService.getRecord(this.currentRecordId);
-            const stream = AIService.streamChat(this.chatMessages, this.currentHexData, record || {});
+            const stream = AIService.streamChat(
+                this.chatMessages, 
+                this.currentHexData, 
+                record || {}, 
+                null, 
+                this.currentTarotCard
+            );
 
             for await (const chunk of stream) {
                 if (fullResponse === '') aiMsgEl.innerText = ''; // Clear placeholder on first chunk
@@ -2007,7 +2024,17 @@ class App {
         }
 
         const askAiBtn = document.getElementById('ask-ai');
-        if (askAiBtn) askAiBtn.style.display = 'none';
+        if (askAiBtn) {
+            askAiBtn.style.display = 'block';
+            modal.classList.remove('history-mode'); // Ensure button is visible
+
+            askAiBtn.onclick = () => {
+                modal.classList.remove('active');
+                this.currentTarotCard = { ...cardInfo, id: id };
+                this.switchView('ai-mentor');
+                this.prepareAIMentorView(null, null);
+            };
+        }
     }
     async renderTarotSpread() {
         const spreadContainer = document.getElementById('tarot-result-container');
