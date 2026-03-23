@@ -42,7 +42,8 @@ class App {
         this.tarotStep = 'intro'; // 'intro', 'shuffling', 'selection', 'result'
         this.tarotPickedCards = [];
         this.tarotShuffleCount = 0;
-        this.ichingMode = 'coin'; // 'coin' or 'plum'
+        this.ichingCastingType = 'coin'; // 'coin' or 'plum'
+        this.ichingAnalysisMode = 'classic'; // 'classic', 'plum', 'liu-yao'
 
         window.app = this; // Global reference for inline oncilcks
         this.init();
@@ -246,7 +247,23 @@ class App {
             // Future extension: Update chart with line strength
         }
 
+        // --- ADDED: Analysis Mode Switcher ---
+        const modeSwitcherHTML = `
+            <div class="analysis-mode-selector">
+                <div class="analysis-tab ${this.ichingAnalysisMode === 'classic' ? 'active' : ''}" onclick="window.app.switchIChingMode('classic')">
+                    <span class="dot"></span> 經典義理
+                </div>
+                <div class="analysis-tab ${this.ichingAnalysisMode === 'plum' ? 'active' : ''}" onclick="window.app.switchIChingMode('plum')">
+                    <span class="dot"></span> 梅花心易
+                </div>
+                <div class="analysis-tab ${this.ichingAnalysisMode === 'liu-yao' ? 'active' : ''}" onclick="window.app.switchIChingMode('liu-yao')">
+                    <span class="dot"></span> 六爻象數
+                </div>
+            </div>
+        `;
+
         nameEl.innerHTML = `
+            ${modeSwitcherHTML}
             <div class="result-hex-display">
                 <div class="hex-block original">
                     <span class="hex-label">本卦 (當前)</span>
@@ -269,7 +286,7 @@ class App {
                 ` : ''}
             </div>
 
-            ${meta.isPlum && meta.plumResult ? `
+            ${(this.ichingAnalysisMode === 'plum' && meta.isPlum && meta.plumResult) ? `
             <div class="plum-analysis-box glass-panel" style="margin: 20px 0; border: 1px solid var(--accent-gold);">
                 <h4 style="color: var(--accent-gold); margin-bottom: 10px;">梅花易數：體用分析</h4>
                 <div style="display: flex; justify-content: space-around; margin-bottom: 10px; font-size: 0.9rem;">
@@ -308,9 +325,9 @@ class App {
             summaryEl.innerText = original.summary;
         }
 
-        // Professional Najia Rendering
+        // Professional Najia Rendering (Visible only in Liu Yao Mode)
         const najiaBox = document.getElementById('najia-info');
-        if (original.najia_analysis) {
+        if (original.najia_analysis && this.ichingAnalysisMode === 'liu-yao') {
             najiaBox.classList.remove('hidden');
             najiaBox.querySelector('.palace-info').innerText = `${original.najia_analysis.palace}宮 [${original.najia_analysis.palace_wuxing}]`;
 
@@ -722,6 +739,7 @@ class App {
                     <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/yi_history.md', 'theory-detail-content')">易經傳承簡史</button>
                     <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/hexagram_structure.md', 'theory-detail-content')">卦象結構深度解析</button>
                     <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/wuxing_energy.md', 'theory-detail-content')">五行理論與健康 (圖)</button>
+                    <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/liu_yao_basics.md', 'theory-detail-content')">六爻預測基礎</button>
                     <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/najia_six_relatives.md', 'theory-detail-content')">納甲與六親解析</button>
                     <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/solar_terms.md', 'theory-detail-content')">二十四節氣與易經</button>
                     <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/plum_blossom_theory.md', 'theory-detail-content')">梅花易數全書 (進階)</button>
@@ -864,6 +882,20 @@ class App {
                 this.switchView(targetView);
             });
         });
+    }
+
+    switchIChingMode(mode) {
+        this.ichingAnalysisMode = mode;
+        console.log(`Switched I-Ching Analysis Mode to: ${mode}`);
+        
+        // If result overlay is visible, we need to refresh it with current data
+        const overlay = document.getElementById('result-overlay');
+        if (overlay && !overlay.classList.contains('hidden') && this.currentHexData) {
+            const result = HexagramEngine.calculateHexagram(this.currentTosses);
+            this.showResultOverlay(this.currentHexData, result.hasChange ? this.library.find(h => h.binary === result.futureBinary) : null, result, this.currentRecordId);
+        } else {
+            this.renderIChingView(); 
+        }
     }
 
     switchView(viewId) {
