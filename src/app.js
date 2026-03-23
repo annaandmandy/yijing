@@ -1110,8 +1110,8 @@ class App {
             // Generate symbol for card
             let symbolHtml = '<div class="card-symbol">';
             // In our data, binary string "111000" where index 0 is line 1 (bottom).
-            // We reverse it to render from top to bottom visually (6th line at top, 1st line at bottom).
-            hex.binary.split('').reverse().forEach(char => {
+            // Reverting to Top-to-Bottom mapping
+            hex.binary.split('').forEach(char => {
                 symbolHtml += `<div class="hex-line ${char === '1' ? 'yang' : 'yin'}"></div>`;
             });
             symbolHtml += '</div>';
@@ -1329,7 +1329,7 @@ class App {
         // So we reverse it before rendering to stack from top-down visually.
         return `
             <div class="mini-hex-symbol">
-                ${binary.split('').reverse().map(b => `<div class="line ${b === '0' ? 'yin' : 'yang'}"></div>`).join('')}
+                ${binary.split('').map(b => `<div class="line ${b === '0' ? 'yin' : 'yang'}"></div>`).join('')}
             </div>
         `;
     }
@@ -1339,7 +1339,7 @@ class App {
         // Same as hexagram: bottom to top rendering
         return `
             <div class="mini-hex-symbol trigram" style="height: auto; gap: 3px; width: 40px;">
-                ${binary.split('').reverse().map(b => `<div class="line ${b === '0' ? 'yin' : 'yang'}" style="height: 4px;"></div>`).join('')}
+                ${binary.split('').map(b => `<div class="line ${b === '0' ? 'yin' : 'yang'}" style="height: 4px;"></div>`).join('')}
             </div>
         `;
     }
