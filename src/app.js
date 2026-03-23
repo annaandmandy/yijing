@@ -1787,6 +1787,40 @@ class App {
         if (resetBtn) resetBtn.onclick = () => this.resetTarot();
     }
 
+    getTarotSpreadConfig(type) {
+        switch (type) {
+            case 'one-card':
+                return {
+                    name: '每日指引單牌占',
+                    count: 1,
+                    labels: ['今日啟示 Daily Insight'],
+                    keys: ['daily']
+                };
+            case 'relationship':
+                return {
+                    name: '雙人關係陣',
+                    count: 7,
+                    labels: ['我的現狀', '對方的現狀', '過去的連結', '現在的互動', '潛在因素', '指引建議', '未來發展'],
+                    keys: ['querent_state', 'partner_state', 'past_connection', 'present_dynamics', 'hidden_factors', 'advice', 'potential_outcome']
+                };
+            case 'celtic-cross':
+                return {
+                    name: '賽爾特十字陣',
+                    count: 10,
+                    labels: ['現狀', '挑戰', '目標', '基礎', '過去', '未來', '自我核心', '環境因素', '希望與恐懼', '最終結果'],
+                    keys: ['present', 'challenge', 'goal', 'foundation', 'past', 'future', 'self_image', 'external_factors', 'hopes_fears', 'outcome']
+                };
+            case 'three-card':
+            default:
+                return {
+                    name: '過去現在未來三牌陣',
+                    count: 3,
+                    labels: ['過去 Past', '現在 Present', '未來 Future'],
+                    keys: ['past', 'present', 'future']
+                };
+        }
+    }
+
     resetTarot() {
         this.tarotStep = 'intro';
         this.tarotPickedCards = [];
@@ -1798,9 +1832,12 @@ class App {
 
     handleTarotInterpret() {
         const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
-        const context = spreadType === 'one-card' ? '每日指引單牌占' : '過去現在未來三牌陣';
-        const cardsStr = Object.entries(this.tarotSpread).map(([pos, card]) =>
-            `${pos}: ${card.id} (${card.isReversed ? '逆位' : '正位'})`
+        const config = this.getTarotSpreadConfig(spreadType);
+        const context = config.name;
+        
+        if (!this.tarotSpread) this.tarotSpread = {};
+        const cardsStr = Object.entries(this.tarotSpread || {}).map(([pos, card]) =>
+            card ? `${pos}: ${card.id} (${card.isReversed ? '逆位' : '正位'})` : `${pos}: 未抽牌`
         ).join(', ');
 
         const questionEl = document.getElementById('tarot-question');
@@ -2188,9 +2225,10 @@ class App {
 
         try {
             const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
-            const context = spreadType === 'one-card' ? '每日指引單牌占' : '過去現在未來三牌陣';
-            const cardsStr = Object.entries(this.tarotSpread).map(([pos, card]) =>
-                `${pos}: ${card.id} (${card.isReversed ? '逆位' : '正位'})`
+            const config = this.getTarotSpreadConfig(spreadType);
+            const context = config.name;
+            const cardsStr = Object.entries(this.tarotSpread || {}).map(([pos, card]) =>
+                card ? `${pos}: ${card.id} (${card.isReversed ? '逆位' : '正位'})` : `${pos}: 未抽牌`
             ).join(', ');
 
             const questionEl = document.getElementById('tarot-question');

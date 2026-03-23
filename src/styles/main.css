@@ -266,10 +266,13 @@ canvas {
 }
 
 .result-actions button {
-    display: block; /* Ensure buttons are block by default */
+    display: block;
+    /* Ensure buttons are block by default */
 }
 
-#ask-mentor-result, #re-toss, #copy-result {
+#ask-mentor-result,
+#re-toss,
+#copy-result {
     min-width: 120px;
 }
 
@@ -1069,6 +1072,7 @@ canvas {
     /* Allow cards to overflow on sides */
     overflow: visible !important;
 }
+
 .shuffling-container {
     display: flex;
     flex-direction: column;
@@ -1253,11 +1257,12 @@ canvas {
 .tarot-spread {
     display: flex;
     gap: 20px;
-    margin: 80px auto 40px auto;
+    margin: 10px auto 0 auto;
+    /* Reduced top and bottom margins */
     perspective: 2000px;
     justify-content: center;
-    flex-wrap: wrap; /* Allow cards to wrap on smaller screens/large sets */
-    min-height: 400px;
+    flex-wrap: wrap;
+    min-height: 200px; /* Reduced from 400px to allow content to sit tighter */
 }
 
 .tarot-card-wrapper {
@@ -1336,7 +1341,7 @@ canvas {
 
 .card-info {
     text-align: center;
-    margin-top: 15px;
+    margin-top: 5px; /* Reduced from 15px */
 }
 
 .spread-label {
@@ -2512,7 +2517,8 @@ canvas {
     border-collapse: collapse;
     margin: 20px 0;
     display: block;
-    overflow-x: auto; /* Enables horizontal scrolling on mobile */
+    overflow-x: auto;
+    /* Enables horizontal scrolling on mobile */
     border-radius: 8px;
 }
 
@@ -2680,7 +2686,8 @@ canvas {
         display: flex;
         flex-direction: column;
         align-items: center;
-        height: auto; /* Ensure wrapper height fits content on mobile */
+        height: auto;
+        /* Ensure wrapper height fits content on mobile */
     }
 
     .tarot-card {
@@ -2703,8 +2710,9 @@ canvas {
 
 /* Quick Analysis Area */
 .quick-analysis {
-    margin: 20px auto;
-    padding: 20px;
+    margin: 0 auto 10px auto;
+    /* Reduced from 10px */
+    padding: 15px 20px; /* Slightly tighter padding */
     max-width: 800px;
     border-left: 4px solid var(--accent-gold);
     animation: fadeIn 0.8s ease-out;
@@ -2757,6 +2765,7 @@ canvas {
         filter: drop-shadow(0 0 20px var(--accent-gold));
     }
 }
+
 /* Tarot History Modal Styles */
 .tarot-history-detail {
     padding: 10px;
@@ -2884,10 +2893,13 @@ canvas {
 
 /* Hide scrollbars globally while allowing scrolling */
 * {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
 }
 
 *::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
