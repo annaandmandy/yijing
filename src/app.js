@@ -717,12 +717,14 @@ class App {
             </div>
             <div class="lookup-card glass-panel" id="theoretical-knowledge-section" style="margin-top: 20px;">
                 <h3>易學深研 (Advance Theory)</h3>
-                <div class="theory-links" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; padding: 10px;">
-                    <button class="btn-secondary" style="font-size: 0.85rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/plum_blossom_theory.md', 'theory-detail-content')">梅花易數全書 (進階)</button>
-                    <button class="btn-secondary" style="font-size: 0.85rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/wuxing_energy.md', 'theory-detail-content')">五行理論與健康 (圖)</button>
-                    <button class="btn-secondary" style="font-size: 0.85rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/najia_six_relatives.md', 'theory-detail-content')">納甲與六親解析</button>
-                    <button class="btn-secondary" style="font-size: 0.85rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/solar_terms.md', 'theory-detail-content')">二十四節氣與易經</button>
-                    <button class="btn-secondary" style="font-size: 0.85rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/yi_history.md', 'theory-detail-content')">易經傳承簡史</button>
+                <div class="theory-links" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; padding: 10px;">
+                    <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/divination_ethics.md', 'theory-detail-content')">占卜守則與心法</button>
+                    <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/yi_history.md', 'theory-detail-content')">易經傳承簡史</button>
+                    <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/hexagram_structure.md', 'theory-detail-content')">卦象結構深度解析</button>
+                    <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/wuxing_energy.md', 'theory-detail-content')">五行理論與健康 (圖)</button>
+                    <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/najia_six_relatives.md', 'theory-detail-content')">納甲與六親解析</button>
+                    <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/solar_terms.md', 'theory-detail-content')">二十四節氣與易經</button>
+                    <button class="btn-secondary" style="font-size: 0.82rem;" onclick="window.app.fetchAndRenderMarkdown('/yi_data_library/plum_blossom_theory.md', 'theory-detail-content')">梅花易數全書 (進階)</button>
                 </div>
             </div>
             
@@ -732,7 +734,11 @@ class App {
                 </div>
             </div>
         `;
+
+        // Load ethics by default
+        this.fetchAndRenderMarkdown('/yi_data_library/divination_ethics.md', 'theory-detail-content');
     }
+
 
     renderLearnContent() {
         const container = document.querySelector('#subpage-learn .learn-content');
