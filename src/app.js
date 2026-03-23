@@ -269,12 +269,18 @@ class App {
                 ` : ''}
             </div>
 
-            ${(meta.isPlum || meta.plumResult) ? `
+            ${meta.isPlum && meta.plumResult ? `
             <div class="plum-analysis-box glass-panel" style="margin: 20px 0; border: 1px solid var(--accent-gold);">
                 <h4 style="color: var(--accent-gold); margin-bottom: 10px;">梅花易數：體用分析</h4>
                 <div style="display: flex; justify-content: space-around; margin-bottom: 10px; font-size: 0.9rem;">
-                    <div><strong>體卦：</strong>${meta.plumResult.analysis.bodyTrigram.name} (${meta.plumResult.analysis.bodyTrigram.wuxing})</div>
-                    <div><strong>用卦：</strong>${meta.plumResult.analysis.guestTrigram.name} (${meta.plumResult.analysis.guestTrigram.wuxing})</div>
+                    <div style="text-align: center;">
+                        <strong>體卦：</strong>${meta.plumResult.analysis.bodyTrigram.name} (${meta.plumResult.analysis.bodyTrigram.wuxing})
+                        <div style="margin-top: 5px;">${this.renderTrigramSymbol(meta.plumResult.analysis.bodyTrigram.binary)}</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <strong>用卦：</strong>${meta.plumResult.analysis.guestTrigram.name} (${meta.plumResult.analysis.guestTrigram.wuxing})
+                        <div style="margin-top: 5px;">${this.renderTrigramSymbol(meta.plumResult.analysis.guestTrigram.binary)}</div>
+                    </div>
                 </div>
                 <div style="padding: 10px; background: rgba(212, 175, 55, 0.1); border-radius: 10px;">
                     <div style="font-weight: bold; margin-bottom: 5px;">關係：${meta.plumResult.analysis.interaction}</div>
@@ -1324,6 +1330,16 @@ class App {
         return `
             <div class="mini-hex-symbol">
                 ${binary.split('').reverse().map(b => `<div class="line ${b === '0' ? 'yin' : 'yang'}"></div>`).join('')}
+            </div>
+        `;
+    }
+
+    renderTrigramSymbol(binary) {
+        if (!binary || binary.length !== 3) return '';
+        // Same as hexagram: bottom to top rendering
+        return `
+            <div class="mini-hex-symbol trigram" style="height: auto; gap: 3px; width: 40px;">
+                ${binary.split('').reverse().map(b => `<div class="line ${b === '0' ? 'yin' : 'yang'}" style="height: 4px;"></div>`).join('')}
             </div>
         `;
     }

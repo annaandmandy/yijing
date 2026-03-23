@@ -55,18 +55,23 @@ export class PlumBlossomEngine {
      * 0 (坤): 000
      */
     static getTrigramBinary(id) {
+        // App expects bottom-to-top order [line1, line2, line3]
         const map = {
-            1: "111", 2: "011", 3: "101", 4: "001",
-            5: "110", 6: "010", 7: "100", 8: "000"
+            1: "111", // 乾 (Heaven)
+            2: "110", // 兌 (Lake) - Top is 0
+            3: "101", // 離 (Fire) - Mid is 0
+            4: "100", // 震 (Thunder) - Mid/Top is 0
+            5: "011", // 巽 (Wind) - Bottom is 0
+            6: "010", // 坎 (Water) - Bottom/Top is 0
+            7: "001", // 艮 (Mountain) - Bottom/Mid is 0
+            8: "000"  // 坤 (Earth)
         };
         return map[id];
     }
 
     static getHexBinary(upperId, lowerId) {
-        // App expects bottom-to-top order [line1, line2, ..., line6]
-        const upper = this.getTrigramBinary(upperId).split("").reverse().join("");
-        const lower = this.getTrigramBinary(lowerId).split("").reverse().join("");
-        return lower + upper;
+        // App expects bottom-to-top 6-bit string [lower3, upper3]
+        return this.getTrigramBinary(lowerId) + this.getTrigramBinary(upperId);
     }
 
     /**
@@ -75,11 +80,11 @@ export class PlumBlossomEngine {
      * The trigram WITH the moving line is the "Guest" (用).
      */
     static analyzeBodyGuest(upper, lower, movingLine) {
-        const isUpperBody = movingLine > 3 ? false : true; // Lines 1-3 are lower, 4-6 are upper
-        
-        // Wait, line 1-3 is lower trigram. If moving line is 1,2,3 -> Lower is Guest, Upper is Body.
-        const bodyTrigram = movingLine > 3 ? lower : upper;
-        const guestTrigram = movingLine > 3 ? upper : lower;
+        // Lines 1-3 are in the Lower trigram. 
+        // Lines 4-6 are in the Upper trigram.
+        // The trigram WITHOUT the moving line is "Body" (體).
+        const bodyTrigram = movingLine <= 3 ? upper : lower; // If moving in Lower, Upper is Body
+        const guestTrigram = movingLine <= 3 ? lower : upper; // If moving in Lower, Lower is Guest
 
         const interaction = this.getWuxingInteraction(bodyTrigram.wuxing, guestTrigram.wuxing);
 
