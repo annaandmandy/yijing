@@ -206,7 +206,7 @@ class App {
         }
 
         const overlay = document.getElementById('result-overlay');
-        
+
         // Hide inputs to prevent overlap/distraction
         const qContainer = document.querySelector('.question-container');
         const plumZone = document.getElementById('plum-blossom-input');
@@ -500,11 +500,11 @@ class App {
     hideResultOverlay() {
         const overlay = document.getElementById('result-overlay');
         if (overlay) overlay.classList.add('hidden');
-        
+
         // Restore input and mode switcher
         const qContainer = document.querySelector('.question-container');
         const plumZone = document.getElementById('plum-blossom-input');
-        
+
         if (qContainer) qContainer.style.display = 'flex';
         // Only show plum zone if we are in plum mode
         if (this.ichingMode === 'plum' && plumZone) {
@@ -719,7 +719,7 @@ class App {
                 </div>
             </div>
         `;
-        
+
         // Auto-load the theory content
         this.fetchAndRenderMarkdown('/yi_data_library/plum_blossom_theory.md', 'plum-theory-library-content');
     }
@@ -894,7 +894,7 @@ class App {
         const instruction = document.querySelector('.instruction');
 
         if (qContainer) qContainer.style.display = 'flex';
-        
+
         if (this.ichingMode === 'plum') {
             if (plumZone) {
                 plumZone.style.display = 'block';
@@ -1541,6 +1541,14 @@ class App {
                     }
                 };
                 actionContainer.appendChild(btn);
+
+                // Add Clear Chat button next to it
+                const clearBtn = document.createElement('button');
+                clearBtn.className = 'btn-mini btn-secondary';
+                clearBtn.innerHTML = '<i class="fas fa-trash-alt"></i> 清除對話';
+                clearBtn.title = "清除當前紀錄的對話內容";
+                clearBtn.onclick = () => this.handleClearChat();
+                actionContainer.appendChild(clearBtn);
             }
         }
 
@@ -1563,6 +1571,20 @@ class App {
         document.getElementById('chat-input-main').onkeypress = (e) => { if (e.key === 'Enter') this.handleSendChat(); };
     }
 
+    handleClearChat() {
+        if (!this.chatMessages || this.chatMessages.length === 0) return;
+
+        if (confirm("確定要清除當前與導師的對談紀錄嗎？（清除後無法復原）")) {
+            this.chatMessages = [];
+            const history = document.getElementById('chat-history-main');
+            history.innerHTML = `<p class="empty-state">對話已清除。請重新提問。</p>`;
+
+            if (this.currentRecordId) {
+                JournalService.updateMessages(this.currentRecordId, []);
+            }
+        }
+    }
+
     async handleSendChat(forcedText = null) {
         const input = document.getElementById('chat-input-main');
         const text = forcedText || input.value.trim();
@@ -1580,7 +1602,7 @@ class App {
         this.appendMessageToUI('user', text);
 
         const status = document.querySelector('.chat-status');
-        status.innerText = '導師沈思中...';
+        status.innerText = '思考中...';
 
         // Show placeholder instead of empty bubble
         const aiMsgEl = this.appendMessageToUI('ai', '導師思考中...');
@@ -1748,7 +1770,7 @@ class App {
             if (e) e.preventDefault();
             modal.classList.remove('active');
             document.body.style.overflow = '';
-            
+
             if (this.previousView === 'ai-mentor') {
                 this.switchView('ai-mentor');
                 this.previousView = null;
@@ -2395,7 +2417,7 @@ class App {
         if (!record || !record.spread) return;
         const modal = document.getElementById('detail-modal');
         const body = modal.querySelector('.modal-body');
-        
+
         let cardsHtml = '';
         for (const card of record.spread) {
             const cardInfo = await TarotService.getCard(card.id);
@@ -2421,7 +2443,7 @@ class App {
                 ` : ''}
             </div>
         `;
-        
+
         this.showModal(modal);
     }
     async renderTarotSpread() {
@@ -2560,7 +2582,7 @@ class App {
 
         console.log(`Generating Plum Blossom for: ${n1}, ${n2}, ${n3}`);
         const result = PlumBlossomEngine.calculateFromNumbers(n1, n2, n3);
-        
+
         // Match with library to get hexagram details
         const hex = this.library.find(h => h.binary === result.binary);
         if (!hex) {
@@ -2592,7 +2614,7 @@ class App {
         // Show result overlay (reusing Iching result UI)
         this.showResultOverlay(hex, null, {
             originalBinary: result.binary,
-            hasChange: false, 
+            hasChange: false,
             movingLine: result.movingLine,
             isPlum: true,
             plumResult: result
@@ -2603,11 +2625,11 @@ class App {
         this.switchView('library');
         // Switch to lookup/theory subpage
         this.switchLibrarySubpage('lookup');
-        
+
         // Wait for render, then fetch specific markdown
         setTimeout(() => {
-            const container = document.getElementById('tarot-lookup-content') || 
-                            document.querySelector('#subpage-lookup .lookup-tables');
+            const container = document.getElementById('tarot-lookup-content') ||
+                document.querySelector('#subpage-lookup .lookup-tables');
             if (container) {
                 container.innerHTML = '<div id="plum-theory-content" class="glass-panel"></div>';
                 this.fetchAndRenderMarkdown('/yi_data_library/plum_blossom_theory.md', 'plum-theory-content');

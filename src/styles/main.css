@@ -713,6 +713,18 @@ canvas {
     gap: 10px;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#mentor-result-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .btn-mini {
     background: rgba(212, 175, 55, 0.1);
     border: 1px solid var(--accent-gold);
