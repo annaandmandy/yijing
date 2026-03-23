@@ -575,7 +575,7 @@ class App {
             <div class="bagua-circle">
                 <div class="bagua-center">☯</div>
                 ${trigrams.map((t, i) => `
-                    <div class="trigram-node t-${i}" onclick="app.showTrigramDetail('${t.name}')">
+                    <div class="trigram-node t-${i}" onclick="window.app.showTrigramDetail('${t.name}')">
                         <span class="t-symbol">${t.symbol}</span>
                         <span class="t-name">${t.name}</span>
                     </div>
