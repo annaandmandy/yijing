@@ -2129,6 +2129,10 @@ class App {
     }
 
     showTarotDetail(cardInfo, id) {
+        if (!cardInfo) {
+            console.error(`Cannot show detail for card ${id}: data is null`);
+            return;
+        }
         const modal = document.getElementById('detail-modal');
         const body = modal.querySelector('.modal-body');
 

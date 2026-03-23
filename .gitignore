@@ -7,5 +7,6 @@ __pycache__/
 !vercel.json
 !public/yi_data_enhanced/*.json
 !public/yi_data_library/*.json
+!public/tarot_data/*.json
 node_modules
 src/config.js

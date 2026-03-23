@@ -13,7 +13,15 @@ export class TarotService {
     static async getCard(id) {
         try {
             const response = await fetch(`${this.DATA_PATH}card_${id}.json`);
-            if (!response.ok) throw new Error("Card data not found");
+            if (!response.ok) {
+                console.error(`Tarot card ${id} not found: ${response.status}`);
+                return null;
+            }
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                console.error(`Tarot card ${id} returned non-JSON content: ${contentType}`);
+                return null;
+            }
             return await response.json();
         } catch (err) {
             console.error(`Error loading Tarot card ${id}:`, err);
