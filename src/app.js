@@ -1558,12 +1558,91 @@ class App {
         modal.classList.add('active');
     }
 
-    showHistoryTarotResult(recordId) {
+    async showHistoryTarotResult(recordId) {
+        const record = JournalService.getRecord(recordId);
+        if (!record) return;
+
         const modal = document.getElementById('detail-modal');
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-        this.switchView('ai-mentor');
-        this.prepareAIMentorView(null, recordId);
+        await this.renderTarotHistoryDetail(record);
+        
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    async renderTarotHistoryDetail(record) {
+        const modal = document.getElementById('detail-modal');
+        const body = modal.querySelector('.modal-body');
+        
+        const spreadCards = record.spread || [];
+        const isOneCard = record.spreadType === 'one-card';
+        const labels = isOneCard ? ['今日啟示 Daily Insight'] : ['過去 Past', '現在 Present', '未來 Future'];
+        
+        let cardsHtml = '';
+        for (let i = 0; i < spreadCards.length; i++) {
+            const c = spreadCards[i];
+            const id = typeof c === 'string' ? c : c.id;
+            const reversed = typeof c === 'string' ? false : c.isReversed;
+            const cardInfo = await TarotService.getCard(id);
+            
+            cardsHtml += `
+                <div class="tarot-history-card">
+                    <div class="tarot-card-mini ${reversed ? 'reversed' : ''}">
+                        <img src="${TarotService.getImageUrl(id)}" alt="${cardInfo?.name_zh}">
+                    </div>
+                    <div class="card-meta">
+                        <span class="label">${labels[i] || ''}</span>
+                        <span class="name">${cardInfo?.name_zh || id}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        body.innerHTML = `
+            <div class="tarot-history-detail">
+                <div class="modal-header-flex">
+                    <div class="tarot-icon-header">🔮</div>
+                    <h2>塔羅占卜回顧</h2>
+                </div>
+                
+                <div class="history-question glass-panel">
+                    <span class="hint">問卜內容：</span>
+                    <p>${record.question || '（未輸入問題）'}</p>
+                </div>
+
+                <div class="history-spread-grid">
+                    ${cardsHtml}
+                </div>
+
+                <div class="history-insight glass-panel">
+                    <h3>導師初步解析</h3>
+                    <div class="insight-content">
+                        ${record.quickInsight ? record.quickInsight : '<p class="hint">此紀錄尚無初步解析內容。</p>'}
+                    </div>
+                </div>
+
+                <div class="history-actions">
+                    <button class="btn-primary purple-btn" id="history-go-chat">進入深度對話</button>
+                    <button class="btn-secondary close-modal">關閉視窗</button>
+                </div>
+            </div>
+        `;
+
+        const goChatBtn = document.getElementById('history-go-chat');
+        if (goChatBtn) {
+            goChatBtn.onclick = () => {
+                modal.classList.remove('active');
+                this.switchView('ai-mentor');
+                this.prepareAIMentorView(null, record.id);
+            };
+        }
+
+        const closeBtn = body.querySelector('.close-modal');
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            };
+        }
     }
 
     showHistoryResultOverlay(recordId) {
@@ -2013,6 +2092,11 @@ class App {
 
             const interpretation = await AIService.ask(prompt);
             analysisText.innerText = interpretation;
+
+            // Persist the interpretation for history
+            if (this.currentRecordId) {
+                JournalService.updateRecord(this.currentRecordId, { quickInsight: interpretation });
+            }
         } catch (error) {
             console.error("Auto interpretation failed:", error);
             analysisText.innerText = "星象觀測受阻，請點選「詳細解牌」按鈕。";

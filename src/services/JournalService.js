@@ -25,6 +25,20 @@ export class JournalService {
   }
 
   /**
+   * Updates any fields for a specific record.
+   * @param {string} id - Record ID.
+   * @param {Object} updates - Object containing fields to update.
+   */
+  static updateRecord(id, updates) {
+    const history = this.getHistory();
+    const index = history.findIndex(item => item.id === id);
+    if (index !== -1) {
+      history[index] = { ...history[index], ...updates };
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history));
+    }
+  }
+
+  /**
    * Updates messages for a specific record.
    * @param {string} id - Record ID.
    * @param {Array} messages - Message history.
