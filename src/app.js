@@ -379,7 +379,7 @@ class App {
             };
         });
 
-        overlay.classList.remove('history-mode'); 
+        overlay.classList.remove('history-mode');
 
         // Link Consult Mentor button directly to AI view with record
         const askAiBtn = overlay.querySelector('#ask-mentor-result');
@@ -906,11 +906,11 @@ class App {
     updateNavLabels() {
         const isTarot = this.currentMode === 'tarot';
         const navMap = {
-            'tabletop': isTarot ? '抽牌 Tabletop' : '抽爻 Tabletop',
-            'ai-mentor': '導師 AI Mentor',
-            'library': isTarot ? '塔羅牌大全' : '圖書館 Library',
-            'history': '每日紀錄 Journal',
-            'settings': '設定 Settings'
+            'tabletop': isTarot ? '抽牌' : '抽爻',
+            'ai-mentor': '導師',
+            'library': isTarot ? '塔羅牌大全' : '圖書館',
+            'history': '每日紀錄',
+            'settings': '設定'
         };
 
         document.querySelectorAll('.nav-links a').forEach(link => {
@@ -1175,7 +1175,7 @@ class App {
 
     updateMonthlyStats() {
         const currentMode = this.currentMode || 'iching';
-        
+
         const statsCard = document.querySelector('.stats-card');
         if (currentMode === 'tarot') {
             if (statsCard) statsCard.style.display = 'none';
@@ -1194,15 +1194,15 @@ class App {
         if (this.radarChart) this.radarChart.destroy();
 
         if (stats.total === 0) {
-            summaryEl.innerHTML = currentMode === 'tarot' 
+            summaryEl.innerHTML = currentMode === 'tarot'
                 ? "<p>本月尚無紀錄，快去開啟您的塔羅探索吧！</p>"
                 : "<p>本月尚無紀錄，快去開啟您的易經探索吧！</p>";
             // Empty Chart
             this.radarChart = new Chart(ctx, {
                 type: 'radar',
-                data: { 
-                    labels: currentMode === 'tarot' ? ['權杖(火)', '聖杯(水)', '寶劍(風)', '金幣(土)', '大序'] : ['金', '木', '水', '火', '土'], 
-                    datasets: [] 
+                data: {
+                    labels: currentMode === 'tarot' ? ['權杖(火)', '聖杯(水)', '寶劍(風)', '金幣(土)', '大序'] : ['金', '木', '水', '火', '土'],
+                    datasets: []
                 },
                 options: { scales: { r: { display: false } } }
             });
@@ -1381,7 +1381,7 @@ class App {
         // Switch button logic to point to main AI View
         const askAiBtn = document.getElementById('ask-ai');
         const isHistory = !!(recordId && recordId !== "null" && recordId !== "");
-        
+
         if (askAiBtn) {
             modal.classList.toggle('history-mode', isHistory);
             askAiBtn.style.display = isHistory ? 'none' : 'block';
@@ -1417,7 +1417,7 @@ class App {
         } else if (this.currentTarotCard) {
             header.innerText = `${this.currentTarotCard.name_zh} (${this.currentTarotCard.name_en})`;
             this.currentHexData = null;
-        } else if (hex) { 
+        } else if (hex) {
             header.innerText = `${hex.name}卦 (#${hex.id})`;
             this.currentHexData = hex;
             this.currentTarotCard = null;
@@ -1449,7 +1449,7 @@ class App {
             if (currentRecord?.type === 'tarot') emptyHint = '與導師探討此次塔羅占卜的深層意涵。';
             else if (this.currentTarotCard) emptyHint = `與導師深度探討「${this.currentTarotCard.name_zh}」牌的象徵意涵與啟示。`;
             else if (hex || this.currentHexData) emptyHint = `與導師探討「${(hex || this.currentHexData).name}卦」的深層意涵。`;
-            
+
             chatHistory.innerHTML = `<p class="empty-state">${emptyHint}</p>`;
         }
 
@@ -1485,10 +1485,10 @@ class App {
             // Get the full record context for the AI
             const record = JournalService.getRecord(this.currentRecordId);
             const stream = AIService.streamChat(
-                this.chatMessages, 
-                this.currentHexData, 
-                record || {}, 
-                null, 
+                this.chatMessages,
+                this.currentHexData,
+                record || {},
+                null,
                 this.currentTarotCard
             );
 
@@ -1551,12 +1551,12 @@ class App {
                 <p class="selection-hint" style="color: var(--text-secondary); font-size: 0.9rem;">當天共有 ${records.length} 筆紀錄，請選擇欲查看的項目：</p>
                 ${records.map(record => {
             const time = new Date(record.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
+
             if (record.type === 'tarot') {
                 const spreadCards = record.spread || [];
                 let cardCount = 0;
                 let cardsDisplayStr = '';
-                
+
                 if (Array.isArray(spreadCards)) {
                     cardCount = spreadCards.length;
                     const majorMap = {
@@ -1572,7 +1572,7 @@ class App {
                     const cardNames = spreadCards.map(c => {
                         const id = typeof c === 'string' ? c : c.id;
                         const reversed = typeof c === 'string' ? false : c.isReversed;
-                        
+
                         let name = id;
                         if (!id.includes('_')) {
                             name = majorMap[id] || id;
@@ -1655,7 +1655,7 @@ class App {
 
         const modal = document.getElementById('detail-modal');
         await this.renderTarotHistoryDetail(record);
-        
+
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
@@ -1663,23 +1663,23 @@ class App {
     async renderTarotHistoryDetail(record) {
         const modal = document.getElementById('detail-modal');
         modal.classList.add('history-mode'); // Hide floating Ask AI button
-        
+
         const askAiBtn = document.getElementById('ask-ai');
         if (askAiBtn) askAiBtn.style.display = 'none';
 
         const body = modal.querySelector('.modal-body');
-        
+
         const spreadCards = record.spread || [];
         const isOneCard = record.spreadType === 'one-card';
         const labels = isOneCard ? ['今日啟示 Daily Insight'] : ['過去 Past', '現在 Present', '未來 Future'];
-        
+
         let cardsHtml = '';
         for (let i = 0; i < spreadCards.length; i++) {
             const c = spreadCards[i];
             const id = typeof c === 'string' ? c : c.id;
             const reversed = typeof c === 'string' ? false : c.isReversed;
             const cardInfo = await TarotService.getCard(id);
-            
+
             cardsHtml += `
                 <div class="tarot-history-card">
                     <div class="tarot-card-mini ${reversed ? 'reversed' : ''}">
@@ -1834,7 +1834,7 @@ class App {
         const spreadType = SettingsService.getSetting('tarotSpread') || 'three-card';
         const config = this.getTarotSpreadConfig(spreadType);
         const context = config.name;
-        
+
         if (!this.tarotSpread) this.tarotSpread = {};
         const cardsStr = Object.entries(this.tarotSpread || {}).map(([pos, card]) =>
             card ? `${pos}: ${card.id} (${card.isReversed ? '逆位' : '正位'})` : `${pos}: 未抽牌`
@@ -1877,7 +1877,7 @@ class App {
         if (this.tarotStep !== 'shuffling') return;
         this.isTarotShuffling = true;
         document.querySelector('.deck-pile')?.classList.add('active');
-        
+
         if (this.shuffleInterval) clearInterval(this.shuffleInterval);
         this.shuffleInterval = setInterval(() => {
             this.handleTarotShuffling();
@@ -1905,7 +1905,7 @@ class App {
         this.isTarotShuffling = false;
         if (this.shuffleInterval) clearInterval(this.shuffleInterval);
         document.querySelector('.deck-pile')?.classList.remove('active');
-        
+
         if (this.tarotStep === 'shuffling') {
             this.finishTarotShuffle();
         }
@@ -1973,7 +1973,7 @@ class App {
                 const handleTouchMove = (e) => {
                     const touch = e.touches[0];
                     const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                    
+
                     // Clear previous hover
                     const allCards = fan.querySelectorAll('.fan-card');
                     allCards.forEach(c => c.classList.remove('hover-touch'));
@@ -2000,7 +2000,7 @@ class App {
                     // Start tracking on fan container to avoid event bubbling issues
                     fan.addEventListener('touchmove', handleTouchMove, { passive: true });
                     fan.addEventListener('touchend', handleTouchEnd, { once: true });
-                    
+
                     // Clear other hovers first
                     fan.querySelectorAll('.fan-card').forEach(c => c.classList.remove('hover-touch'));
                     card.classList.add('hover-touch');
@@ -2102,6 +2102,42 @@ class App {
 
             this.autoInterpretTarot();
         }, 600);
+    }
+
+    showTarotDetail(cardInfo, id) {
+        if (!cardInfo) return;
+        const modal = document.getElementById('detail-modal');
+        const body = modal.querySelector('.modal-body');
+
+        body.innerHTML = `
+            <div class="tarot-detail-view" style="padding: 20px;">
+                <div class="tarot-detail-header" style="margin-bottom: 20px; text-align: center;">
+                    <h2 style="color: var(--accent-gold);">${cardInfo.name_zh} <small style="color: var(--text-secondary); font-size: 1rem;">${cardInfo.name_en}</small></h2>
+                    <span class="arcana-badge" style="background: rgba(212,175,55,0.2); color: var(--accent-gold); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem;">${cardInfo.arcana} Arcana</span>
+                </div>
+                <div class="tarot-detail-main" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div class="tarot-detail-img" style="flex: 1; min-width: 200px;">
+                        <img src="${TarotService.getImageUrl(id)}" alt="${cardInfo.name_zh}" style="width:100%; border-radius:10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    </div>
+                    <div class="tarot-detail-text" style="flex: 2; min-width: 300px;">
+                        <p class="summary" style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;"><strong>概述：</strong>${cardInfo.summary}</p>
+                        <div class="meaning-section" style="margin-bottom: 15px;">
+                            <h4 style="color: var(--success); margin-bottom: 5px;">正位牌義</h4>
+                            <p style="font-size: 0.95rem; opacity: 0.9;">${cardInfo.llm_analysis.general_upright}</p>
+                        </div>
+                        <div class="meaning-section" style="margin-bottom: 15px;">
+                            <h4 style="color: var(--error); margin-bottom: 5px;">逆位牌義</h4>
+                            <p style="font-size: 0.95rem; opacity: 0.9;">${cardInfo.llm_analysis.general_reversed}</p>
+                        </div>
+                        <blockquote style="border-left: 4px solid var(--accent-gold); padding-left: 15px; font-style: italic; color: var(--text-secondary); margin: 20px 0;">
+                            ${cardInfo.advice}
+                        </blockquote>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.showModal(modal);
     }
 
     async renderTarotLibrary() {
