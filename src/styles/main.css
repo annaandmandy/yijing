@@ -2485,6 +2485,33 @@ canvas {
     margin-bottom: 8px;
 }
 
+.learn-article table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    display: block;
+    overflow-x: auto; /* Enables horizontal scrolling on mobile */
+    border-radius: 8px;
+}
+
+.learn-article th,
+.learn-article td {
+    padding: 12px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: left;
+    line-height: 1.6;
+}
+
+.learn-article th {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--accent-gold);
+    white-space: nowrap;
+}
+
+.learn-article td {
+    min-width: 100px;
+}
+
 /* Phonetic Styles */
 .card-phonetic {
     font-size: 0.7rem;
