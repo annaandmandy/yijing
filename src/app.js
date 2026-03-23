@@ -1600,6 +1600,9 @@ class App {
         // User Message
         this.chatMessages.push({ role: 'user', content: text });
         this.appendMessageToUI('user', text);
+        
+        // Always scroll to bottom after user message
+        history.scrollTop = history.scrollHeight;
 
         const status = document.querySelector('.chat-status');
         status.innerText = '思考中...';
@@ -1637,8 +1640,6 @@ class App {
                 } else {
                     aiMsgEl.innerText = fullResponse;
                 }
-
-                history.scrollTop = history.scrollHeight;
             }
             this.chatMessages.push({ role: 'assistant', content: fullResponse });
             if (this.currentRecordId) {
