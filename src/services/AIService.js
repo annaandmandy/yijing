@@ -69,6 +69,8 @@ export class AIService {
         // Dynamic System Instruction based on context
         let persona = `你現在是一位精通「六爻」與「術數」的易經導師。
 當前卦象：${hexagramData?.name}卦 (#${hexagramData?.id})
+${hexagramData?.structure?.upper_trigram_attr ? `上卦：${hexagramData.structure.upper_trigram_attr.split('（')[0]}` : ""}
+${hexagramData?.structure?.lower_trigram_attr ? `下卦：${hexagramData.structure.lower_trigram_attr.split('（')[0]}` : ""}
 宮位：${hexagramData?.najia_analysis?.palace}宮 [${hexagramData?.najia_analysis?.palace_wuxing}]
 納甲數據：${JSON.stringify(hexagramData?.najia_analysis?.lines)}`;
 
