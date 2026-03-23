@@ -646,14 +646,14 @@ class App {
 
     showTrigramDetail(name) {
         const data = {
-            "乾": { nature: "天", attribute: "健", element: "金", animal: "馬", family: "父", body: "首", color: "大赤、金", season: "秋冬之交", zhuyin: "ㄑㄧㄢˊ", pinyin: "Qián" },
-            "坤": { nature: "地", attribute: "順", element: "土", animal: "牛", family: "母", body: "腹", color: "黃、黑", season: "夏秋之交", zhuyin: "ㄎㄨㄣ", pinyin: "Kūn" },
-            "震": { nature: "雷", attribute: "動", element: "木", animal: "龍", family: "長男", body: "足", color: "青、綠", season: "春", zhuyin: "ㄓㄣˋ", pinyin: "Zhèn" },
-            "巽": { nature: "風", attribute: "入", element: "木", animal: "雞", family: "長女", body: "股 (大腿)", color: "白", season: "春夏之交", zhuyin: "ㄒㄩㄣˋ", pinyin: "Xùn" },
-            "坎": { nature: "水", attribute: "陷", element: "水", animal: "豕 (豬)", family: "中男", body: "耳", color: "黑、藍", season: "冬", zhuyin: "ㄎㄢˇ", pinyin: "Kǎn" },
-            "離": { nature: "火", attribute: "麗", element: "火", animal: "雉 (雉雞)", family: "中女", body: "目", color: "紅、紫", season: "夏", zhuyin: "ㄌㄧˊ", pinyin: "Lí" },
-            "艮": { nature: "山", attribute: "止", element: "土", animal: "狗", family: "少男", body: "手", color: "黃", season: "冬春之交", zhuyin: "ㄍㄣˋ", pinyin: "Gèn" },
-            "兌": { nature: "澤", attribute: "說 (悅)", element: "金", animal: "羊", family: "少女", body: "口", color: "白", season: "秋", zhuyin: "ㄉㄨㄟˋ", pinyin: "Duì" }
+            "乾": { nature: "天、冰、雹", attribute: "健、剛、領袖", element: "金", animal: "馬", family: "父", body: "首", color: "大赤、金", season: "秋冬之交", zhuyin: "ㄑㄧㄢˊ", pinyin: "Qián", objects: "金玉、寶石、圓形、精密儀器" },
+            "坤": { nature: "地、陰雲、霧", attribute: "順、柔、包容", element: "土", animal: "牛", family: "母", body: "腹", color: "黃、黑", season: "夏秋之交", zhuyin: "ㄎㄨㄣ", pinyin: "Kūn", objects: "布帛、瓦片、圓形物、黃色物" },
+            "震": { nature: "雷、地震、驟雨", attribute: "動、驚、起、怒", element: "木", animal: "龍", family: "長男", body: "足", color: "青、綠", season: "春", zhuyin: "ㄓㄣˋ", pinyin: "Zhèn", objects: "竹木、樂器、發聲器、高處、道路" },
+            "巽": { nature: "風、長雲", attribute: "入、伏、順、利", element: "木", animal: "雞", family: "長女", body: "股 (大腿)", color: "白", season: "春夏之交", zhuyin: "ㄒㄩㄣˋ", pinyin: "Xùn", objects: "木頭、繩索、花草、細長物、文書" },
+            "坎": { nature: "水、雨、雪", attribute: "陷、險、隱、智", element: "水", animal: "豕 (豬)", family: "中男", body: "耳", color: "黑、藍", season: "冬", zhuyin: "ㄎㄢˇ", pinyin: "Kǎn", objects: "水、酒、帶核之物、黑色物" },
+            "離": { nature: "日、電、虹", attribute: "麗、附、明、熱", element: "火", animal: "雉 (雉雞)", family: "中女", body: "目", color: "紅、紫", season: "夏", zhuyin: "ㄌㄧˊ", pinyin: "Lí", objects: "火、電、燈、殼中物、乾燥物" },
+            "艮": { nature: "山、多雲之氣", attribute: "止、靜、重、固", element: "土", animal: "狗", family: "少男", body: "手", color: "黃", season: "冬春之交", zhuyin: "ㄍㄣˋ", pinyin: "Gèn", objects: "山石、門戶、土工、木果、硬質物" },
+            "兌": { nature: "雨、澤、霧氣", attribute: "說 (悅)、缺、毀摺", element: "金", animal: "羊", family: "少女", body: "口", color: "白", season: "秋", zhuyin: "ㄉㄨㄟˋ", pinyin: "Duì", objects: "金、刀、破損物、甜味" }
         };
         const t = data[name];
         const panel = document.getElementById('trigram-detail-panel');
@@ -670,6 +670,9 @@ class App {
                 <span><strong>人體：</strong>${t.body}</span>
                 <span><strong>代表色：</strong>${t.color}</span>
                 <span><strong>時令：</strong>${t.season}</span>
+            </div>
+            <div class="t-detail-full" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--glass-border); font-size: 0.85rem;">
+                <p><strong>對應萬物：</strong>${t.objects}</p>
             </div>
         `;
     }
