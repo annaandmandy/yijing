@@ -64,39 +64,57 @@
         "lines": [
             {
                 "line_number": 1,
+                "tiangan": "己",
                 "dizhi": "卯",
                 "wuxing": "木",
-                "relative": "父母"
+                "relative": "父母",
+                "is_shi": false,
+                "is_ying": false
             },
             {
                 "line_number": 2,
+                "tiangan": "己",
                 "dizhi": "丑",
                 "wuxing": "土",
-                "relative": "子孫"
+                "relative": "子孫",
+                "is_shi": false,
+                "is_ying": false
             },
             {
                 "line_number": 3,
+                "tiangan": "己",
                 "dizhi": "亥",
                 "wuxing": "水",
-                "relative": "官鬼"
+                "relative": "官鬼",
+                "is_shi": false,
+                "is_ying": true
             },
             {
                 "line_number": 4,
+                "tiangan": "己",
                 "dizhi": "酉",
                 "wuxing": "金",
-                "relative": "妻財"
+                "relative": "妻財",
+                "is_shi": false,
+                "is_ying": false
             },
             {
                 "line_number": 5,
+                "tiangan": "己",
                 "dizhi": "未",
                 "wuxing": "土",
-                "relative": "子孫"
+                "relative": "子孫",
+                "is_shi": false,
+                "is_ying": false
             },
             {
                 "line_number": 6,
+                "tiangan": "己",
                 "dizhi": "巳",
                 "wuxing": "火",
-                "relative": "兄弟"
+                "relative": "兄弟",
+                "is_shi": true,
+                "is_ying": false
             }
         ]
     },

@@ -59,44 +59,62 @@
     "binary": "001000",
     "name": "謙",
     "najia_analysis": {
-        "palace": "巽",
-        "palace_wuxing": "木",
+        "palace": "兌",
+        "palace_wuxing": "金",
         "lines": [
             {
                 "line_number": 1,
-                "dizhi": "子",
-                "wuxing": "水",
-                "relative": "父母"
+                "tiangan": "丙",
+                "dizhi": "辰",
+                "wuxing": "土",
+                "relative": "父母",
+                "is_shi": false,
+                "is_ying": false
             },
             {
                 "line_number": 2,
-                "dizhi": "寅",
-                "wuxing": "木",
-                "relative": "兄弟"
+                "tiangan": "丙",
+                "dizhi": "午",
+                "wuxing": "火",
+                "relative": "官鬼",
+                "is_shi": false,
+                "is_ying": true
             },
             {
                 "line_number": 3,
-                "dizhi": "辰",
-                "wuxing": "土",
-                "relative": "妻財"
+                "tiangan": "丙",
+                "dizhi": "申",
+                "wuxing": "金",
+                "relative": "兄弟",
+                "is_shi": false,
+                "is_ying": false
             },
             {
                 "line_number": 4,
+                "tiangan": "癸",
                 "dizhi": "丑",
                 "wuxing": "土",
-                "relative": "妻財"
+                "relative": "父母",
+                "is_shi": false,
+                "is_ying": false
             },
             {
                 "line_number": 5,
+                "tiangan": "癸",
                 "dizhi": "亥",
                 "wuxing": "水",
-                "relative": "父母"
+                "relative": "子孫",
+                "is_shi": true,
+                "is_ying": false
             },
             {
                 "line_number": 6,
+                "tiangan": "癸",
                 "dizhi": "酉",
                 "wuxing": "金",
-                "relative": "官鬼"
+                "relative": "兄弟",
+                "is_shi": false,
+                "is_ying": false
             }
         ]
     },
