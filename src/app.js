@@ -1966,6 +1966,42 @@ class App {
                 card.style.setProperty('--base-y', `${y}px`);
                 card.style.setProperty('--base-angle', `${angle}deg`);
                 card.style.zIndex = i;
+                card.dataset.index = i; // Store index for touch retrieval
+
+                // Mobile Touch Optimization
+                const handleTouchMove = (e) => {
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    
+                    // Clear previous hover
+                    const allCards = fan.querySelectorAll('.fan-card');
+                    allCards.forEach(c => c.classList.remove('hover-touch'));
+
+                    if (target && target.classList.contains('fan-card')) {
+                        target.classList.add('hover-touch');
+                        this.lastTouchedCard = target;
+                    }
+                };
+
+                const handleTouchEnd = () => {
+                    if (this.lastTouchedCard) {
+                        const idx = parseInt(this.lastTouchedCard.dataset.index);
+                        this.handleTarotPickCard(this.lastTouchedCard, idx);
+                        this.lastTouchedCard.classList.remove('hover-touch');
+                        this.lastTouchedCard = null;
+                    }
+                    fan.removeEventListener('touchmove', handleTouchMove);
+                    fan.removeEventListener('touchend', handleTouchEnd);
+                };
+
+                card.addEventListener('touchstart', (e) => {
+                    // Start tracking on fan container to avoid event bubbling issues
+                    fan.addEventListener('touchmove', handleTouchMove, { passive: true });
+                    fan.addEventListener('touchend', handleTouchEnd, { once: true });
+                    
+                    card.classList.add('hover-touch');
+                    this.lastTouchedCard = card;
+                });
 
                 card.onclick = () => this.handleTarotPickCard(card, i);
                 fan.appendChild(card);
@@ -1978,6 +2014,8 @@ class App {
             for (let i = 0; i < cardCount; i++) {
                 const card = document.createElement('div');
                 card.className = 'fan-card';
+                card.dataset.index = i;
+
                 const angle = ((i / (cardCount - 1)) - 0.5) * arcSpread;
                 const radian = (angle - 90) * (Math.PI / 180);
                 const x = Math.cos(radian) * radius;

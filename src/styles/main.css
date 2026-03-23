@@ -1068,7 +1068,7 @@ canvas {
     padding: 30px;
     margin: 0 0 40px 0 !important;
     border: none !important;
-    background: rgba(255, 255, 255, 0.03);
+    background: transparent;
     /* Allow cards to overflow on sides */
     overflow: visible !important;
 }
@@ -1124,8 +1124,8 @@ canvas {
     position: absolute;
     width: 100%;
     height: 100%;
-    background: #1a1a1a;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300"><rect width="200" height="300" fill="%231a1a1a"/><rect x="10" y="10" width="180" height="280" fill="none" stroke="%23d4af37" stroke-width="2"/><circle cx="100" cy="150" r="40" fill="none" stroke="%23d4af37" stroke-width="1"/><path d="M100 110 L100 190 M60 150 L140 150" stroke="%23d4af37" stroke-width="1"/></svg>');
+    background: #000;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300"><rect width="200" height="300" fill="%23000000"/><rect x="10" y="10" width="180" height="280" fill="none" stroke="%23d4af37" stroke-width="2"/><circle cx="100" cy="150" r="40" fill="none" stroke="%23d4af37" stroke-width="1"/><path d="M100 110 L100 190 M60 150 L140 150" stroke="%23d4af37" stroke-width="1"/></svg>');
     background-size: cover;
     border-radius: 10px;
     border: 1px solid var(--glass-border);
@@ -1157,36 +1157,34 @@ canvas {
 }
 
 .fan-card {
-    width: 130px;
-    aspect-ratio: 13 / 21;
-    height: auto;
-    flex-shrink: 0;
-    background: #1a1a1a;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="130" height="210" viewBox="0 0 130 210"><rect width="130" height="210" fill="%231a1a1a"/><rect x="5" y="5" width="120" height="200" fill="none" stroke="%23d4af37" stroke-width="1"/><circle cx="65" cy="105" r="20" fill="none" stroke="%23d4af37" stroke-width="0.5"/></svg>');
-    background-size: cover;
-    border-radius: 8px;
     position: absolute;
-    transform: translate(var(--base-x), var(--base-y)) rotate(var(--base-angle));
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    width: 60px;
+    height: 100px;
+    background: #000;
+    background-image:
+        radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 80%),
+        linear-gradient(135deg, #000000 0%, #050505 100%);
+    border-radius: 6px;
+    border: 1px solid var(--accent-gold);
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--glass-border);
-    /* Hitbox improvement: larger transparent area around the card */
-    outline: 10px solid transparent;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+    transform: translate(var(--base-x), var(--base-y)) rotate(var(--base-angle));
+    transform-origin: center center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
-.fan-card:hover {
-    transform: translate(var(--base-x), var(--base-y)) rotate(var(--base-angle)) translateY(-40px) scale(1.1);
+.fan-card:hover,
+.fan-card.hover-touch {
+    transform: translate(var(--base-x), calc(var(--base-y) - 40px)) rotate(var(--base-angle)) scale(1.2);
     z-index: 1000 !important;
-    box-shadow: 0 10px 20px rgba(212, 175, 55, 0.4);
+    border-color: #fff;
+    box-shadow: 0 0 25px var(--accent-gold);
 }
 
 .fan-card.picked {
+    transform: translate(var(--base-x), -500px) rotate(360deg) scale(0);
     opacity: 0;
-    transform: translate(var(--base-x), var(--base-y)) translateY(-200px) scale(1.5) rotate(0deg);
     pointer-events: none;
-    z-index: 2000 !important;
-    transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.5s ease-out;
 }
 
 .selection-instruction {
@@ -1370,9 +1368,9 @@ canvas {
 .deck-pile {
     width: 160px;
     height: 280px;
-    background: var(--glass-bg);
+    background: transparent;
     border-radius: 12px;
-    border: 2px dashed var(--accent-purple);
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
