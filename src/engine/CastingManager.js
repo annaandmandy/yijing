@@ -35,15 +35,22 @@ export class CastingManager {
         this.container.appendChild(this.renderer.domElement);
 
         // Lighting for premium look
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         this.scene.add(ambientLight);
 
-        const spotLight = new THREE.SpotLight(0xffffff, 1);
+        const spotLight = new THREE.SpotLight(0xffffff, 1.5);
         spotLight.position.set(5, 20, 10);
+        spotLight.angle = Math.PI / 4;
+        spotLight.penumbra = 0.5;
+        spotLight.decay = 2;
+        spotLight.distance = 200;
         spotLight.castShadow = true;
-        spotLight.shadow.mapSize.width = 1024;
-        spotLight.shadow.mapSize.height = 1024;
         this.scene.add(spotLight);
+
+        // Add a back-light to catch edges
+        const backLight = new THREE.PointLight(0xffd700, 0.8);
+        backLight.position.set(-5, 5, -5);
+        this.scene.add(backLight);
 
         window.addEventListener('resize', () => this.onResize());
     }
@@ -107,28 +114,37 @@ export class CastingManager {
     }
 
     createCoins() {
-        // Thicker geometry for better visual weight
-        const coinGeometry = new THREE.CylinderGeometry(0.85, 0.85, 0.25, 64);
+        const loader = new THREE.TextureLoader();
+        const frontTex = loader.load('/assets/coins/coin_front.png');
+        const backTex = loader.load('/assets/coins/coin_back.png');
+        const edgeTex = loader.load('/assets/coins/coin_edge.png');
+        edgeTex.wrapS = THREE.RepeatWrapping;
+        edgeTex.repeat.set(8, 1); // Tile horizontally for the edge
 
-        // More exquisite materials
+        // Thinner geometry for more realistic feel
+        const coinGeometry = new THREE.CylinderGeometry(0.85, 0.85, 0.1, 64);
+
+        // Materials that match the weathered bronze look
         const sideMat = new THREE.MeshStandardMaterial({
-            color: 0x8c6a1b,
-            metalness: 0.9,
-            roughness: 0.1
+            color: 0x3d2e1f, // Darker, aged bronze to blend with the textures
+            metalness: 0.5,
+            roughness: 0.7,
+            emissive: 0x1a1510,
+            emissiveIntensity: 0.02
         });
         const faceMatYang = new THREE.MeshStandardMaterial({
-            color: 0xffd700,
-            metalness: 1.0,
-            roughness: 0.05,
-            emissive: 0xd4af37,
-            emissiveIntensity: 0.2
+            map: backTex,
+            metalness: 0.6,
+            roughness: 0.45,
+            bumpMap: backTex,
+            bumpScale: 0.02
         });
         const faceMatYin = new THREE.MeshStandardMaterial({
-            color: 0xdddddd,
-            metalness: 0.8,
-            roughness: 0.2,
-            emissive: 0x999999,
-            emissiveIntensity: 0.1
+            map: frontTex,
+            metalness: 0.6,
+            roughness: 0.45,
+            bumpMap: frontTex,
+            bumpScale: 0.02
         });
 
         const materials = [sideMat, faceMatYang, faceMatYin];
@@ -138,8 +154,9 @@ export class CastingManager {
             coinMesh.castShadow = true;
             this.scene.add(coinMesh);
 
-            // Refined physics shape (matching thicker geometry)
-            const coinShape = new CANNON.Cylinder(0.85, 0.85, 0.25, 32);
+            // Refined physics shape (matching thinner geometry)
+            // height in CANNON Cylinder is total height, same as THREE
+            const coinShape = new CANNON.Cylinder(0.85, 0.85, 0.1, 32);
             const coinBody = new CANNON.Body({
                 mass: 1.2,
                 shape: coinShape,
