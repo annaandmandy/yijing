@@ -1110,7 +1110,13 @@ class App {
             if (coinZone) coinZone.classList.add('hidden');
         } else {
             if (plumZone) plumZone.classList.add('hidden');
-            if (coinZone) coinZone.classList.remove('hidden');
+            if (coinZone) {
+                coinZone.classList.remove('hidden');
+                // Ensure 3D scene adapts to container size after being hidden
+                if (this.caster) {
+                    setTimeout(() => this.caster.onResize(), 50);
+                }
+            }
         }
 
         // Sync buttons
@@ -1157,6 +1163,11 @@ class App {
                 }
 
                 this.updateNavLabels();
+                
+                // Default to Coin casting when entering I-Ching mode from others
+                if (mode === 'iching') {
+                    this.ichingMode = 'coin';
+                }
 
                 // Force switch to Tabletop view when changing mode
                 this.currentView = 'tabletop';
