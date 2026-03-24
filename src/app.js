@@ -210,10 +210,12 @@ class App {
         const phonetics = HEXAGRAM_PHONETICS[original.id];
         const phoneticStr = phonetics ? `<div class="result-phonetic-stack"><span class="zhuyin">${phonetics.bopomofo}</span><span class="pinyin">${phonetics.pinyin}</span></div>` : '';
         
+        const displayName = (future && future.name !== original.name) ? `${original.name} 之 ${future.name}` : `${original.name} (${original.id})`;
+        
         nameEl.innerHTML = `
             <div class="result-badge">${meta.isPlum ? '梅花易數' : (meta.hasChange || meta.futureBinary ? '變卦' : '本卦')}</div>
             <div class="hex-header-main">
-                <div class="hex-name-main">${original.name} (${original.id})</div>
+                <div class="hex-name-main">${displayName}</div>
                 ${this.renderMiniHexSymbol(original.binary)}
             </div>
             ${phoneticStr}
@@ -1971,12 +1973,15 @@ class App {
             }
 
             const hex = this.library.find(h => h.id === record.originalId);
+            const futureHex = record.futureId ? this.library.find(h => h.id === record.futureId) : null;
+            const displayName = (futureHex && futureHex.name !== hex?.name) ? `${hex?.name}之${futureHex.name}` : `${hex?.name || '未知'}卦`;
+
             return `
                         <div class="selection-item glass-panel" style="padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; gap: 15px;">
                             <div class="item-info" style="flex: 1;">
                                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                                     <span style="font-size: 0.8rem; background: rgba(212, 175, 55, 0.2); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px;">${time}</span>
-                                    <strong style="color: var(--text-primary);">${hex?.name || '未知'}卦</strong>
+                                    <strong style="color: var(--text-primary);">${displayName}</strong>
                                 </div>
                                 <div style="font-size: 0.9rem; color: var(--text-secondary);">${record.question || '隨喜求卦'}</div>
                             </div>
