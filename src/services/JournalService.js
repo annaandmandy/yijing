@@ -127,4 +127,17 @@ export class JournalService {
       wuxing: wuxingCounters
     };
   }
+  
+  /**
+   * Deletes a specific record by ID.
+   */
+  static deleteRecord(id) {
+    const history = this.getHistory();
+    const filtered = history.filter(item => item.id !== id);
+    if (history.length !== filtered.length) {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filtered));
+      return true;
+    }
+    return false;
+  }
 }

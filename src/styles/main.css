@@ -3612,3 +3612,22 @@ canvas {
         text-align: center;
     }
 }
+
+.grid-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 10px;
+    padding: 0 5px;
+}
+
+.grid-card-tag {
+    font-size: 0.6rem;
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--accent-gold);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    white-space: nowrap;
+}

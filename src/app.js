@@ -280,8 +280,9 @@ class App {
 
     renderClassicContent(container, original, future, meta) {
         let html = '';
+        const parse = (txt) => (window.marked ? window.marked.parse(txt || '') : (txt || ''));
+
         if (meta.hasChange && future) {
-            const futureAdvice = future.llm_analysis?.general ? `<br><small style="color: var(--text-secondary); opacity: 0.8;">核心啟示：${future.llm_analysis.general}</small>` : '';
             html = `
                 <div class="result-hex-display">
                     <div class="hex-block original">
@@ -300,8 +301,8 @@ class App {
                 </div>
                 <div class="analysis-classic-box glass-panel">
                     <div class="change-info">
-                        <p><strong>現狀：</strong>${original.name}卦 — ${original.summary}</p>
-                        <p><strong>趨勢：</strong>變爻引發向 ${future.name}卦 的演進。${future.summary}</p>
+                        <div><strong>現狀：</strong>${original.name}卦 — ${parse(original.summary)}</div>
+                        <div style="margin-top: 10px;"><strong>趨勢：</strong>變爻引發向 ${future.name}卦 的演進。${parse(future.summary)}</div>
                     </div>
                 </div>
             `;
@@ -314,7 +315,7 @@ class App {
                         <span class="hex-name-text">${original.name}</span>
                     </div>
                 </div>
-                <div class="analysis-classic-box glass-panel"><p>${original.summary}</p></div>
+                <div class="analysis-classic-box glass-panel">${parse(original.summary)}</div>
             `;
         }
         container.innerHTML = html;
@@ -419,7 +420,7 @@ class App {
                         <span class="verdict-interaction">${analysis.result?.split('：')[0] || analysis.interaction || ''}</span>
                         <i class="fas fa-magic" style="color: var(--accent-gold); opacity: 0.5;"></i>
                     </div>
-                    <div class="verdict-text">${analysis.result?.split('：')[1] || analysis.result || '根據體用生剋關係，此卦象代表發展平穩。'}</div>
+                    <div class="verdict-text">${window.marked ? window.marked.parse(analysis.result?.split('：')[1] || analysis.result || '根據體用生剋關係，此卦象代表發展平穩。') : (analysis.result?.split('：')[1] || analysis.result)}</div>
                 </div>
             </div>
         `;
@@ -1042,6 +1043,16 @@ class App {
     }
 
     switchView(viewId) {
+        // Hide result overlay when switching views
+        const overlay = document.getElementById('result-overlay');
+        if (overlay) overlay.classList.add('hidden');
+
+        // Clear AI Mentor context title if switching fundamentally
+        const aiTitle = document.getElementById('mentor-current-hex');
+        if (aiTitle && !this.currentRecordId) {
+            aiTitle.innerText = "等待卦象中...";
+        }
+
         // Map 'tabletop' to 'tarot' if we are in tarot mode
         let activeViewId = viewId;
         if (viewId === 'tabletop' && this.currentMode === 'tarot') {
@@ -1967,7 +1978,8 @@ class App {
                             ${cardsDisplayStr}
                         </div>
                         <div class="item-actions" style="display: flex; gap: 8px;">
-                            <button class="nav-btn gold" onclick="window.app.showHistoryTarotResult('${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">查看解析</button>
+                            <button class="nav-btn gold" onclick="window.app.showHistoryTarotResult('${record.id}')" title="查看解析"><i class="fas fa-eye"></i> 解析</button>
+                            <button class="nav-btn" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.2); width: 38px; padding: 0;" onclick="window.app.handleDeleteRecord('${record.id}', ${day})" title="刪除"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </div>
                 `;
@@ -1987,8 +1999,9 @@ class App {
                                 <div style="font-size: 0.9rem; color: var(--text-secondary);">${record.question || '隨喜求卦'}</div>
                             </div>
                             <div class="item-actions" style="display: flex; gap: 8px;">
-                                <button class="nav-btn" onclick="window.app.showHistoryResultOverlay('${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">查看斷語</button>
-                                <button class="nav-btn gold" onclick="window.app.showHexDetailById('${hex?.id}', '${record.id}')" style="white-space: nowrap; font-size: 0.8rem;">詳解</button>
+                                <button class="nav-btn" onclick="window.app.showHistoryResultOverlay('${record.id}')" title="查看結果"><i class="fas fa-eye"></i> 斷語</button>
+                                <button class="nav-btn gold" onclick="window.app.showHexDetailById('${hex?.id}', '${record.id}')" title="詳解"><i class="fas fa-book-open"></i> 詳解</button>
+                                <button class="nav-btn" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.2); width: 38px; padding: 0;" onclick="window.app.handleDeleteRecord('${record.id}', ${day})" title="刪除"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </div>
                     `;
@@ -2028,6 +2041,29 @@ class App {
                 handleClose(e);
             }
         };
+    }
+
+    async handleDeleteRecord(recordId, day) {
+        if (!confirm("確定要刪除這條紀錄嗎？此操作不可恢復。")) return;
+
+        const success = JournalService.deleteRecord(recordId);
+        if (success) {
+            // Close the current modal
+            const modal = document.getElementById('detail-modal');
+            modal.classList.remove('active');
+
+            // Re-render the calendar and stats to reflect the deletion
+            this.renderCalendar(this.calendarYear, this.calendarMonth);
+
+            // If the deleted record was the one AI was talking about, reset AI
+            if (this.currentRecordId === recordId) {
+                this.currentRecordId = null;
+                const aiTitle = document.getElementById('mentor-current-hex');
+                if (aiTitle) aiTitle.innerText = "等待卦象中...";
+                const chatHistory = document.getElementById('chat-history-main');
+                if (chatHistory) chatHistory.innerHTML = '<p class="empty-state">紀錄已刪除。請選擇新的一卦開始。</p>';
+            }
+        }
     }
 
     async showHistoryTarotResult(recordId) {
