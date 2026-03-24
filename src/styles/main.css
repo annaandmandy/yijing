@@ -3171,13 +3171,13 @@ canvas {
     .tarot-fan {
         height: 420px;
         width: 100%;
-        margin: 60px auto 20px auto;
+        margin: 20px auto 20px auto; /* Reduced from 60px */
         perspective: 1000px;
     }
 
     .interaction-zone {
         min-height: 480px;
-        padding: 80px 15px 15px 15px;
+        padding: 40px 15px 15px 15px; /* Reduced from 80px */
     }
 
     .fan-card {

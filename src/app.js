@@ -1375,7 +1375,7 @@ class App {
             // Tags extraction
             const wuxing = hex.najia_analysis?.palace_wuxing || HEXAGRAM_ELEMENTS[hex.id] || "？";
             const wuxingColor = ELEMENT_COLORS[wuxing] || "var(--accent-gold)";
-            
+
             // Limit to 2 qualitative tags to keep card clean
             const qualitativeTags = (hex.tags || []).slice(0, 2);
             const tagsHtml = `
@@ -2412,11 +2412,11 @@ class App {
 
                 const isTopRow = i >= groupSize;
                 const localIdx = i % groupSize;
-                
+
                 // Parity between rows as requested
-                const radius = 200; 
-                const rowGap = 260; 
-                const globalY = -120; // Shift both rows up
+                const radius = 200;
+                const rowGap = 260;
+                const globalY = -180; // Shift both rows even higher as requested
                 const yShift = isTopRow ? globalY : (globalY + rowGap);
 
                 const angle = ((localIdx / (groupSize - 1)) - 0.5) * arcSpread;
@@ -2581,7 +2581,7 @@ class App {
                 });
                 this.currentRecordId = recordId;
                 this.chatMessages = [];
-                
+
                 // Trigger quick analysis for new readings
                 this.autoInterpretTarot();
             } else {
