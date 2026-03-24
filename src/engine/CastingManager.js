@@ -29,26 +29,32 @@ export class CastingManager {
         this.camera.lookAt(0, 0, 0);
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setClearColor(0x000000, 1);
         this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.shadowMap.enabled = true;
         this.container.appendChild(this.renderer.domElement);
 
         // Lighting for premium look
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         this.scene.add(ambientLight);
 
-        const spotLight = new THREE.SpotLight(0xffffff, 1.5);
+        // Add hemisphere light for natural fill and better color representation
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+        hemiLight.position.set(0, 20, 0);
+        this.scene.add(hemiLight);
+
+        const spotLight = new THREE.SpotLight(0xffffff, 2.5);
         spotLight.position.set(5, 20, 10);
         spotLight.angle = Math.PI / 4;
         spotLight.penumbra = 0.5;
-        spotLight.decay = 2;
+        spotLight.decay = 1.5;
         spotLight.distance = 200;
         spotLight.castShadow = true;
         this.scene.add(spotLight);
 
-        // Add a back-light to catch edges
-        const backLight = new THREE.PointLight(0xffd700, 0.8);
+        // Add a back-light to catch edges and provide depth
+        const backLight = new THREE.PointLight(0xffd700, 1.2);
         backLight.position.set(-5, 5, -5);
         this.scene.add(backLight);
 
@@ -100,12 +106,12 @@ export class CastingManager {
         wallRight.position.set(10, 0, 0);
         this.world.addBody(wallRight);
 
-        // Visual floor (decorative)
-        const floorGeo = new THREE.PlaneGeometry(20, 20);
+        // Visual floor (decorative, keep dark for pure black look)
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
         const floorMat = new THREE.MeshStandardMaterial({
-            color: 0x1a1b26,
-            roughness: 0.8,
-            metalness: 0.2
+            color: 0x000000,
+            roughness: 1.0,
+            metalness: 0.0
         });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
@@ -115,8 +121,8 @@ export class CastingManager {
 
     createCoins() {
         const loader = new THREE.TextureLoader();
-        const frontTex = loader.load('/assets/coins/coin_front.png');
-        const backTex = loader.load('/assets/coins/coin_back.png');
+        const frontTex = loader.load('/assets/coins/money_front_bright.png');
+        const backTex = loader.load('/assets/coins/money_back_bright.png');
         const edgeTex = loader.load('/assets/coins/coin_edge.png');
         edgeTex.wrapS = THREE.RepeatWrapping;
         edgeTex.repeat.set(8, 1); // Tile horizontally for the edge
@@ -126,25 +132,25 @@ export class CastingManager {
 
         // Materials that match the weathered bronze look
         const sideMat = new THREE.MeshStandardMaterial({
-            color: 0x3d2e1f, // Darker, aged bronze to blend with the textures
-            metalness: 0.5,
-            roughness: 0.7,
-            emissive: 0x1a1510,
-            emissiveIntensity: 0.02
+            color: 0x5a4632, // Lighter, warmer aged bronze
+            metalness: 0.7,
+            roughness: 0.5,
+            emissive: 0x2a2015,
+            emissiveIntensity: 0.1 // Added subtle inner glow for better focus
         });
         const faceMatYang = new THREE.MeshStandardMaterial({
             map: backTex,
-            metalness: 0.6,
-            roughness: 0.45,
+            metalness: 0.7,
+            roughness: 0.35,
             bumpMap: backTex,
-            bumpScale: 0.02
+            bumpScale: 0.05
         });
         const faceMatYin = new THREE.MeshStandardMaterial({
             map: frontTex,
-            metalness: 0.6,
-            roughness: 0.45,
+            metalness: 0.7,
+            roughness: 0.35,
             bumpMap: frontTex,
-            bumpScale: 0.02
+            bumpScale: 0.05
         });
 
         const materials = [sideMat, faceMatYang, faceMatYin];
