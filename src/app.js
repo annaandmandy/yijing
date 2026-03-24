@@ -2367,7 +2367,7 @@ class App {
         if (isMobile) {
             // "Double Arch" for mobile to prevent overflow
             const groupSize = 39;
-            const arcSpread = 120;
+            const arcSpread = 100; // Reduced from 120 to prevent overflow
 
             for (let i = 0; i < cardCount; i++) {
                 const card = document.createElement('div');
@@ -2375,8 +2375,12 @@ class App {
 
                 const isTopRow = i >= groupSize;
                 const localIdx = i % groupSize;
-                const radius = isTopRow ? 140 : 180;
-                const yShift = isTopRow ? 0 : 160;
+                
+                // Parity between rows as requested
+                const radius = 200; 
+                const rowGap = 260; 
+                const globalY = -120; // Shift both rows up
+                const yShift = isTopRow ? globalY : (globalY + rowGap);
 
                 const angle = ((localIdx / (groupSize - 1)) - 0.5) * arcSpread;
                 const radian = (angle - 90) * (Math.PI / 180);
@@ -2540,6 +2544,18 @@ class App {
                 });
                 this.currentRecordId = recordId;
                 this.chatMessages = [];
+                
+                // Trigger quick analysis for new readings
+                this.autoInterpretTarot();
+            } else {
+                // If it's a history record, show the stored insight if it exists
+                const record = JournalService.getRecord(recordId);
+                const analysisCont = document.getElementById('tarot-quick-analysis');
+                const analysisText = document.getElementById('tarot-analysis-text');
+                if (analysisCont && analysisText && record && record.quickInsight) {
+                    analysisCont.classList.remove('hidden');
+                    analysisText.innerText = record.quickInsight;
+                }
             }
         };
 

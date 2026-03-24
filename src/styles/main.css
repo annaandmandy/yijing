@@ -57,7 +57,8 @@
     gap: 4px;
     padding: 3px;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.05); /* Even subtler */
+    background: rgba(255, 255, 255, 0.05);
+    /* Even subtler */
 }
 
 .casting-mode-switcher .mode-btn {
@@ -655,7 +656,8 @@ canvas {
     opacity: 0.8;
 }
 
-.tag-shi, .tag-ying {
+.tag-shi,
+.tag-ying {
     font-size: 0.7rem;
     padding: 1px 4px;
     border-radius: 4px;
@@ -837,11 +839,25 @@ canvas {
 }
 
 /* Wuxing Theming */
-.wuxing-metal { color: var(--wuxing-metal); }
-.wuxing-wood { color: var(--wuxing-wood); }
-.wuxing-water { color: var(--wuxing-water); }
-.wuxing-fire { color: var(--wuxing-fire); }
-.wuxing-earth { color: var(--wuxing-earth); }
+.wuxing-metal {
+    color: var(--wuxing-metal);
+}
+
+.wuxing-wood {
+    color: var(--wuxing-wood);
+}
+
+.wuxing-water {
+    color: var(--wuxing-water);
+}
+
+.wuxing-fire {
+    color: var(--wuxing-fire);
+}
+
+.wuxing-earth {
+    color: var(--wuxing-earth);
+}
 
 .plum-verdict-card {
     background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(0, 0, 0, 0.4));
@@ -886,16 +902,22 @@ canvas {
 
 @media (max-width: 600px) {
     .plum-timeline {
-        flex-direction: row; /* Keep side-by-side */
+        flex-direction: row;
+        /* Keep side-by-side */
         gap: 6px;
-        overflow-x: auto; /* Allow scroll if extreme */
+        overflow-x: auto;
+        /* Allow scroll if extreme */
         padding-bottom: 10px;
     }
+
     .plum-step {
-        min-width: 100px; /* Ensure cards don't collapse too much */
+        min-width: 100px;
+        /* Ensure cards don't collapse too much */
     }
+
     .plum-timeline::before {
-        top: 60%; /* Adjust line position for smaller cards */
+        top: 60%;
+        /* Adjust line position for smaller cards */
     }
 }
 
@@ -929,8 +951,15 @@ canvas {
 }
 
 @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(20px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* Grid and Library */
@@ -1595,10 +1624,10 @@ canvas {
     position: absolute;
     width: 100%;
     height: 100%;
-    background: #000;
-    background-image:
-        radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 80%),
-        linear-gradient(135deg, #1a002a 0%, #050505 100%);
+    background: #0a0a0a;
+    background-image: url('/assets/tarot/tarot_v2.png');
+    background-size: cover;
+    background-position: center;
     background-size: cover;
     border-radius: 10px;
     border: 1px solid var(--accent-gold);
@@ -1633,10 +1662,10 @@ canvas {
     position: absolute;
     width: 60px;
     height: 100px;
-    background: #000;
-    background-image:
-        radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 80%),
-        linear-gradient(135deg, #000000 0%, #050505 100%);
+    background: #0a0a0a;
+    background-image: url('/assets/tarot/tarot_v2.png');
+    background-size: cover;
+    background-position: center;
     border-radius: 6px;
     border: 1px solid var(--accent-gold);
     cursor: pointer;
@@ -1734,7 +1763,8 @@ canvas {
     perspective: 2000px;
     justify-content: center;
     flex-wrap: wrap;
-    min-height: 200px; /* Reduced from 400px to allow content to sit tighter */
+    min-height: 200px;
+    /* Reduced from 400px to allow content to sit tighter */
 }
 
 .tarot-card-wrapper {
@@ -1773,31 +1803,11 @@ canvas {
 }
 
 .tarot-card-back {
-    background: #11001a;
-    background-image:
-        radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.15) 0%, transparent 70%),
-        linear-gradient(135deg, #1a002a 0%, #050505 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #0a0a0a;
+    background-image: url('/assets/tarot/tarot_v2.png');
+    background-size: cover;
+    background-position: center;
     border: 2px solid var(--accent-gold);
-    box-shadow: inset 0 0 30px rgba(212, 175, 55, 0.1);
-}
-
-.tarot-card-back::before {
-    content: "";
-    position: absolute;
-    width: 80%;
-    height: 80%;
-    border: 1px solid rgba(156, 39, 176, 0.2);
-    border-radius: 8px;
-}
-
-.tarot-card-back::after {
-    content: "🔮";
-    font-size: 3rem;
-    filter: drop-shadow(0 0 15px var(--accent-gold));
-    animation: pulse 3s infinite;
 }
 
 .tarot-card-front {
@@ -1813,7 +1823,8 @@ canvas {
 
 .card-info {
     text-align: center;
-    margin-top: 5px; /* Reduced from 15px */
+    margin-top: 5px;
+    /* Reduced from 15px */
 }
 
 .spread-label {
@@ -3185,7 +3196,8 @@ canvas {
 .quick-analysis {
     margin: 0 auto 10px auto;
     /* Reduced from 10px */
-    padding: 15px 20px; /* Slightly tighter padding */
+    padding: 15px 20px;
+    /* Slightly tighter padding */
     max-width: 800px;
     border-left: 4px solid var(--accent-gold);
     animation: fadeIn 0.8s ease-out;
@@ -3376,6 +3388,7 @@ canvas {
     display: none;
     /* Chrome, Safari, Opera */
 }
+
 /* Library Mobile Optimization */
 .lookup-grid {
     display: grid;
@@ -3388,25 +3401,26 @@ canvas {
     .lookup-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .theory-links {
         grid-template-columns: 1fr !important;
     }
-    
+
     .lookup-tables {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
-    
+
     .data-table {
-        min-width: 600px; /* Ensure table doesn't squish too much */
+        min-width: 600px;
+        /* Ensure table doesn't squish too much */
         font-size: 0.8rem;
     }
-    
+
     .lookup-card h3 {
         font-size: 1.1rem;
     }
-    
+
     #theory-detail-content {
         font-size: 0.85rem !important;
         padding: 10px !important;
@@ -3433,7 +3447,7 @@ canvas {
         grid-template-columns: 1fr 1fr;
         font-size: 0.85rem;
     }
-    
+
     .bagua-circle {
         transform: scale(0.8);
         margin: -20px auto;
@@ -3446,7 +3460,7 @@ canvas {
     flex-direction: column;
     align-items: center;
     padding: 30px 0;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 16px;
     margin: 20px 0;
 }
@@ -3497,11 +3511,30 @@ canvas {
     box-shadow: 0 0 25px currentColor;
 }
 
-.wood .w-circle { color: #4caf50; border-color: #4caf50; }
-.fire .w-circle { color: #f44336; border-color: #f44336; }
-.earth .w-circle { color: #ffeb3b; border-color: #ffeb3b; }
-.metal .w-circle { color: #e0e0e0; border-color: #e0e0e0; }
-.water .w-circle { color: #2196f3; border-color: #2196f3; }
+.wood .w-circle {
+    color: #4caf50;
+    border-color: #4caf50;
+}
+
+.fire .w-circle {
+    color: #f44336;
+    border-color: #f44336;
+}
+
+.earth .w-circle {
+    color: #ffeb3b;
+    border-color: #ffeb3b;
+}
+
+.metal .w-circle {
+    color: #e0e0e0;
+    border-color: #e0e0e0;
+}
+
+.water .w-circle {
+    color: #2196f3;
+    border-color: #2196f3;
+}
 
 .w-label {
     margin-top: 8px;
@@ -3522,6 +3555,7 @@ canvas {
         width: 220px;
         height: 220px;
     }
+
     .w-circle {
         width: 40px;
         height: 40px;
@@ -3540,7 +3574,8 @@ canvas {
     overflow: hidden;
 }
 
-.data-table th, .data-table td {
+.data-table th,
+.data-table td {
     padding: 12px 8px;
     text-align: center;
     border-bottom: 1px solid var(--glass-border);
@@ -3572,19 +3607,22 @@ canvas {
     .lookup-card {
         padding: 10px !important;
     }
-    
+
     .data-table {
         font-size: 0.75rem;
-        display: block; /* Force block for horizontal scroll */
+        display: block;
+        /* Force block for horizontal scroll */
         overflow-x: auto;
         white-space: nowrap;
         -webkit-overflow-scrolling: touch;
     }
-    
-    .data-table th, .data-table td {
-        padding: 10px 15px; /* More horizontal room for tapping */
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 15px;
+        /* More horizontal room for tapping */
     }
-    
+
     /* Make the Najia table readable but compact */
     #subpage-lookup .data-table {
         min-width: 450px;
@@ -3594,19 +3632,25 @@ canvas {
 /* Absolute Stability for Mobile Tables 📱🧹 */
 @media (max-width: 600px) {
     .data-table {
-        display: table !important; /* Restore normal table layout */
-        overflow-x: hidden !important; /* Completely disable horizontal scroll */
-        white-space: normal !important; /* Allow text wrapping */
-        min-width: 0 !important; /* Let it shrink to container */
-        table-layout: fixed; /* Force rigid columns */
+        display: table !important;
+        /* Restore normal table layout */
+        overflow-x: hidden !important;
+        /* Completely disable horizontal scroll */
+        white-space: normal !important;
+        /* Allow text wrapping */
+        min-width: 0 !important;
+        /* Let it shrink to container */
+        table-layout: fixed;
+        /* Force rigid columns */
     }
-    
-    .data-table th, .data-table td {
+
+    .data-table th,
+    .data-table td {
         padding: 8px 4px;
         font-size: 0.7rem;
         word-break: break-all;
     }
-    
+
     /* Center text for narrow cells */
     .data-table td {
         text-align: center;
