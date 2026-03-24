@@ -995,9 +995,37 @@ canvas {
     letter-spacing: 2px;
 }
 
-.hex-card h3 {
+.card-name {
     font-size: 1.2rem;
+    font-weight: 600;
     color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+/* Hexagram Tags in Library */
+.hex-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.tag-wuxing, .tag-pill {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+}
+
+.tag-wuxing {
+    font-weight: 600;
+}
+
+.tag-pill {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
 }
 
 /* History List Enhancement */

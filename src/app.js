@@ -11,7 +11,7 @@ import { CastingManager } from './engine/CastingManager.js';
 import { AIService } from './services/AIService.js';
 import { TimeService } from './services/TimeService.js';
 
-import { HEXAGRAM_ELEMENTS, HEXAGRAM_PHONETICS } from './constants.js';
+import { HEXAGRAM_ELEMENTS, HEXAGRAM_PHONETICS, ELEMENT_COLORS } from './constants.js';
 import { TarotEngine } from './engine/TarotEngine.js';
 import { TarotService } from './services/TarotService.js';
 import { SettingsService } from './services/SettingsService.js';
@@ -1373,12 +1373,26 @@ class App {
                 </div>
             ` : '';
 
+            // Tags extraction
+            const wuxing = hex.najia_analysis?.palace_wuxing || HEXAGRAM_ELEMENTS[hex.id] || "？";
+            const wuxingColor = ELEMENT_COLORS[wuxing] || "var(--accent-gold)";
+            
+            // Limit to 2 qualitative tags to keep card clean
+            const qualitativeTags = (hex.tags || []).slice(0, 2);
+            const tagsHtml = `
+                <div class="hex-card-tags">
+                    <span class="tag-wuxing" style="background: ${wuxingColor}33; color: ${wuxingColor}; border-color: ${wuxingColor}66;">${wuxing}</span>
+                    ${qualitativeTags.map(t => `<span class="tag-pill">${t}</span>`).join('')}
+                </div>
+            `;
+
             card.innerHTML = `
                 ${symbolHtml}
                 <div class="card-id">#${hex.id}</div>
                 <div class="card-name">${hex.name}卦</div>
                 ${phoneticHtml}
                 <div class="card-binary">${hex.binary}</div>
+                ${tagsHtml}
             `;
             card.onclick = () => this.showHexDetail(hex);
             grid.appendChild(card);
@@ -1615,6 +1629,17 @@ class App {
             </div>
         ` : '';
 
+        // Build Tags HTML for Modal
+        const wuxing = hex.najia_analysis?.palace_wuxing || HEXAGRAM_ELEMENTS[hex.id] || "？";
+        const wuxingColor = ELEMENT_COLORS[wuxing] || "var(--accent-gold)";
+        const tags = hex.tags || [];
+        const tagsHtmlInside = `
+            <div class="modal-tag-container" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-wrap: wrap; gap: 8px;">
+                <span class="tag-wuxing" style="background: ${wuxingColor}33; color: ${wuxingColor}; border-color: ${wuxingColor}66; padding: 3px 10px; font-size: 0.8rem;">${wuxing}</span>
+                ${tags.map(t => `<span class="tag-pill" style="padding: 3px 10px; font-size: 0.8rem;">${t}</span>`).join('')}
+            </div>
+        `;
+
         body.innerHTML = `
             <div class="modal-header">
                 <div class="modal-header-flex">
@@ -1691,6 +1716,7 @@ class App {
                     </ul>
                 </div>
             </details>
+            ${tagsHtmlInside}
         `;
 
         // Switch button logic to point to main AI View
