@@ -42,7 +42,7 @@ class App {
         this.tarotStep = 'intro'; // 'intro', 'shuffling', 'selection', 'result'
         this.tarotPickedCards = [];
         this.tarotShuffleCount = 0;
-        this.ichingCastingType = 'coin'; // 'coin' or 'plum'
+        this.ichingMode = this.settings.ichingMode || 'coin'; // Standardized naming
         this.ichingAnalysisMode = 'classic'; // 'classic', 'plum', 'liu-yao'
 
         window.app = this; // Global reference for inline oncilcks
@@ -590,6 +590,10 @@ class App {
             closeOverlayBtn.onclick = (e) => {
                 if (e) e.stopPropagation();
                 this.hideResultOverlay();
+                // Ensure a full reset of the casting state when closing
+                this.currentTosses = [];
+                this.caster.reset();
+                this.renderCastingProgress();
             };
         }
 
@@ -614,6 +618,12 @@ class App {
 
         this.resultSource = null;
         document.querySelector('.instruction').classList.remove('hidden');
+
+        // Ensure a full reset of the casting state when hiding result
+        // This fixes the "stays on 6th toss" bug
+        this.currentTosses = [];
+        if (this.caster) this.caster.reset();
+        this.renderCastingProgress();
 
         // If we came from AI Mentor, return there instead of being on Tabletop
         if (this.previousView === 'ai-mentor') {
@@ -2150,6 +2160,8 @@ class App {
         }
 
         this.bindModalEvents(modal);
+        modal.classList.add('active'); // Fixed bug: ensuring modal is visible
+        document.body.style.overflow = 'hidden'; // Stop background scroll
     }
 
     showHistoryResultOverlay(recordId) {
@@ -2845,11 +2857,19 @@ class App {
         const coinZone = document.getElementById('canvas-container');
         const plumZone = document.getElementById('plum-blossom-input');
 
+        // Set initial state based on this.ichingMode
         modeBtns.forEach(btn => {
+            if (btn.dataset.mode === this.ichingMode) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+
             btn.onclick = () => {
                 modeBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.ichingMode = btn.dataset.mode;
+                SettingsService.setSetting('ichingMode', this.ichingMode);
 
                 if (this.ichingMode === 'plum') {
                     if (coinZone) coinZone.classList.add('hidden');
@@ -2860,6 +2880,15 @@ class App {
                 }
             };
         });
+
+        // Apply initial visibility
+        if (this.ichingMode === 'plum') {
+            if (coinZone) coinZone.classList.add('hidden');
+            if (plumZone) plumZone.classList.remove('hidden');
+        } else {
+            if (plumZone) plumZone.classList.add('hidden');
+            if (coinZone) coinZone.classList.remove('hidden');
+        }
 
         const submitBtn = document.getElementById('plum-submit');
         if (submitBtn) {

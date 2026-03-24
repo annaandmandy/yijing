@@ -128,7 +128,8 @@ export class CastingManager {
         edgeTex.repeat.set(8, 1); // Tile horizontally for the edge
 
         // Thinner geometry for more realistic feel
-        const coinGeometry = new THREE.CylinderGeometry(0.85, 0.85, 0.1, 64);
+        // Slightly larger geometry for better visibility
+        const coinGeometry = new THREE.CylinderGeometry(1.1, 1.1, 0.1, 64);
 
         // Materials that match the weathered bronze look
         const sideMat = new THREE.MeshStandardMaterial({
@@ -162,7 +163,8 @@ export class CastingManager {
 
             // Refined physics shape (matching thinner geometry)
             // height in CANNON Cylinder is total height, same as THREE
-            const coinShape = new CANNON.Cylinder(0.85, 0.85, 0.1, 32);
+            // Matching larger geometry
+            const coinShape = new CANNON.Cylinder(1.1, 1.1, 0.1, 32);
             const coinBody = new CANNON.Body({
                 mass: 1.2,
                 shape: coinShape,
@@ -277,5 +279,18 @@ export class CastingManager {
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
+    }
+
+    reset() {
+        this.isCasting = false;
+        this.coins.forEach((coin, i) => {
+            coin.body.velocity.set(0, 0, 0);
+            coin.body.angularVelocity.set(0, 0, 0);
+            coin.body.position.set((i - 1) * 2, 4, 0);
+            coin.body.quaternion.set(0, 0, 0, 1);
+            
+            coin.mesh.position.copy(coin.body.position);
+            coin.mesh.quaternion.copy(coin.body.quaternion);
+        });
     }
 }
