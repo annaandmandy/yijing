@@ -42,15 +42,13 @@ class App {
         this.tarotStep = 'intro'; // 'intro', 'shuffling', 'selection', 'result'
         this.tarotPickedCards = [];
         this.tarotShuffleCount = 0;
-        this.ichingMode = this.settings.ichingMode || 'coin'; // Standardized naming
-        this.ichingAnalysisMode = 'classic'; // 'classic', 'plum', 'liu-yao'
-
-        window.app = this; // Global reference for inline oncilcks
-        this.init();
+        window.app = this; // Global reference for inline onclicks
     }
 
     async init() {
         console.log("Initializing I-Ching Lab...");
+        this.ichingMode = this.settings.ichingMode || 'coin';
+        this.ichingAnalysisMode = 'classic';
 
         // Load data
         this.library = await ManifestService.loadAllHexagrams();
@@ -1093,35 +1091,36 @@ class App {
         }
 
         if (activeViewId === 'tabletop') {
-            this.restoreCastingInputs();
+            this.syncCastingModeUI();
         }
 
         this.renderView();
     }
 
-    restoreCastingInputs() {
+    syncCastingModeUI() {
         const qContainer = document.querySelector('.question-container');
         const plumZone = document.getElementById('plum-blossom-input');
         const coinZone = document.getElementById('canvas-container');
-        const instruction = document.querySelector('.instruction');
+        const modeBtns = document.querySelectorAll('.casting-mode-switcher .mode-btn');
 
         if (qContainer) qContainer.style.display = 'flex';
 
         if (this.ichingMode === 'plum') {
-            if (plumZone) {
-                plumZone.style.display = 'block';
-                plumZone.classList.remove('hidden');
-            }
+            if (plumZone) plumZone.classList.remove('hidden');
             if (coinZone) coinZone.classList.add('hidden');
         } else {
-            if (plumZone) {
-                plumZone.classList.add('hidden');
-                plumZone.style.display = 'none';
-            }
+            if (plumZone) plumZone.classList.add('hidden');
             if (coinZone) coinZone.classList.remove('hidden');
         }
 
-        if (instruction) instruction.classList.remove('hidden');
+        // Sync buttons
+        modeBtns.forEach(btn => {
+            if (btn.dataset.mode === this.ichingMode) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
     }
 
     setupModeSwitcher() {
@@ -2880,41 +2879,16 @@ class App {
     }
     setupPlumBlossomEvents() {
         const modeBtns = document.querySelectorAll('.casting-mode-switcher .mode-btn');
-        const coinZone = document.getElementById('canvas-container');
-        const plumZone = document.getElementById('plum-blossom-input');
 
-        // Set initial state based on this.ichingMode
         modeBtns.forEach(btn => {
-            if (btn.dataset.mode === this.ichingMode) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-
             btn.onclick = () => {
-                modeBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
                 this.ichingMode = btn.dataset.mode;
                 SettingsService.setSetting('ichingMode', this.ichingMode);
-
-                if (this.ichingMode === 'plum') {
-                    if (coinZone) coinZone.classList.add('hidden');
-                    if (plumZone) plumZone.classList.remove('hidden');
-                } else {
-                    if (plumZone) plumZone.classList.add('hidden');
-                    if (coinZone) coinZone.classList.remove('hidden');
-                }
+                this.syncCastingModeUI();
             };
         });
 
-        // Apply initial visibility
-        if (this.ichingMode === 'plum') {
-            if (coinZone) coinZone.classList.add('hidden');
-            if (plumZone) plumZone.classList.remove('hidden');
-        } else {
-            if (plumZone) plumZone.classList.add('hidden');
-            if (coinZone) coinZone.classList.remove('hidden');
-        }
+        this.syncCastingModeUI(); // Initial sync
 
         const submitBtn = document.getElementById('plum-submit');
         if (submitBtn) {
@@ -2996,5 +2970,6 @@ class App {
 // Start the app
 window.addEventListener('DOMContentLoaded', () => {
     window.ichingApp = new App();
+    window.ichingApp.init(); // Call init method
     window.app = window.ichingApp; // Compatibility for inline onclick
 });
