@@ -209,9 +209,9 @@ class App {
         const binaryEl = overlay.querySelector('.binary-display');
         const phonetics = HEXAGRAM_PHONETICS[original.id];
         const phoneticStr = phonetics ? `<div class="result-phonetic-stack"><span class="zhuyin">${phonetics.bopomofo}</span><span class="pinyin">${phonetics.pinyin}</span></div>` : '';
-        
+
         const displayName = (future && future.name !== original.name) ? `${original.name} 之 ${future.name}` : `${original.name} (${original.id})`;
-        
+
         nameEl.innerHTML = `
             <div class="result-badge">${meta.isPlum ? '梅花易數' : (meta.hasChange || meta.futureBinary ? '變卦' : '本卦')}</div>
             <div class="hex-header-main">
@@ -221,7 +221,7 @@ class App {
             ${phoneticStr}
         `;
         binaryEl.innerText = meta.originalBinary;
-        
+
         // Only reset the mode if we are opening a fresh overlay
         if (overlay.classList.contains('hidden')) {
             this.ichingAnalysisMode = meta.isPlum ? 'plum' : 'classic';
@@ -281,6 +281,7 @@ class App {
     renderClassicContent(container, original, future, meta) {
         let html = '';
         if (meta.hasChange && future) {
+            const futureAdvice = future.llm_analysis?.general ? `<br><small style="color: var(--text-secondary); opacity: 0.8;">核心啟示：${future.llm_analysis.general}</small>` : '';
             html = `
                 <div class="result-hex-display">
                     <div class="hex-block original">
@@ -300,7 +301,7 @@ class App {
                 <div class="analysis-classic-box glass-panel">
                     <div class="change-info">
                         <p><strong>現狀：</strong>${original.name}卦 — ${original.summary}</p>
-                        <p><strong>趨勢：</strong>變爻引發向 ${future.name}卦 的演進。這代表了事態未來的發展方向。</p>
+                        <p><strong>趨勢：</strong>變爻引發向 ${future.name}卦 的演進。${future.summary}</p>
                     </div>
                 </div>
             `;
@@ -345,7 +346,7 @@ class App {
         // 2. Check if the object itself is the analysis (has bodyTrigram)
         // 3. If neither, but has raw trigrams, re-run analysis engine!
         let analysis = pr.analysis || (pr.bodyTrigram ? pr : null);
-        
+
         if ((!analysis || !analysis.bodyTrigram) && pr.upperTrigram && pr.lowerTrigram) {
             console.log("Plum Recovery: Re-analyzing from raw trigrams...");
             analysis = PlumBlossomEngine.analyzeBodyGuest(pr.upperTrigram, pr.lowerTrigram, pr.movingLine || 1);
@@ -481,7 +482,7 @@ class App {
         const relations = HexagramEngine.getRelatedHexagrams(original.binary);
         const nuclearHex = this.library.find(h => h.binary === relations.nuclearBinary);
         const invertedHex = this.library.find(h => h.binary === relations.invertedBinary);
-        
+
         let quickInsight = "";
         if (recordId) {
             const record = JournalService.getRecord(recordId);
@@ -509,7 +510,7 @@ class App {
                     <h4><i class="fas fa-dragon"></i> 六親與六神</h4>
                     <ul class="beast-list">
                         ${(original.najia_analysis?.lines || []).slice().reverse().map((line, i) => `
-                            <li><span class="beast-name">${beasts[5-i]}</span> <span class="relative-name">${line.relative}</span></li>
+                            <li><span class="beast-name">${beasts[5 - i]}</span> <span class="relative-name">${line.relative}</span></li>
                         `).join('')}
                     </ul>
                 </div>
@@ -649,18 +650,18 @@ class App {
         if (!hex) return "無數據。";
         const gZ = TimeService.getGanZhi(new Date());
         const strengthMap = TimeService.getWuxingStrength(gZ.monthBranch);
-        
+
         const targetMap = {
             "career": ["官鬼"],
             "wealth": ["妻財"],
             "love": ["妻財", "官鬼"]
         };
-        
+
         const focusTargets = targetMap[type];
         if (!hex.najia_analysis) return "請查看六爻納甲盤。";
-        
+
         const targetLines = hex.najia_analysis.lines.filter(l => focusTargets.includes(l.relative));
-        
+
         let strengthVerdict = "";
         if (targetLines.length > 0) {
             const sorted = [...targetLines].sort((a, b) => {
@@ -670,7 +671,7 @@ class App {
             });
             const targetLine = sorted[0];
             const strength = strengthMap[targetLine.wuxing];
-            
+
             const generalVerdicts = {
                 "旺": "【用神大吉】目前能量極強（旺），所求之事正值良機。",
                 "相": "【用神吉】能量受生（相），有貴人相助，穩步成長。",
@@ -1013,7 +1014,7 @@ class App {
     switchIChingMode(mode) {
         this.ichingAnalysisMode = mode;
         console.log(`Switched I-Ching Analysis Mode to: ${mode}`);
-        
+
         // If result overlay is visible, we need to refresh it with current data
         const overlay = document.getElementById('result-overlay');
         if (overlay && !overlay.classList.contains('hidden') && this.currentHexData) {
@@ -1032,11 +1033,11 @@ class App {
                 plumResult: record.plumResult || record.advancedTheory?.plum || null,
                 castingMode: record.method === '梅花' ? 'plum' : 'iching'
             };
-            
+
             const futureHex = record.futureId ? this.library.find(h => h.id === record.futureId) : null;
             this.showResultOverlay(this.currentHexData, futureHex, meta, this.currentRecordId);
         } else {
-            this.renderView(); 
+            this.renderView();
         }
     }
 
@@ -1829,7 +1830,7 @@ class App {
         // User Message
         this.chatMessages.push({ role: 'user', content: text });
         this.appendMessageToUI('user', text);
-        
+
         // Always scroll to bottom after user message
         history.scrollTop = history.scrollHeight;
 
@@ -1843,7 +1844,7 @@ class App {
         try {
             // Get the full record context for the AI
             const record = JournalService.getRecord(this.currentRecordId);
-            
+
             // Determine if there is a future hexagram to include
             let futureHex = null;
             if (record && record.futureId) {
