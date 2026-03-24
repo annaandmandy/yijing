@@ -178,6 +178,7 @@ class App {
             advancedTheory: advancedTheory
         });
         this.currentRecordId = recordId;
+        this.currentHexData = originalHex; // Ensure mode switching works
         this.chatMessages = []; // Reset chat for new session
 
         this.showResultOverlay(originalHex, futureHex, result, recordId);
@@ -193,169 +194,301 @@ class App {
 
     showResultOverlay(original, future, meta, recordId = null, isHistoricalView = false) {
         this.currentRecordId = recordId || this.currentRecordId;
+        this.currentHexData = original; // Ensure session persistence
         const isHistory = isHistoricalView || this.resultSource === 'history';
-        // Don't override resultSource if it's already 'history'
         if (this.currentRecordId && !this.resultSource) this.resultSource = 'history';
 
-        // Get AI insight if available
-        let quickInsight = "";
-        if (this.currentRecordId) {
-            const record = JournalService.getRecord(this.currentRecordId);
-            if (record && record.quickInsight) {
-                quickInsight = record.quickInsight;
-            }
-        }
-
         const overlay = document.getElementById('result-overlay');
-
-        // Hide inputs to prevent overlap/distraction
         const qContainer = document.querySelector('.question-container');
         const plumZone = document.getElementById('plum-blossom-input');
         if (qContainer) qContainer.style.display = 'none';
         if (plumZone) plumZone.style.display = 'none';
 
+        // Basic Header Info
         const nameEl = overlay.querySelector('.hex-name');
         const binaryEl = overlay.querySelector('.binary-display');
-        const summaryEl = overlay.querySelector('.hex-summary');
-        const origPhonetics = HEXAGRAM_PHONETICS[original.id];
-        const origPhoneticStr = origPhonetics ? `
-            <div class="result-phonetic-stack">
-                <span class="zhuyin">${origPhonetics.bopomofo}</span>
-                <span class="pinyin">${origPhonetics.pinyin}</span>
+        const phonetics = HEXAGRAM_PHONETICS[original.id];
+        const phoneticStr = phonetics ? `<div class="result-phonetic-stack"><span class="zhuyin">${phonetics.bopomofo}</span><span class="pinyin">${phonetics.pinyin}</span></div>` : '';
+        
+        nameEl.innerHTML = `
+            <div class="result-badge">${meta.isPlum ? '梅花易數' : (meta.hasChange || meta.futureBinary ? '變卦' : '本卦')}</div>
+            <div class="hex-header-main">
+                <div class="hex-name-main">${original.name} (${original.id})</div>
+                ${this.renderMiniHexSymbol(original.binary)}
             </div>
-        ` : '';
-
-        const futurePhonetics = future ? HEXAGRAM_PHONETICS[future.id] : null;
-        const futurePhoneticStr = futurePhonetics ? `
-            <div class="result-phonetic-stack">
-                <span class="zhuyin">${futurePhonetics.bopomofo}</span>
-                <span class="pinyin">${futurePhonetics.pinyin}</span>
-            </div>
-        ` : '';
-
-        // Advanced Theory Logic
-        const relations = HexagramEngine.getRelatedHexagrams(original.binary);
-        const nuclearHex = this.library.find(h => h.binary === relations.nuclearBinary);
-        const invertedHex = this.library.find(h => h.binary === relations.invertedBinary);
-
-        const gZ = TimeService.getGanZhi(new Date());
-        const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
-        const strength = TimeService.getWuxingStrength(gZ.monthBranch);
-
-        // Update Radar Chart if available
-        if (this.radarChart) {
-            // Future extension: Update chart with line strength
+            ${phoneticStr}
+        `;
+        binaryEl.innerText = meta.originalBinary;
+        
+        // Only reset the mode if we are opening a fresh overlay
+        if (overlay.classList.contains('hidden')) {
+            this.ichingAnalysisMode = meta.isPlum ? 'plum' : 'classic';
         }
 
-        // --- ADDED: Analysis Mode Switcher ---
-        const modeSwitcherHTML = `
+        // Render Modular Sections
+        this.renderAnalysisTabs(meta);
+        this.renderAnalysisContent(original, future, meta);
+
+        // Advanced Panel (Optional Toggle)
+        this.renderAdvancedPanel(original, future, meta, recordId);
+
+        // Buttons & Events
+        this.setupOverlayButtons(original, future, meta, recordId, isHistory);
+
+        overlay.classList.remove('hidden');
+        document.querySelector('.instruction').classList.add('hidden');
+        overlay.classList.remove('history-mode');
+    }
+
+    renderAnalysisTabs(meta) {
+        const container = document.getElementById('analysis-tabs-container');
+        if (!container) return;
+
+        const isCoinDivination = meta.castingMode === 'iching';
+
+        container.innerHTML = `
             <div class="analysis-mode-selector">
                 <div class="analysis-tab ${this.ichingAnalysisMode === 'classic' ? 'active' : ''}" onclick="window.app.switchIChingMode('classic')">
                     <span class="dot"></span> 經典義理
                 </div>
+                ${(meta.isPlum || meta.plumResult || meta.castingMode === 'plum') ? `
                 <div class="analysis-tab ${this.ichingAnalysisMode === 'plum' ? 'active' : ''}" onclick="window.app.switchIChingMode('plum')">
                     <span class="dot"></span> 梅花心易
-                </div>
+                </div>` : ''}
                 <div class="analysis-tab ${this.ichingAnalysisMode === 'liu-yao' ? 'active' : ''}" onclick="window.app.switchIChingMode('liu-yao')">
                     <span class="dot"></span> 六爻象數
                 </div>
             </div>
         `;
+    }
 
-        nameEl.innerHTML = `
-            ${modeSwitcherHTML}
-            <div class="result-hex-display">
-                <div class="hex-block original">
-                    <span class="hex-label">本卦 (當前)</span>
-                    ${this.renderMiniHexSymbol(original.binary)}
-                    <div class="hex-name-wrap">
+    renderAnalysisContent(original, future, meta) {
+        const container = document.getElementById('analysis-content-area');
+        if (!container) return;
+        container.innerHTML = ''; // Clear previous content
+
+        if (this.ichingAnalysisMode === 'plum') {
+            this.renderPlumContent(container, meta);
+        } else if (this.ichingAnalysisMode === 'liu-yao') {
+            this.renderLiuYaoContent(container, original, meta);
+        } else {
+            this.renderClassicContent(container, original, future, meta);
+        }
+    }
+
+    renderClassicContent(container, original, future, meta) {
+        let html = '';
+        if (meta.hasChange && future) {
+            html = `
+                <div class="result-hex-display">
+                    <div class="hex-block original">
+                        <span class="hex-label">本卦</span>
+                        ${this.renderMiniHexSymbol(original.binary)}
                         <span class="hex-name-text">${original.name}</span>
-                        ${origPhoneticStr}
                     </div>
-                </div>
-                ${meta.hasChange ? `
-                <div class="hex-arrow">→</div>
-                <div class="hex-block future">
-                    <span class="hex-label">之卦 (演變)</span>
-                    ${this.renderMiniHexSymbol(future.binary)}
-                    <div class="hex-name-wrap">
+                    <div class="hex-arrow">
+                        <i class="fas fa-long-arrow-alt-right"></i>
+                    </div>
+                    <div class="hex-block future">
+                        <span class="hex-label">變卦</span>
+                        ${this.renderMiniHexSymbol(future.binary)}
                         <span class="hex-name-text">${future.name}</span>
-                        ${futurePhoneticStr}
                     </div>
                 </div>
-                ` : ''}
-            </div>
-
-            ${(this.ichingAnalysisMode === 'plum' && meta.isPlum && meta.plumResult) ? `
-            <div class="plum-analysis-box glass-panel" style="margin: 20px 0; border: 1px solid var(--accent-gold);">
-                <h4 style="color: var(--accent-gold); margin-bottom: 10px;">梅花易數：體用分析</h4>
-                <div style="display: flex; justify-content: space-around; margin-bottom: 10px; font-size: 0.9rem;">
-                    <div style="text-align: center;">
-                        <strong>體卦：</strong>${meta.plumResult.analysis.bodyTrigram.name} (${meta.plumResult.analysis.bodyTrigram.wuxing})
-                        <div style="margin-top: 5px;">${this.renderTrigramSymbol(meta.plumResult.analysis.bodyTrigram.binary)}</div>
+                <div class="analysis-classic-box glass-panel">
+                    <div class="change-info">
+                        <p><strong>現狀：</strong>${original.name}卦 — ${original.summary}</p>
+                        <p><strong>趨勢：</strong>變爻引發向 ${future.name}卦 的演進。這代表了事態未來的發展方向。</p>
                     </div>
-                    <div style="text-align: center;">
-                        <strong>用卦：</strong>${meta.plumResult.analysis.guestTrigram.name} (${meta.plumResult.analysis.guestTrigram.wuxing})
-                        <div style="margin-top: 5px;">${this.renderTrigramSymbol(meta.plumResult.analysis.guestTrigram.binary)}</div>
-                    </div>
-                </div>
-                <div style="padding: 10px; background: rgba(212, 175, 55, 0.1); border-radius: 10px;">
-                    <div style="font-weight: bold; margin-bottom: 5px;">關係：${meta.plumResult.analysis.interaction}</div>
-                    <p style="font-size: 0.9rem; margin: 0;">${meta.plumResult.analysis.result}</p>
-                </div>
-                <div style="margin-top: 10px; text-align: center;">
-                    <button class="btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="window.app.showPlumTheory()">
-                        <i class="fas fa-book-open"></i> 進階說明：梅花易數原理
-                    </button>
-                </div>
-            </div>
-            ` : ''}
-        `;
-
-        binaryEl.innerText = meta.originalBinary;
-
-        if (meta.hasChange) {
-            summaryEl.innerHTML = `
-                <div class="change-info">
-                    <p><strong>現狀：</strong>${original.name}卦 — ${original.summary}</p>
-                    <p><strong>趨勢：</strong>變爻引發向 ${future.name}卦 的演進。這代表了事態未來的發展方向。</p>
                 </div>
             `;
         } else {
-            summaryEl.innerText = original.summary;
+            html = `
+                <div class="result-hex-display">
+                    <div class="hex-block original">
+                        <span class="hex-label">本卦</span>
+                        ${this.renderMiniHexSymbol(original.binary)}
+                        <span class="hex-name-text">${original.name}</span>
+                    </div>
+                </div>
+                <div class="analysis-classic-box glass-panel"><p>${original.summary}</p></div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    renderPlumContent(container, meta) {
+        if (!meta.isPlum || !meta.plumResult) {
+            container.innerHTML = `
+                <div class="plum-analysis-box glass-panel error-fallback" style="border-color: #ff4d4d; color: #ff4d4d;">
+                    <p><i class="fas fa-exclamation-triangle"></i> 此卦為金錢卦投擲，不支援梅花體用分析。</p>
+                </div>
+            `;
+            return;
         }
 
-        // Professional Najia Rendering (Visible only in Liu Yao Mode)
-        const najiaBox = document.getElementById('najia-info');
-        if (original.najia_analysis && this.ichingAnalysisMode === 'liu-yao') {
-            najiaBox.classList.remove('hidden');
-            najiaBox.querySelector('.palace-info').innerText = `${original.najia_analysis.palace}宮 [${original.najia_analysis.palace_wuxing}]`;
+        if (!meta.isPlum && !meta.plumResult) {
+            container.innerHTML = `<div class="glass-panel error-fallback">此卦不支援梅花體用分析 (僅限梅花易數求卦)。</div>`;
+            return;
+        }
 
-            const linesContainer = najiaBox.querySelector('.lines-najia');
-            linesContainer.innerHTML = '';
+        let pr = meta.plumResult;
+        if (!pr) {
+            container.innerHTML = `<div class="glass-panel error-fallback">未獲取到梅花易數分析數據 (plumResult 為空)。</div>`;
+            return;
+        }
 
-            // Reversed to show lines from top (6) to bottom (1) or bottom-up?
-            // Usually I-Ching UI is bottom-up, let's keep it bottom-up (1 to 6)
-            original.najia_analysis.lines.forEach(line => {
-                const lineEl = document.createElement('div');
-                lineEl.className = 'najia-line';
-                lineEl.dataset.line = line.line_number;
-                lineEl.dataset.relative = line.relative;
-                lineEl.innerHTML = `
+        // Recovery Strategy:
+        // 1. Check if it has a valid .analysis property
+        // 2. Check if the object itself is the analysis (has bodyTrigram)
+        // 3. If neither, but has raw trigrams, re-run analysis engine!
+        let analysis = pr.analysis || (pr.bodyTrigram ? pr : null);
+        
+        if ((!analysis || !analysis.bodyTrigram) && pr.upperTrigram && pr.lowerTrigram) {
+            console.log("Plum Recovery: Re-analyzing from raw trigrams...");
+            analysis = PlumBlossomEngine.analyzeBodyGuest(pr.upperTrigram, pr.lowerTrigram, pr.movingLine || 1);
+        }
+
+        // Dual-schema handling: handle both old (guestTrigram) and new (origGuestTrigram) keys
+        const bodyTrigram = analysis?.bodyTrigram;
+        const guestTrigram = analysis?.origGuestTrigram || analysis?.guestTrigram;
+
+        if (!analysis || !bodyTrigram || !guestTrigram) {
+            const keys = Object.keys(pr).join('/');
+            const innerKeys = pr.analysis ? Object.keys(pr.analysis).join(',') : 'n/a';
+            container.innerHTML = `<div class="glass-panel error-fallback">梅花格式不完整 (Keys: ${keys} | AnalysisKeys: ${innerKeys})。</div>`;
+            return;
+        }
+
+        const symbolMap = { "乾": "☰", "兌": "☱", "離": "☲", "震": "☳", "巽": "☴", "坎": "☵", "艮": "☶", "坤": "☷" };
+        const wuxingMap = { "金": "wuxing-metal", "木": "wuxing-wood", "水": "wuxing-water", "火": "wuxing-fire", "土": "wuxing-earth" };
+
+        const getTrigramHtml = (t, label = '') => `
+            <div class="plum-trigram-item">
+                <span class="trigram-symbol ${wuxingMap[t.wuxing]}">${symbolMap[t.name] || ''}</span>
+                <div class="trigram-info">
+                    <span class="trigram-name">${t.name}</span>
+                    <span class="trigram-wuxing">${t.wuxing}</span>
+                </div>
+                ${label ? `<span class="plum-tag">${label}</span>` : ''}
+            </div>
+        `;
+
+        container.innerHTML = `
+            <div class="plum-analysis-container">
+                <div class="plum-timeline">
+                    <!-- Stage 1: Original -->
+                    <div class="plum-step">
+                        <div class="plum-step-title">本卦 (開啟)</div>
+                        <div class="plum-step-card gold-border-top">
+                            <div class="plum-trigram-pair">
+                                ${getTrigramHtml(bodyTrigram, '體')}
+                                ${getTrigramHtml(guestTrigram, '用')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 2: Nuclear -->
+                    <div class="plum-step">
+                        <div class="plum-step-title">互卦 (過程)</div>
+                        <div class="plum-step-card">
+                            <div class="plum-trigram-pair">
+                                ${analysis.nuclearUpper ? getTrigramHtml(analysis.nuclearUpper, '上') : '<div class="plum-trigram-item">無</div>'}
+                                ${analysis.nuclearLower ? getTrigramHtml(analysis.nuclearLower, '下') : '<div class="plum-trigram-item">無</div>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 3: Future -->
+                    <div class="plum-step">
+                        <div class="plum-step-title">之卦 (結果)</div>
+                        <div class="plum-step-card gold-border-bottom">
+                            <div class="plum-trigram-pair">
+                                ${getTrigramHtml(bodyTrigram, '體')}
+                                ${analysis.futureGuestTrigram ? getTrigramHtml(analysis.futureGuestTrigram, '用') : '<div class="plum-trigram-item">無</div>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="plum-verdict-card">
+                    <div class="verdict-header">
+                        <span class="verdict-interaction">${analysis.result?.split('：')[0] || analysis.interaction || ''}</span>
+                        <i class="fas fa-magic" style="color: var(--accent-gold); opacity: 0.5;"></i>
+                    </div>
+                    <div class="verdict-text">${analysis.result?.split('：')[1] || analysis.result || '根據體用生剋關係，此卦象代表發展平穩。'}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderLiuYaoContent(container, original, meta) {
+        if (!original.najia_analysis) {
+            container.innerHTML = `<div class="glass-panel error-fallback">資料庫缺失此卦的納甲資料。</div>`;
+            return;
+        }
+
+        const gZ = TimeService.getGanZhi(new Date());
+        const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
+        const najia = original.najia_analysis;
+
+        let linesHtml = [...najia.lines].reverse().map((line, idx) => {
+            const realLineIdx = 5 - idx;
+            const beast = beasts[realLineIdx];
+            const changingLines = meta.changingLines || [];
+            const isMoving = changingLines.includes(line.line_number);
+            const shiYingTag = line.is_shi ? '<span class="tag-shi">世</span>' : (line.is_ying ? '<span class="tag-ying">應</span>' : '');
+
+            return `
+                <div class="najia-line-row" data-line="${line.line_number}" data-relative="${line.relative}">
+                    <span class="line-beast">${beast}</span>
                     <span class="line-rel">${line.relative}</span>
+                    <span class="line-stem">${line.tiangan || ''}</span>
                     <span class="line-dz">${line.dizhi}</span>
                     <span class="line-wx">${line.wuxing}</span>
-                `;
-                linesContainer.appendChild(lineEl);
-            });
+                    ${shiYingTag}
+                    ${isMoving ? '<span class="moving-mark">●</span>' : ''}
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="liu-yao-analysis-box glass-panel">
+                <div class="focus-selectors">
+                    <small>針對特定事分析：</small>
+                    <div class="btn-group">
+                        <button class="btn-focus" data-type="career" onclick="window.app.highlightYongShen('career', window.app.currentHexData)">問事業</button>
+                        <button class="btn-focus" data-type="wealth" onclick="window.app.highlightYongShen('wealth', window.app.currentHexData)">問金錢</button>
+                        <button class="btn-focus" data-type="love" onclick="window.app.highlightYongShen('love', window.app.currentHexData)">問感情</button>
+                    </div>
+                    <div id="analysis-verdict" class="analysis-verdict-box hidden"></div>
+                </div>
+                <div class="najia-info">
+                    <div class="palace-info">${najia.palace}宮 [${najia.palace_wuxing}屬性]</div>
+                    <div class="lines-najia">${linesHtml}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderAdvancedPanel(original, future, meta, recordId) {
+        const overlay = document.getElementById('result-overlay');
+        const gZ = TimeService.getGanZhi(new Date());
+        const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
+        const strength = TimeService.getWuxingStrength(gZ.monthBranch);
+        const relations = HexagramEngine.getRelatedHexagrams(original.binary);
+        const nuclearHex = this.library.find(h => h.binary === relations.nuclearBinary);
+        const invertedHex = this.library.find(h => h.binary === relations.invertedBinary);
+        
+        let quickInsight = "";
+        if (recordId) {
+            const record = JournalService.getRecord(recordId);
+            if (record?.quickInsight) quickInsight = record.quickInsight;
         }
-        // Insert Advanced Panel
+
         const advancedPanel = document.createElement('div');
         advancedPanel.className = 'advanced-insights-panel hidden';
         advancedPanel.id = 'advanced-panel';
-
-        const palaceWuxing = original.najia_analysis?.palace_wuxing || "金";
-        const relatives = (original.najia_analysis?.lines || []).map(line => line.relative);
 
         advancedPanel.innerHTML = `
             <div class="advanced-grid">
@@ -363,42 +496,29 @@ class App {
                     <h4><i class="fas fa-link"></i> 關聯卦象</h4>
                     <div class="related-hexes">
                         <div class="rel-item" onclick="app.showHexDetail(app.library.find(h=>h.id==='${nuclearHex?.id}'), false, '${recordId || ''}')">
-                            <span class="rel-label">互卦 (內在)</span>
-                            <span class="rel-name">${nuclearHex?.name || "無"}卦</span>
+                            <span class="rel-name">${nuclearHex?.name || "無"}卦 (互)</span>
                         </div>
                         <div class="rel-item" onclick="app.showHexDetail(app.library.find(h=>h.id==='${invertedHex?.id}'), false, '${recordId || ''}')">
-                            <span class="rel-label">綜卦 (視角)</span>
-                            <span class="rel-name">${invertedHex?.name || "無"}卦</span>
+                            <span class="rel-name">${invertedHex?.name || "無"}卦 (綜)</span>
                         </div>
                     </div>
                 </div>
                 <div class="insight-col">
                     <h4><i class="fas fa-dragon"></i> 六親與六神</h4>
                     <ul class="beast-list">
-                        ${relatives.slice().reverse().map((rel, i) => `
-                            <li>
-                                <span class="beast-name">${beasts[5 - i]}</span>
-                                <span class="relative-name">${rel}</span>
-                                <span class="line-idx">爻 ${6 - i}</span>
-                            </li>
+                        ${(original.najia_analysis?.lines || []).slice().reverse().map((line, i) => `
+                            <li><span class="beast-name">${beasts[5-i]}</span> <span class="relative-name">${line.relative}</span></li>
                         `).join('')}
                     </ul>
                 </div>
                 <div class="insight-col">
-                    <h4><i class="fas fa-bolt"></i> 今日能量 (${gZ.day})</h4>
+                    <h4><i class="fas fa-bolt"></i> 今日能量</h4>
                     <div class="strength-tags">
-                        ${Object.entries(strength).map(([el, st]) => `
-                            <span class="strength-tag ${st}">${el}:${st}</span>
-                        `).join('')}
+                        ${Object.entries(strength).map(([el, st]) => `<span class="strength-tag ${st}">${el}:${st}</span>`).join('')}
                     </div>
                 </div>
             </div>
-            ${quickInsight ? `
-                <div class="ai-quick-insight glass-panel" style="margin-top: 20px; padding: 15px; border: 1px solid var(--accent-gold);">
-                    <h4 style="color: var(--accent-gold); margin-bottom: 10px;"><i class="fas fa-magic"></i> AI 初步解析</h4>
-                    <div style="font-size: 0.95rem; line-height: 1.6;">${quickInsight}</div>
-                </div>
-            ` : ""}
+            ${quickInsight ? `<div class="ai-quick-insight"><h4>AI 解析</h4><p>${quickInsight}</p></div>` : ""}
         `;
 
         const existingPanel = overlay.querySelector('.advanced-insights-panel');
@@ -408,97 +528,60 @@ class App {
         // Toggle Button
         const toggleBtn = document.createElement('button');
         toggleBtn.className = 'btn-secondary toggle-advanced';
-        toggleBtn.innerHTML = '<i class="fas fa-flask"></i> 顯示深層分析';
+        toggleBtn.innerHTML = '<i class="fas fa-flask"></i> 更多深層分析';
         toggleBtn.onclick = () => {
             advancedPanel.classList.toggle('hidden');
-            toggleBtn.innerHTML = advancedPanel.classList.contains('hidden') ?
-                '<i class="fas fa-flask"></i> 顯示深層分析' : '<i class="fas fa-times"></i> 隱藏分析';
+            toggleBtn.innerHTML = advancedPanel.classList.contains('hidden') ? '<i class="fas fa-flask"></i> 更多深層分析' : '隱藏分析';
         };
 
-        const actionArea = overlay.querySelector('.result-actions');
-        const existingToggle = actionArea.querySelector('.toggle-advanced');
+        const existingToggle = overlay.querySelector('.toggle-advanced');
         if (existingToggle) existingToggle.remove();
-        actionArea.prepend(toggleBtn);
+        overlay.querySelector('.result-actions').prepend(toggleBtn);
+    }
 
-        overlay.classList.remove('hidden');
-        document.querySelector('.instruction').classList.add('hidden');
-
-        // Setup Focus Buttons
-        const focusBtns = overlay.querySelectorAll('.btn-focus');
-        focusBtns.forEach(btn => {
-            btn.classList.remove('active');
-            btn.onclick = () => {
-                focusBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                this.highlightYongShen(btn.dataset.type, original);
-            };
-        });
-
-        overlay.classList.remove('history-mode');
-
-        // Link Consult Mentor button directly to AI view with record
+    setupOverlayButtons(original, future, meta, recordId, isHistory) {
+        const overlay = document.getElementById('result-overlay');
         const askAiBtn = overlay.querySelector('#ask-mentor-result');
         const reTossBtn = overlay.querySelector('#re-toss');
+        const copyBtn = overlay.querySelector('#copy-result');
+        const closeOverlayBtn = overlay.querySelector('#close-result-overlay');
 
-        // USER CLARIFICATION: Always show buttons in the result overlay.
-        // They are only hidden in the "Day Selection" list view.
         if (askAiBtn) {
             askAiBtn.style.setProperty('display', 'block', 'important');
-        }
-        if (reTossBtn) {
-            reTossBtn.style.setProperty('display', isHistory ? 'none' : 'block', 'important');
-        }
-
-        if (askAiBtn) {
             askAiBtn.onclick = () => {
                 const question = document.getElementById('user-question')?.value || "隨喜求卦";
                 this.switchView('ai-mentor');
                 this.prepareAIMentorView(original, this.currentRecordId);
-
-                // Hide overlay and restore inputs if needed (though switching view hides it too)
                 this.hideResultOverlay();
-
-                // Auto-send first message if empty
                 if (this.chatMessages.length === 0) {
                     this.handleSendChat(`針對在此次「${question}」的占卜中，請導師為我開示此卦。`);
                 }
             };
         }
 
-        // Link Copy button
-        const copyBtn = overlay.querySelector('#copy-result');
-        copyBtn.onclick = () => {
-            const question = document.getElementById('user-question')?.value || "隨喜求卦";
-            const solarTime = this.getSolarTime();
+        if (reTossBtn) {
+            reTossBtn.style.setProperty('display', isHistory ? 'none' : 'block', 'important');
+            reTossBtn.onclick = () => {
+                this.hideResultOverlay();
+                this.currentTosses = [];
+                this.caster.reset();
+                this.renderCastingProgress();
+            };
+        }
 
-            // Generate Hexagram Lines Text
-            let linesText = "";
-            if (original.najia_analysis) {
-                // Formatting Najia lines
-                linesText = original.najia_analysis.lines.map(l => {
-                    const isMoving = meta.changingLines.includes(l.line_number);
-                    return `L${l.line_number}: [${l.relative}] ${l.dizhi}${l.wuxing}${isMoving ? ' (動)' : ''}`;
-                }).reverse().join("\n");
-            }
+        if (copyBtn) {
+            copyBtn.onclick = () => {
+                const question = document.getElementById('user-question')?.value || "隨喜求卦";
+                const solarTime = this.getSolarTime();
+                const text = `【I-Ching Lab】\n問題：${question}\n時間：${solarTime}\n本卦：${original.name}${meta.hasChange ? " 之 " + future.name : ""}\n解義：${original.summary}`;
+                navigator.clipboard.writeText(text).then(() => {
+                    const oldText = copyBtn.innerText;
+                    copyBtn.innerText = "已複製資訊！";
+                    setTimeout(() => copyBtn.innerText = oldText, 2000);
+                });
+            };
+        }
 
-            const text = `【I-Ching Lab 卦象紀錄】\n` +
-                `問題：${question}\n` +
-                `時間：${solarTime}\n` +
-                `本卦：${original.name}${meta.hasChange ? " 之 " + future.name : ""}\n` +
-                `二进制：${meta.originalBinary}\n\n` +
-                `[納甲資訊]\n${original.najia_analysis?.palace}宮 [${original.najia_analysis?.palace_wuxing}]\n${linesText}\n\n` +
-                `解義：${original.summary}\n\n` +
-                (quickInsight ? `[AI 初步解析]\n${quickInsight.replace(/<[^>]*>/g, '')}\n\n` : "") +
-                `#IChingLab #易經 #術數`;
-
-            navigator.clipboard.writeText(text).then(() => {
-                const oldText = copyBtn.innerText;
-                copyBtn.innerText = "已複製資訊！";
-                setTimeout(() => copyBtn.innerText = oldText, 2000);
-            });
-        };
-
-        const closeOverlayBtn = overlay.querySelector('#close-result-overlay');
         if (closeOverlayBtn) {
             closeOverlayBtn.onclick = (e) => {
                 if (e) e.stopPropagation();
@@ -506,11 +589,8 @@ class App {
             };
         }
 
-        // Failsafe: Background click to close overlay
         overlay.onclick = (e) => {
-            if (e.target === overlay) {
-                this.hideResultOverlay();
-            }
+            if (e.target === overlay) this.hideResultOverlay();
         };
     }
 
@@ -539,28 +619,72 @@ class App {
     }
 
     highlightYongShen(type, hex) {
-        if (!hex.najia_analysis) return;
+        if (!hex || !hex.najia_analysis) return;
 
-        // Define Target Six Relatives for each focus
         const targetMap = {
             "career": ["官鬼"],
             "wealth": ["妻財"],
-            "love": ["妻財", "官鬼"] // Usually Wealth for men, Official for women
+            "love": ["妻財", "官鬼"]
         };
 
         const targets = targetMap[type];
-        const lines = document.querySelectorAll('.najia-line');
+        const lines = document.querySelectorAll('.najia-line-row');
 
         lines.forEach(line => {
             const isMatch = targets.includes(line.dataset.relative);
             line.classList.toggle('highlight', isMatch);
-
-            // Proactive: Highlight corresponding 3D/2D segments if possible
-            // This would require CastingManager to support selective highlighting
-            // For now, we highlight the UI list
         });
 
-        console.log(`Highlighted YongShen for ${type}:`, targets);
+        const verdict = this.getAnalysisVerdict(type, hex);
+        const container = document.getElementById('analysis-verdict');
+        if (container) {
+            container.innerText = verdict;
+            container.classList.remove('hidden');
+        }
+    }
+
+    getAnalysisVerdict(type, hex) {
+        if (!hex) return "無數據。";
+        const gZ = TimeService.getGanZhi(new Date());
+        const strengthMap = TimeService.getWuxingStrength(gZ.monthBranch);
+        
+        const targetMap = {
+            "career": ["官鬼"],
+            "wealth": ["妻財"],
+            "love": ["妻財", "官鬼"]
+        };
+        
+        const focusTargets = targetMap[type];
+        if (!hex.najia_analysis) return "請查看六爻納甲盤。";
+        
+        const targetLines = hex.najia_analysis.lines.filter(l => focusTargets.includes(l.relative));
+        
+        let strengthVerdict = "";
+        if (targetLines.length > 0) {
+            const sorted = [...targetLines].sort((a, b) => {
+                const sA = (strengthMap[a.wuxing] === '旺' ? 3 : (strengthMap[a.wuxing] === '相' ? 2 : (strengthMap[a.wuxing] === '休' ? 1 : 0)));
+                const sB = (strengthMap[b.wuxing] === '旺' ? 3 : (strengthMap[b.wuxing] === '相' ? 2 : (strengthMap[b.wuxing] === '休' ? 1 : 0)));
+                return sB - sA;
+            });
+            const targetLine = sorted[0];
+            const strength = strengthMap[targetLine.wuxing];
+            
+            const generalVerdicts = {
+                "旺": "【用神大吉】目前能量極強（旺），所求之事正值良機。",
+                "相": "【用神吉】能量受生（相），有貴人相助，穩步成長。",
+                "休": "【用神平】能量收斂（休），宜守不宜進，宜靜觀其變。",
+                "囚": "【用神小凶】受困之象（囚），阻礙重重，宜防範風險。",
+                "死": "【用神凶】能量凋零（死），目前處於劣勢，不宜強求。"
+            };
+            strengthVerdict = generalVerdicts[strength] || "用神能量一般。";
+        } else {
+            strengthVerdict = "卦中不現用神，代表時機未至或需尋求伏藏能量。";
+        }
+
+        const llmKeyMap = { "career": "career", "wealth": "finance", "love": "love" };
+        const specificText = hex.llm_analysis?.[llmKeyMap[type]] || "";
+
+        return specificText ? `${strengthVerdict}\n\n${specificText}` : strengthVerdict;
     }
 
     setupLibraryNav() {
@@ -891,10 +1015,26 @@ class App {
         // If result overlay is visible, we need to refresh it with current data
         const overlay = document.getElementById('result-overlay');
         if (overlay && !overlay.classList.contains('hidden') && this.currentHexData) {
-            const result = HexagramEngine.calculateHexagram(this.currentTosses);
-            this.showResultOverlay(this.currentHexData, result.hasChange ? this.library.find(h => h.binary === result.futureBinary) : null, result, this.currentRecordId);
+            const record = JournalService.getRecord(this.currentRecordId);
+            if (!record) {
+                console.warn("No record found for mode switching, falling back to basic overlay.");
+                this.renderView();
+                return;
+            }
+            // Re-construct the 'meta' object for showResultOverlay
+            const meta = {
+                originalBinary: record.originalBinary || this.currentHexData?.binary,
+                changingLines: record.changingLines || [],
+                hasChange: record.hasChange || false,
+                isPlum: record.isPlum || record.method === '梅花',
+                plumResult: record.plumResult || record.advancedTheory?.plum || null,
+                castingMode: record.method === '梅花' ? 'plum' : 'iching'
+            };
+            
+            const futureHex = record.futureId ? this.library.find(h => h.id === record.futureId) : null;
+            this.showResultOverlay(this.currentHexData, futureHex, meta, this.currentRecordId);
         } else {
-            this.renderIChingView(); 
+            this.renderView(); 
         }
     }
 
@@ -1619,8 +1759,10 @@ class App {
                                 originalBinary: record.originalBinary,
                                 hasChange: record.hasChange,
                                 changingLines: record.changingLines,
-                                isPlum: record.isPlum,
-                                plumResult: record.plumResult
+                                isPlum: record.isPlum || record.method === '梅花',
+                                plumResult: record.plumResult || record.advancedTheory?.plum,
+                                hasChange: record.hasChange || !!record.futureId,
+                                futureBinary: record.futureBinary || null
                             }, record.id);
                         }
                     }
@@ -1986,8 +2128,11 @@ class App {
         this.switchView('tabletop');
         this.showResultOverlay(original, future, {
             originalBinary: record.originalBinary || "000000",
-            hasChange: record.hasChange,
-            changingLines: record.changingLines || []
+            hasChange: record.hasChange || !!record.futureId,
+            changingLines: record.changingLines || [],
+            isPlum: record.isPlum || record.method === '梅花',
+            plumResult: record.plumResult || record.advancedTheory?.plum,
+            futureBinary: future?.binary || null
         }, recordId, true);
     }
 

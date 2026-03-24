@@ -14,6 +14,13 @@
     /* Tarot Mode Theme (Default is I-Ching) */
     --accent-purple: #9c27b0;
     --purple-glow: rgba(156, 39, 176, 0.4);
+
+    /* Wuxing Colors */
+    --wuxing-metal: #e0e0e0;
+    --wuxing-wood: #81c784;
+    --wuxing-water: #64b5f6;
+    --wuxing-fire: #e57373;
+    --wuxing-earth: #ffd54f;
 }
 
 .tarot-mode {
@@ -469,10 +476,55 @@ canvas {
 }
 
 .hex-name {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
     font-size: 2.5rem;
     font-weight: 700;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     color: var(--accent-gold);
+    text-align: center;
+    gap: 15px;
+}
+
+.hex-header-main {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.hex-header-main .mini-hex-symbol {
+    width: 60px;
+    gap: 4px;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.hex-header-main .mini-hex-symbol .line {
+    height: 5px;
+}
+
+.hex-name .result-badge {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.result-badge {
+    display: inline-block;
+    background: var(--accent-gold);
+    color: #1a1b26;
+    font-size: 0.75rem;
+    padding: 2px 12px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    text-transform: uppercase;
 }
 
 /* Buttons */
@@ -567,47 +619,318 @@ canvas {
     background: rgba(212, 175, 55, 0.1);
 }
 
-/* Najia Info Box */
-#najia-info {
-    margin: 15px 0;
-    text-align: left;
-    font-size: 0.9rem;
+/* Professional Najia Line Rendering */
+.najia-line-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 0.8fr 0.8fr 0.8fr 0.5fr 0.5fr;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    border: 1px solid transparent;
+    transition: var(--transition-smooth);
 }
 
-.palace-info {
-    text-align: center;
+.najia-line-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--glass-border);
+}
+
+.najia-line-row.highlight {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.1);
+}
+
+.line-beast {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.line-stem {
     color: var(--accent-blue);
-    margin-bottom: 10px;
-    font-weight: 600;
+    opacity: 0.8;
 }
 
-.najia-line {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px 10px;
-    border-radius: 5px;
-    margin-bottom: 3px;
+.tag-shi, .tag-ying {
+    font-size: 0.7rem;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.tag-shi {
+    background: var(--accent-gold);
+    color: #000;
+}
+
+.tag-ying {
+    background: var(--accent-blue);
+    color: #000;
+}
+
+.moving-mark {
+    color: #ff4d4d;
+    font-size: 1.2rem;
+    line-height: 0;
+    margin-left: 5px;
+}
+
+/* Plum Blossom Stages */
+.plum-stages-grid {
     background: rgba(255, 255, 255, 0.02);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px inset var(--glass-border);
 }
 
-.najia-line.highlight {
-    background: rgba(212, 175, 55, 0.2);
-    border: 1px solid var(--accent-gold);
+.plum-stage-item {
+    transition: var(--transition-smooth);
 }
 
-.line-rel {
-    font-weight: 700;
-    color: var(--accent-gold);
-    min-width: 50px;
+.plum-stage-item:hover {
+    transform: scale(1.05);
 }
 
-.line-dz {
+/* Analysis Mode Selector */
+#analysis-tabs-container {
+    margin-bottom: 20px;
+}
+
+.analysis-mode-selector {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+}
+
+.analysis-tab {
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    border: 1px solid transparent;
+}
+
+.analysis-tab:hover {
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
 }
 
-.line-wx {
-    color: var(--text-secondary);
+.analysis-tab.active {
+    background: rgba(212, 175, 55, 0.15);
+    color: var(--accent-gold);
+    border-color: var(--accent-gold);
+    font-weight: bold;
+}
+
+/* Plum Blossom Optimized UI */
+.plum-analysis-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.plum-timeline {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.plum-timeline::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--accent-gold), transparent);
+    z-index: 0;
+    opacity: 0.3;
+}
+
+.plum-step {
+    flex: 1;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.plum-step-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 12px;
+    transition: var(--transition-smooth);
+    height: 100%;
+}
+
+.plum-step-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.plum-step-title {
     font-size: 0.75rem;
+    color: var(--accent-gold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.plum-trigram-pair {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.plum-trigram-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.trigram-symbol {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.trigram-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.trigram-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.trigram-wuxing {
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+.plum-tag {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(212, 175, 55, 0.2);
+    color: var(--accent-gold);
+    margin-left: auto;
+}
+
+/* Wuxing Theming */
+.wuxing-metal { color: var(--wuxing-metal); }
+.wuxing-wood { color: var(--wuxing-wood); }
+.wuxing-water { color: var(--wuxing-water); }
+.wuxing-fire { color: var(--wuxing-fire); }
+.wuxing-earth { color: var(--wuxing-earth); }
+
+.plum-verdict-card {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(0, 0, 0, 0.4));
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.plum-verdict-card::after {
+    content: '卦';
+    position: absolute;
+    right: -10px;
+    bottom: -20px;
+    font-size: 8rem;
+    opacity: 0.05;
+    font-family: serif;
+    pointer-events: none;
+}
+
+.verdict-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+.verdict-interaction {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--accent-gold);
+}
+
+.verdict-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+@media (max-width: 600px) {
+    .plum-timeline {
+        flex-direction: row; /* Keep side-by-side */
+        gap: 6px;
+        overflow-x: auto; /* Allow scroll if extreme */
+        padding-bottom: 10px;
+    }
+    .plum-step {
+        min-width: 100px; /* Ensure cards don't collapse too much */
+    }
+    .plum-timeline::before {
+        top: 60%; /* Adjust line position for smaller cards */
+    }
+}
+
+#analysis-content-area {
+    margin-top: 15px;
+}
+
+.analysis-verdict-box {
+    margin-top: 15px;
+    padding: 12px 18px;
+    background: rgba(212, 175, 55, 0.12);
+    border-radius: 12px;
+    border-left: 4px solid var(--accent-gold);
+    color: var(--accent-gold);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.analysis-verdict-box.hidden {
+    display: none !important;
+}
+
+.error-fallback {
+    padding: 15px;
+    text-align: center;
+    background: rgba(255, 77, 77, 0.05);
+    border: 1px solid #ff4d4d;
+    color: #ff4d4d;
+    border-radius: 10px;
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 /* Grid and Library */
@@ -2734,9 +3057,10 @@ canvas {
 .header-phonetic-stack {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    /* Left align phonetics in their stack */
+    align-items: center;
+    justify-content: center;
     line-height: 1.1;
+    margin: 0;
 }
 
 .result-phonetic-stack .zhuyin,

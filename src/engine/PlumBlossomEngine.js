@@ -75,21 +75,74 @@ export class PlumBlossomEngine {
      * The trigram WITH the moving line is the "Guest" (用).
      */
     static analyzeBodyGuest(upper, lower, movingLine) {
-        const isUpperBody = movingLine > 3 ? false : true; // Lines 1-3 are lower, 4-6 are upper
+        const isUpperBody = movingLine > 3 ? false : true;
         
-        // Wait, line 1-3 is lower trigram. If moving line is 1,2,3 -> Lower is Guest, Upper is Body.
         const bodyTrigram = movingLine > 3 ? lower : upper;
-        const guestTrigram = movingLine > 3 ? upper : lower;
+        const origGuestTrigram = movingLine > 3 ? upper : lower;
 
-        const interaction = this.getWuxingInteraction(bodyTrigram.wuxing, guestTrigram.wuxing);
+        // Nuclear Analysis
+        const binary = this.getHexBinary(upper.id, lower.id);
+        const nuclearBinary = this.getNuclearBinary(binary);
+        const nuclearLowerBin = nuclearBinary.substring(0, 3);
+        const nuclearUpperBin = nuclearBinary.substring(3, 6);
+        
+        const nuclearLower = this.getTrigramByBinary(nuclearLowerBin);
+        const nuclearUpper = this.getTrigramByBinary(nuclearUpperBin);
+
+        // Future Analysis (The Guest Trigram changes)
+        const futureGuestTrigram = this.getChangedTrigram(origGuestTrigram, movingLine);
+
+        const interactions = {
+            original: this.getWuxingInteraction(bodyTrigram.wuxing, origGuestTrigram.wuxing),
+            nuclearLower: this.getWuxingInteraction(bodyTrigram.wuxing, nuclearLower.wuxing),
+            nuclearUpper: this.getWuxingInteraction(bodyTrigram.wuxing, nuclearUpper.wuxing),
+            future: this.getWuxingInteraction(bodyTrigram.wuxing, futureGuestTrigram.wuxing)
+        };
 
         return {
             isUpperBody,
             bodyTrigram,
-            guestTrigram,
-            interaction,
-            result: this.getInteractionResult(interaction)
+            origGuestTrigram,
+            nuclearLower,
+            nuclearUpper,
+            futureGuestTrigram,
+            interactions,
+            result: this.getInteractionResult(interactions.original)
         };
+    }
+
+    static getNuclearBinary(binary) {
+        // App expects bottom-to-top [L1, L2, L3, L4, L5, L6]
+        // Nuclear (互卦): 
+        // Lower nuclear = Lines 2,3,4
+        // Upper nuclear = Lines 3,4,5
+        const nL = binary.substring(1, 4);
+        const nU = binary.substring(2, 5);
+        return nL + nU;
+    }
+
+    static getTrigramByBinary(bin) {
+        // App standard for hexagram binary is Bottom-to-Top [L1, L2, L3]
+        const map = {
+            "111": "乾", "110": "兌", "101": "離", "100": "震",
+            "011": "巽", "010": "坎", "001": "艮", "000": "坤"
+        };
+        const name = map[bin];
+        return this.TRIGRAMS.find(t => t.name === name) || this.TRIGRAMS[7]; // Fallback to Kun
+    }
+
+    static getChangedTrigram(trigram, movingLine) {
+        // line 1,2,3 -> index 0,1,2 of lower
+        // line 4,5,6 -> index 0,1,2 of upper
+        const bitIndex = (movingLine - 1) % 3;
+        // getTrigramBinary returns Top-to-Bottom
+        const bin = this.getTrigramBinary(trigram.id).split("");
+        // Top is index 0. Bottom is index 2.
+        const flipIdx = 2 - bitIndex;
+        bin[flipIdx] = (bin[flipIdx] === "1" ? "0" : "1");
+        // Convert back to Bottom-to-Top for getTrigramByBinary
+        const newBin = bin.reverse().join("");
+        return this.getTrigramByBinary(newBin);
     }
 
     static getWuxingInteraction(body, guest) {
