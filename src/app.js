@@ -1172,6 +1172,9 @@ class App {
                 // Force switch to Tabletop view when changing mode
                 this.currentView = 'tabletop';
                 this.switchView('tabletop');
+
+                // Clear AI Mentor state when switching modes
+                this.resetAIMentor();
             };
         });
     }
@@ -1856,6 +1859,22 @@ class App {
         // Setup send click
         document.getElementById('send-chat-main').onclick = () => this.handleSendChat();
         document.getElementById('chat-input-main').onkeypress = (e) => { if (e.key === 'Enter') this.handleSendChat(); };
+    }
+
+    resetAIMentor() {
+        console.log("Resetting AI Mentor state...");
+        this.chatMessages = [];
+        this.currentRecordId = null;
+        this.currentHexData = null;
+        this.currentTarotCard = null;
+
+        const header = document.getElementById('mentor-current-hex');
+        const chatHistory = document.getElementById('chat-history-main');
+        const actionContainer = document.getElementById('mentor-result-action');
+
+        if (header) header.innerText = "等待導引...";
+        if (chatHistory) chatHistory.innerHTML = '<p class="empty-state">點擊發送按鈕或輸入疑問。</p>';
+        if (actionContainer) actionContainer.innerHTML = '';
     }
 
     handleClearChat() {

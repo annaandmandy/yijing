@@ -39,17 +39,18 @@
 }
 
 .question-container {
-    position: absolute;
-    top: calc(70px + 20px + var(--safe-top));
+    position: relative; /* Changed from absolute for layout stability */
+    margin-top: 40px;
+    margin-bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
     width: 90%;
-    max-width: 500px;
+    max-width: 600px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 
 .casting-mode-switcher {
@@ -205,6 +206,7 @@ body {
     color: var(--text-primary);
     font-family: 'Inter', 'Noto Serif TC', serif;
     overflow-x: hidden;
+    scrollbar-gutter: stable; /* Prevent horizontal jump when scrollbar appears */
     -webkit-tap-highlight-color: transparent; /* Improve mobile tap feel */
 }
 
@@ -271,23 +273,35 @@ body {
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
     }
-
     to {
         opacity: 1;
-        transform: translateY(0);
+    }
+}
+
+/* Mobile-only slight slide up for animation feel */
+@media (max-width: 768px) {
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 }
 
 /* 3D Canvas Tabletop */
 #canvas-container {
     width: 100%;
-    height: calc(100svh - 70px);
-    /* Use svh for better mobile support */
+    height: calc(100vh - 250px); /* Adjusted to account for relative input height */
     position: relative;
     background: #000;
     overflow: hidden;
+    border-radius: 20px;
+    margin-bottom: 20px;
 }
 
 canvas {
@@ -1592,14 +1606,13 @@ canvas {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start !important;
-    min-height: 550px;
+    justify-content: center !important; /* Centered for desktop */
+    min-height: 600px; /* More stable height */
     position: relative;
-    padding: 30px;
-    margin: 0 0 40px 0 !important;
+    padding: 60px 40px; /* More breathing room */
+    margin: 0 auto 40px auto !important;
     border: none !important;
     background: transparent;
-    /* Allow cards to overflow on sides */
     overflow: visible !important;
 }
 
@@ -1677,14 +1690,12 @@ canvas {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 140%;
-    /* Slightly wider for the 78 cards */
+    width: 100%; /* Changed from 140% to prevent extreme stretch on wide screens */
+    max-width: 1200px;
     height: 450px;
-    /* More height for the arch */
+    margin: 0 auto;
     position: relative;
-    perspective: 1500px;
-    margin-left: -20%;
-    /* Re-center */
+    perspective: 2000px; /* Increased for deeper feeling on desktop */
     overflow: visible !important;
 }
 
@@ -3156,6 +3167,17 @@ canvas {
 
 /* Mobile Shuffling Optimization */
 @media (max-width: 768px) {
+    .question-container {
+        position: absolute;
+        top: calc(70px + 20px + var(--safe-top));
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    #canvas-container {
+        height: calc(100svh - 70px);
+    }
+
     .shuffling-container {
         min-height: 90vh;
         padding-top: 60px;
