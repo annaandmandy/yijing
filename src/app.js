@@ -1695,7 +1695,8 @@ class App {
                             </div>
                         `).join('') || '<p>正在整理爻辭中...</p>'}
                     </div>
-                </details>
+                </div>
+            </details>
 
             <details class="detail-section">
                 <summary>現代解析 (事業/感情/財運)</summary>
