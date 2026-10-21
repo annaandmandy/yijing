@@ -7,7 +7,7 @@ Immersive I Ching (and tarot) divination app: 3D coin casting, Najia / plum-blos
 Frontend (Vite, http://localhost:3000):
 ```bash
 npm install
-npm run dev        # npm run build -> dist/, npm run preview
+npm run dev        # npm run build -> dist/, npm run preview, npm test
 ```
 
 Backend (FastAPI AI proxy, http://localhost:8000):
