@@ -10,3 +10,4 @@ __pycache__/
 !public/tarot_data/*.json
 node_modules
 src/config.js
+dist/

@@ -36,10 +36,9 @@ https://yijing-ebon.vercel.app/
 3. **配置環境變數 (API Key)：**
    在根目錄下建立一個 `.env` 檔案，並填入您的 Gemini API Key：
    ```env
-   VITE_GOOGLE_API_KEY=您的_GOOGLE_API_KEY
    GOOGLE_API_KEY=您的_GOOGLE_API_KEY
    ```
-   *註：`VITE_` 前綴用於前端 Vite 加載，不帶前綴的則是供 Python 腳本使用。*
+   *註：API Key 只由後端 (`server.py`) 與 `scripts/` 中的 Python 數據腳本讀取，前端不會接觸到金鑰。前端透過 `VITE_BACKEND_URL` 連接後端（預設為 `http://localhost:8000`）。*
 
 ---
 
@@ -59,7 +58,7 @@ pip install google-generativeai python-dotenv
 
 # 執行生成腳本
 npm run generate
-# 或者直接執行：python3 yijing_generate.py
+# 或者直接執行：python3 scripts/yijing_generate.py
 ```
 
 ---
@@ -75,13 +74,14 @@ npm run generate
 ## 🌐 部署至雲端 (Deployment)
 
 本專案支援快速部署至 **Railway (後端)** 與 **Vercel (前端)**。
-詳情請參閱：[部署指南 (Deployment Guide)](file:///home/annaandmandy/.gemini/antigravity/brain/e58cbc9b-4cf6-40f7-b998-99303baccee5/deployment_guide.md)
 
 ---
 
 ## 📂 專案結構
 - `src/`: 前端原始碼 (Engine, Services, Styles)。
 - `docs/`: 專案設計文件與上下文 (`CONTEXT.md`)。
+- `scripts/`: 數據生成與增強用的 Python 腳本。
+- `scripts/archive/`: 已執行過的一次性數據修正腳本。
 - `yi_data_library/`: 儲存 64 卦基礎 JSON。
 - `yi_data_enhanced/`: 儲存 AI 增強後的深度解析數據。
 
