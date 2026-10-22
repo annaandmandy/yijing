@@ -39,8 +39,7 @@ Throughout:
 - What `commit-guard.sh` can't see, so never do these:
   - make commits any way other than `git commit -m` (no merge, cherry-pick, revert, rebase, am or pull commits, `gh pr merge`, `gh api`);
   - push to main (`git push origin HEAD:main`);
-  - change directory any way other than a leading `cd <dir>` or `git -C <dir>`; use git aliases, `git -c`, `GIT_DIR` or `GIT_WORK_TREE`;
-  - mention another issue's number in a PR body on an `issue-N` branch (the issue-number rule covers commits only).
+  - change directory any way other than a leading `cd <dir>` or `git -C <dir>`; use git aliases, `git -c`, `GIT_DIR` or `GIT_WORK_TREE`.
 
 ## 1. Read the issue and branch
 - If `$ARGUMENTS` is empty or isn't a number, stop and ask for the issue number.
@@ -129,7 +128,7 @@ Nothing is committed yet, so the change is the working tree against the base bra
   - **Evidence**: the red and green test runs, and my browser check
   - **Review log**: for each reviewer, what it found, what was accepted, and what was rejected and why
   - **What the checks missed**
-  - **Out of scope**: the proposed issues
+  - **Out of scope**: the proposed issues, linking each one created for it by number (`#N`)
 - Run `gh pr checks --watch`. If CI fails, stop and show me the failing check.
 - Run `git fetch origin` so `origin/<base branch>` is current (evidence-checker can't fetch).
 - Send the `evidence-checker` agent only the PR body (`gh pr view --json body`), the issue number `$ARGUMENTS` and the base branch, nothing else. Save its full report, verbatim, to `reviews/issue-$ARGUMENTS-evidence-checker.md`.
