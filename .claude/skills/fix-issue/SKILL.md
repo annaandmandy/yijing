@@ -18,6 +18,7 @@ Throughout:
 - `block-env-bash.sh` (Bash, any case) and the `Read`/`Edit` deny rules `**/.env`, `**/.env.*` and their bracket-class forms `**/.[eE][nN][vV]`, `**/.[eE][nN][vV].*`: no reading or changing `.env` files, in any letter case, at any depth.
 - `readonly-agent-bash.sh` (plan-reviewer, domain-checker): Bash limited to `gh issue view` and read-only git, one command, no pipes.
 - `evidence-agent-bash.sh` (evidence-checker): Bash limited to `npm test`, `npm run build`, `gh pr view`, `gh issue view`, `gh run list/view` and read-only git, one command, no pipes.
+- `browser-checker-guard.sh` (browser-checker): Bash limited to starting the frontend/backend, `curl` to localhost, `gh issue view`, the screenshot folder and `ls -a`. Playwright: no `.env` in any argument (any case); only `http://localhost:3000|8000` or `about:blank`, with no `%`, `..` or `@fs`; screenshots only as `reviews/issue-N-browser/<name>.png`; no `browser_evaluate` or `browser_run_code_unsafe`.
 - `stop-verify.sh` (Stop): `npm test` and `npm run build` must pass before you finish.
 - `commit-guard.sh` (Bash, on `git commit` and `gh pr create|edit`):
   - no commit on `main`, including switching to main and committing in one command;
@@ -31,6 +32,7 @@ Throughout:
 - Keep the red and green test output; `// source:` URLs on domain values.
 - The PR stays a draft until CI has passed and evidence-checker shows no contradicted claim. Nothing stops `gh pr ready` from running earlier.
 - The PR targets the base branch from step 1; run `git branch --show-current` before committing.
+- browser-checker gets only the issue number and the checklist. Its verdicts are reported as-is, and I still confirm at the step 6 STOP.
 - What `commit-guard.sh` can't see, so never do these:
   - make commits any way other than `git commit -m` (no merge, cherry-pick, revert, rebase, am or pull commits, `gh pr merge`, `gh api`);
   - push to main (`git push origin HEAD:main`);
@@ -99,13 +101,19 @@ Nothing is committed yet, so the change is the working tree against the base bra
 - Run the same reviewers again on the fix diff only (the changes made in this step). At most one more round; anything new from it goes in the triage too.
 - List problems outside this issue as proposed new issues (title plus one line each). Don't create them.
 
+### Browser check
+- Write the browser checklist: numbered steps, each with the view, the exact actions and what should be seen. Cover the issue's own scenario. Save it to `reviews/issue-$ARGUMENTS-browser-checklist.md`.
+- Send a fresh `browser-checker` agent only the issue number `$ARGUMENTS` and that checklist: no diff, no implementation notes, no conclusions. It starts the frontend (and the backend for AI steps) itself, runs every step, and saves a screenshot per step to `reviews/issue-$ARGUMENTS-browser/`.
+- Save its full report, verbatim, to `reviews/issue-$ARGUMENTS-browser.md`.
+- A **fail** is a finding: triage it like the others. A **blocked** step (e.g. AI steps without `.env`) is not a pass; list it for me to check by hand.
+
 **STOP**:
 1. Show me the triage table: finding, reviewer, bug pattern, every instance (`file:line`), accepted or rejected, evidence, fixed.
-2. List every service I need to start for the browser check, each with its command:
-   - Frontend, always: `npm run dev` (http://localhost:3000).
+2. Show me the browser-checker report: every step with pass/fail/blocked and its screenshot path.
+3. List the services and steps for anything I should check by hand (blocked steps, or if I want to repeat the check):
+   - Frontend: `npm run dev` (http://localhost:3000).
    - Backend, if any step touches the AI mentor or tarot insight: `source venv/bin/activate && python server.py` (http://localhost:8000; needs `GOOGLE_API_KEY` in `.env`). First time: `python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt`.
-3. Tell me exactly what to check by hand in the browser: which view, which steps, and what I should see.
-4. Wait until I confirm.
+4. Wait until I've reviewed the report and screenshots and confirmed.
 
 ## 7. Commit, push, PR
 - Run `npm test` and `npm run build`. If either fails, stop and show me the output.
