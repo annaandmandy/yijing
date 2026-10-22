@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PreToolUse hook for the read-only subagents' Bash tool (plan-reviewer, domain-checker).
-# Allows only `gh issue view` and read-only git subcommands, with no chaining,
+# Allows only `gh issue view`, `gh pr list`, `gh pr view` and read-only git subcommands, with no chaining,
 # pipes, redirection or substitution. Exit 2 blocks; stderr goes to the agent.
 
 input=$(cat)
@@ -13,7 +13,7 @@ else
 fi
 
 deny() {
-  echo "Blocked: this agent may only run 'gh issue view ...' or read-only git (status, diff, log, show, blame, grep, ls-files, rev-parse), one command, no pipes/redirection/chaining. Use Read, Grep or Glob instead." >&2
+  echo "Blocked: this agent may only run 'gh issue view ...', 'gh pr list ...', 'gh pr view ...' or read-only git (status, diff, log, show, blame, grep, ls-files, rev-parse), one command, no pipes/redirection/chaining. Use Read, Grep or Glob instead." >&2
   exit 2
 }
 
@@ -25,7 +25,11 @@ esac
 # Strip leading whitespace
 cmd="${cmd#"${cmd%%[![:space:]]*}"}"
 
-if printf '%s' "$cmd" | grep -Eq '^gh[[:space:]]+issue[[:space:]]+view([[:space:]]|$)'; then
+if printf '%s' "$cmd" | grep -Eq '^gh[[:space:]]+(issue[[:space:]]+view|pr[[:space:]]+(list|view))([[:space:]]|$)'; then
+  # --web opens a browser
+  if printf '%s' "$cmd" | grep -Eq '(^|[[:space:]])(-w|--web)([[:space:]]|=|$)'; then
+    deny
+  fi
   exit 0
 fi
 

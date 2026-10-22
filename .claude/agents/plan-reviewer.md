@@ -21,6 +21,7 @@ Nothing else. If you were given the planner's reasoning or conclusions, ignore t
 ## Bash
 Use Bash only for:
 - `gh issue view <number> --json title,body,comments` (plain `gh issue view` prints nothing in non-interactive mode);
+- `gh pr list --state open --json number,title,headRefName,body` and `gh pr view <number> --json title,body,files`;
 - read-only git: `git status`, `git diff`, `git log`, `git show`, `git blame`, `git grep`, `git ls-files`, `git rev-parse`.
 
 One command per call, no pipes, redirection or chaining. Everything else (reading and searching files) goes through Read, Grep and Glob. Don't read `.env` files.
@@ -28,14 +29,16 @@ One command per call, no pipes, redirection or chaining. Everything else (readin
 ## Steps
 1. Run `gh issue view <number> --json title,body,comments`. Note the exact scenario: the inputs, steps, observed result and expected result. If the issue can't be fetched, say so and review against the plan's own statement of the problem, flagging that you couldn't confirm it.
 2. Read `CLAUDE.md` for the architecture and Coding Standards.
-3. Find where the bug actually lives: trace the issue's scenario through the code (entry point `src/app.js`, engines in `src/engine/`, services in `src/services/`, backend `server.py`, generators in `scripts/`) down to the faulty line or lines. Do this before judging the plan's diagnosis.
-4. Check the plan against what you found:
+3. Run `gh pr list --state open --json number,title,headRefName,body`. For each open PR whose title or body touches the same issue, files or behaviour as the plan, run `gh pr view <number> --json title,body,files` and compare its changed files with the plan's. If an open PR already does part of the plan, or changes the same lines in a conflicting way, report it as a gap.
+4. Find where the bug actually lives: trace the issue's scenario through the code (entry point `src/app.js`, engines in `src/engine/`, services in `src/services/`, backend `server.py`, generators in `scripts/`) down to the faulty line or lines. Do this before judging the plan's diagnosis.
+5. Check the plan against what you found:
    - **Root cause** — does the plan change the code where the bug lives, or does it patch a symptom upstream or downstream of it?
    - **Tests hit the bug's code path** — for each proposed test, would it fail on the current code and pass after the fix? A test that calls a helper the buggy path doesn't use, mocks away the faulty function, or uses inputs that never reach the faulty branch doesn't count.
    - **Shared or leftover state** — module-level variables, App instance fields, `localStorage` (`JournalService`, `SettingsService`), cached manifest/tarot data, Three.js/cannon-es scene objects, event listeners, timers, streaming requests in flight. Could the change leave stale state between casts, views or modals, register a listener twice, or leak between tests?
    - **Verification reproduces the issue** — does the plan's verification run the issue's exact scenario (same inputs, same steps, same view) and check the expected result the issue states, not a nearby or easier case?
    - **CLAUDE.md** — no new npm dependency without asking; no hand edits to `public/yi_data_enhanced/`, `public/yi_data_library/` or `public/tarot_data/` (change the generator in `scripts/` and regenerate); `GOOGLE_API_KEY` stays server-side, never in a `VITE_*` variable or frontend code; `npm run build` is run and succeeds before the change is called done.
    - **Requirements** — does the plan cover everything the issue asks for, and nothing that contradicts it?
+   - **Open PRs** — does an open PR (step 3) already do part of this work, or touch the same files in a way that will conflict? Name the PR and say what to drop or coordinate.
 
 ## What to report
 Only gaps that affect correctness or the issue's requirements. No style preferences, naming, formatting, refactoring ideas or "nice to have" tests. If a point checks out, don't mention it.

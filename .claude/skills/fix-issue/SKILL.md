@@ -16,7 +16,7 @@ Throughout:
 ## Guardrails
 **What a hook enforces** (a blocked call shows the reason; fix the call, don't work around the hook):
 - `block-env-bash.sh` (Bash, any case) and the `Read`/`Edit` deny rules `**/.env`, `**/.env.*` and their bracket-class forms `**/.[eE][nN][vV]`, `**/.[eE][nN][vV].*`: no reading or changing `.env` files, in any letter case, at any depth.
-- `readonly-agent-bash.sh` (plan-reviewer, domain-checker): Bash limited to `gh issue view` and read-only git, one command, no pipes.
+- `readonly-agent-bash.sh` (plan-reviewer, domain-checker): Bash limited to `gh issue view`, `gh pr list`, `gh pr view` (no `--web`) and read-only git, one command, no pipes.
 - `evidence-agent-bash.sh` (evidence-checker): Bash limited to `npm test`, `npm run build`, `gh pr view`, `gh issue view`, `gh run list/view` and read-only git, one command, no pipes.
 - `browser-checker-guard.sh` (browser-checker): Bash limited to starting the frontend/backend, `curl` to localhost, `gh issue view`, the screenshot folder and `ls -a`. Playwright: no `.env` in any argument (any case); only `http://localhost:3000|8000` or `about:blank`, with no `%`, `..` or `@fs`; screenshots only as `reviews/issue-N-browser/<name>.png`; no `browser_evaluate` or `browser_run_code_unsafe`.
 - `stop-verify.sh` (Stop): `npm test` and `npm run build` must pass before you finish.
@@ -32,6 +32,7 @@ Throughout:
 - Keep the red and green test output; `// source:` URLs on domain values.
 - The PR stays a draft until CI has passed and evidence-checker shows no contradicted claim. Nothing stops `gh pr ready` from running earlier.
 - The PR targets the base branch from step 1; run `git branch --show-current` before committing.
+- plan-reviewer checks open PRs for overlap with the plan; drop or coordinate any work an open PR already does.
 - browser-checker gets only the issue number and the checklist. Its verdicts are reported as-is, and I still confirm at the step 6 STOP.
 - What `commit-guard.sh` can't see, so never do these:
   - make commits any way other than `git commit -m` (no merge, cherry-pick, revert, rebase, am or pull commits, `gh pr merge`, `gh api`);
