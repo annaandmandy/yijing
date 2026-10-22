@@ -54,6 +54,8 @@ Static data (served from `public/`):
 - Never hand-edit `public/yi_data_enhanced/`, `public/yi_data_library/` or `public/tarot_data/`; change the generator in `scripts/` and regenerate.
 - Keep `GOOGLE_API_KEY` server-side (`server.py`, `scripts/`); never expose it via a `VITE_*` variable or frontend code.
 - Run `npm run build` and confirm it succeeds before saying a change is done.
+- Every domain expected value in a test (GanZhi, solar terms, hexagrams, Six Spirits, five-element strength, classical text) needs a source comment naming the outside reference it came from (e.g. `// source: HKO 2024 農曆對照表`), not our own code's output. Run `domain-checker` on diffs that add or change such values.
+- Before presenting a plan, run the `plan-reviewer` agent (issue number + plan text only), revise, at most two rounds, and append a Review log to the plan.
 
 ## Deploy
 Frontend → Vercel (`vercel.json`, SPA rewrite). Backend → Railway (`Procfile`: gunicorn + uvicorn workers on `$PORT`).
