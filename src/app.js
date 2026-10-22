@@ -2205,7 +2205,7 @@ class App {
             this.renderCalendar(this.calendarYear, this.calendarMonth);
 
             // If the deleted record was the one AI was talking about, reset AI
-            if (this.currentRecordId === recordId) {
+            if (JournalService.sameId(this.currentRecordId, recordId)) {
                 this.currentRecordId = null;
                 const aiTitle = document.getElementById('mentor-current-hex');
                 if (aiTitle) aiTitle.innerText = "等待卦象中...";

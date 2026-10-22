@@ -23,6 +23,21 @@ export class JournalService {
   static MIGRATIONS = {};
 
   /**
+   * Record ids as one type. The first saveRecord stored ids as numbers and the History
+   * modal passes them back as strings, so ids are compared by this key.
+   */
+  static idKey(id) {
+    return String(id);
+  }
+
+  /**
+   * True when two record ids name the same record.
+   */
+  static sameId(a, b) {
+    return a != null && b != null && this.idKey(a) === this.idKey(b);
+  }
+
+  /**
    * Saves a new divination record.
    * @param {Object} record - { timestamp, question, originalId, futureId, changingLines, messages }
    */
@@ -42,12 +57,12 @@ export class JournalService {
 
   /**
    * Updates any fields for a specific record.
-   * @param {string} id - Record ID.
+   * @param {string|number} id - Record ID.
    * @param {Object} updates - Object containing fields to update.
    */
   static updateRecord(id, updates) {
     const history = this.getHistory();
-    const index = history.findIndex(item => item.id === id);
+    const index = history.findIndex(item => this.sameId(item.id, id));
     if (index !== -1) {
       history[index] = { ...history[index], ...updates };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history));
@@ -56,12 +71,12 @@ export class JournalService {
 
   /**
    * Updates messages for a specific record.
-   * @param {string} id - Record ID.
+   * @param {string|number} id - Record ID.
    * @param {Array} messages - Message history.
    */
   static updateMessages(id, messages) {
     const history = this.getHistory();
-    const index = history.findIndex(item => item.id === id);
+    const index = history.findIndex(item => this.sameId(item.id, id));
     if (index !== -1) {
       history[index].messages = messages;
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history));
@@ -73,7 +88,7 @@ export class JournalService {
    */
   static getRecord(id) {
     const history = this.getHistory();
-    return history.find(item => item.id === id);
+    return history.find(item => this.sameId(item.id, id));
   }
 
   /**
@@ -158,7 +173,7 @@ export class JournalService {
    */
   static deleteRecord(id) {
     const history = this.getHistory();
-    const filtered = history.filter(item => item.id !== id);
+    const filtered = history.filter(item => !this.sameId(item.id, id));
     if (history.length !== filtered.length) {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filtered));
       return true;
@@ -261,14 +276,14 @@ export class JournalService {
     // Each local record can be matched once, so same-millisecond duplicates survive.
     const unmatched = new Map();
     merged.forEach((record, index) => {
-      const key = String(record.id);
+      const key = this.idKey(record.id);
       if (!unmatched.has(key)) unmatched.set(key, []);
       unmatched.get(key).push(index);
     });
 
     const counts = { added: 0, updated: 0, skipped: 0 };
     for (const record of imported) {
-      const index = unmatched.get(String(record.id))?.shift();
+      const index = unmatched.get(this.idKey(record.id))?.shift();
       if (index === undefined) {
         merged.push(record);
         counts.added++;
