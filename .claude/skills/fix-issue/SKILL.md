@@ -66,13 +66,22 @@ Nothing is committed yet, so the change is the working tree against the base bra
 - Make sure `reviews/` is in `.gitignore`; add it if it's missing.
 - Save each reviewer's full report, verbatim, to `reviews/issue-$ARGUMENTS-<reviewer>.md`. For `/code-review`, write its findings to the file, all of them, in full. Work from these files, not from memory. When you report to me, copy URLs and quotes exactly from them.
 - For every finding, mark it accepted or rejected, with evidence (`file:line`, a test run, or a quoted source).
-- Fix the accepted findings that affect correctness. Then run `npm test` and `npm run build` yourself; stop if either fails.
+- For every accepted finding:
+  - Name the bug pattern in one line (e.g. "month branch taken from calendar month instead of solar term").
+  - Grep the whole repo for every instance of that pattern, not only the lines the reviewer cited. Show the grep commands you ran.
+  - List every instance in the triage, each with `file:line` and whether you fixed it.
+  - Where possible, add a test that fails on any instance of the pattern, not only the cited one.
+- Fix the accepted findings that affect correctness, at every instance. Then run `npm test` and `npm run build` yourself; stop if either fails.
+- Run the same reviewers again on the fix diff only (the changes made in this step). At most one more round; anything new from it goes in the triage too.
 - List problems outside this issue as proposed new issues (title plus one line each). Don't create them.
 
 **STOP**:
-1. Show me the triage table: finding, reviewer, accepted or rejected, evidence, fixed.
-2. Tell me exactly what to check by hand in the browser: which view, which steps, and what I should see.
-3. Wait until I confirm.
+1. Show me the triage table: finding, reviewer, bug pattern, every instance (`file:line`), accepted or rejected, evidence, fixed.
+2. List every service I need to start for the browser check, each with its command:
+   - Frontend, always: `npm run dev` (http://localhost:3000).
+   - Backend, if any step touches the AI mentor or tarot insight: `source venv/bin/activate && python server.py` (http://localhost:8000; needs `GOOGLE_API_KEY` in `.env`). First time: `python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt`.
+3. Tell me exactly what to check by hand in the browser: which view, which steps, and what I should see.
+4. Wait until I confirm.
 
 ## 7. Commit, push, PR
 - Run `npm test` and `npm run build`. If either fails, stop and show me the output.
