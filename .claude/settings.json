@@ -45,6 +45,15 @@
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/commit-guard.sh"
           }
         ]
+      },
+      {
+        "matcher": "mcp__plugin_playwright_playwright__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/playwright-guard.sh"
+          }
+        ]
       }
     ],
     "Stop": [
