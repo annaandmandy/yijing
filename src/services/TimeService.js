@@ -19,27 +19,23 @@ export class TimeService {
 
         // Year GanZhi (simplified)
         // 2024 is Jia-Chen (甲辰)
+        // TODO: year changes at 立春, not Jan 1 — dates before ~Feb 4 get next year's GanZhi.
         const yearBase = year - 1984; // 1984 was 甲子
         const yearStem = this.STEMS[((yearBase % 10) + 10) % 10];
         const yearBranch = this.BRANCHES[((yearBase % 12) + 12) % 12];
 
         // Monthly Branch (Approx based on Solar Terms)
-        // Tiger (寅) is usually Feb (approx start of Spring)
-        const monthlyBranch = this.BRANCHES[(month + 1) % 12];
+        // Tiger (寅) is usually Feb (approx start of Spring), so Jan is 丑 and Dec is 子
+        // TODO: month boundary is the 節 (e.g. 立春 ~Feb 4), not the 1st of the Gregorian month.
+        const monthlyBranch = this.BRANCHES[month % 12];
 
-        // Daily GanZhi (High Precision Epoch Calculation)
-        // Based on Jan 1, 1900 being 甲戌 (Stem 0, Branch 10)
-        // Total days since 1900-01-01
-        const epoch = new Date(1900, 0, 1);
-        const diffDays = Math.floor((date.getTime() - epoch.getTime()) / (24 * 60 * 60 * 1000));
+        // Daily GanZhi: whole days since 1900-01-01, which was 甲戌 (Stem 0, Branch 10).
+        // Counting in UTC keeps the result independent of time of day and DST.
+        const dayMs = 24 * 60 * 60 * 1000;
+        const diffDays = (Date.UTC(year, month - 1, day) - Date.UTC(1900, 0, 1)) / dayMs;
 
-        // Jan 1, 1900 was actually 甲戌 (But different systems use different offsets)
-        // Let's use 1900-01-31 as 甲子 (Stem 0, Branch 0) for easier math
-        const anchor = new Date(1900, 0, 31);
-        const daysFromAnchor = Math.floor((date.getTime() - anchor.getTime()) / (24 * 60 * 60 * 1000));
-
-        const dayStem = this.STEMS[((daysFromAnchor % 10) + 10) % 10];
-        const dayBranch = this.BRANCHES[((daysFromAnchor % 12) + 12) % 12];
+        const dayStem = this.STEMS[((diffDays % 10) + 10) % 10];
+        const dayBranch = this.BRANCHES[(((diffDays + 10) % 12) + 12) % 12];
 
         return {
             year: `${yearStem}${yearBranch}`,
@@ -71,6 +67,7 @@ export class TimeService {
         // Qiu (囚): Matches overcomes season
         // Si (死): Season overcomes matches
 
+        // TODO: 囚/死 are swapped — textbook rule is 剋令者囚, 令剋者死 (e.g. spring: 金囚 土死). Fix together with wuxing_energy.md.
         const relationships = {
             "木": { "木": "旺", "火": "相", "水": "休", "土": "囚", "金": "死" },
             "火": { "火": "旺", "土": "相", "木": "休", "金": "囚", "水": "死" },

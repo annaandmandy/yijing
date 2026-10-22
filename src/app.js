@@ -5,17 +5,23 @@
 
 import { HexagramEngine } from './engine/HexagramEngine.js';
 import { ManifestService } from './services/ManifestService.js';
-import { JournalService } from './services/JournalService.js';
+import { JournalService, BackupError } from './services/JournalService.js';
 import { CastingManager } from './engine/CastingManager.js';
 
 import { AIService } from './services/AIService.js';
 import { TimeService } from './services/TimeService.js';
+import { ShareService } from './services/ShareService.js';
 
 import { HEXAGRAM_ELEMENTS, HEXAGRAM_PHONETICS, ELEMENT_COLORS } from './constants.js';
 import { TarotEngine } from './engine/TarotEngine.js';
 import { TarotService } from './services/TarotService.js';
 import { SettingsService } from './services/SettingsService.js';
 import { PlumBlossomEngine } from './engine/PlumBlossomEngine.js';
+
+// Journal text can come from an imported backup file, so escape it before using innerHTML
+const escapeHtml = (text) => String(text).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+));
 
 class App {
     constructor() {
@@ -145,7 +151,8 @@ class App {
 
         // Calculate Advanced Theory for AI Context
         const relations = HexagramEngine.getRelatedHexagrams(result.originalBinary);
-        const gZ = TimeService.getGanZhi(new Date());
+        const castDate = new Date();
+        const gZ = TimeService.getGanZhi(castDate);
         const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
         const strengthMap = TimeService.getWuxingStrength(gZ.monthBranch);
 
@@ -164,6 +171,7 @@ class App {
 
         // Save to Journal first to get ID for chat session
         const recordId = JournalService.saveRecord({
+            date: castDate.toISOString(),
             question: document.getElementById('user-question')?.value || "隨喜求卦",
             originalId: originalHex.id,
             originalBinary: result.originalBinary,
@@ -186,13 +194,11 @@ class App {
         if (detailBtn) detailBtn.classList.add('pulse-gold');
     }
 
-    getSolarTime() {
-        return new Date().toLocaleString('zh-TW', { timeZone: 'America/New_York' }) + " (波士頓真太陽時)";
-    }
-
     showResultOverlay(original, future, meta, recordId = null, isHistoricalView = false) {
         this.currentRecordId = recordId || this.currentRecordId;
         this.currentHexData = original; // Ensure session persistence
+        // GanZhi-based analysis uses the cast date, not today
+        this.currentCastDate = JournalService.getCastDate(JournalService.getRecord(this.currentRecordId));
         const isHistory = isHistoricalView || this.resultSource === 'history';
         if (this.currentRecordId && !this.resultSource) this.resultSource = 'history';
 
@@ -430,7 +436,7 @@ class App {
             return;
         }
 
-        const gZ = TimeService.getGanZhi(new Date());
+        const gZ = TimeService.getGanZhi(this.currentCastDate || new Date());
         const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
         const najia = original.najia_analysis;
 
@@ -475,7 +481,7 @@ class App {
 
     renderAdvancedPanel(original, future, meta, recordId) {
         const overlay = document.getElementById('result-overlay');
-        const gZ = TimeService.getGanZhi(new Date());
+        const gZ = TimeService.getGanZhi(this.currentCastDate || new Date());
         const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
         const strength = TimeService.getWuxingStrength(gZ.monthBranch);
         const relations = HexagramEngine.getRelatedHexagrams(original.binary);
@@ -514,13 +520,13 @@ class App {
                     </ul>
                 </div>
                 <div class="insight-col">
-                    <h4><i class="fas fa-bolt"></i> 今日能量</h4>
+                    <h4><i class="fas fa-bolt"></i> 當日能量</h4>
                     <div class="strength-tags">
                         ${Object.entries(strength).map(([el, st]) => `<span class="strength-tag ${st}">${el}:${st}</span>`).join('')}
                     </div>
                 </div>
             </div>
-            ${quickInsight ? `<div class="ai-quick-insight"><h4>AI 解析</h4><p>${quickInsight}</p></div>` : ""}
+            ${quickInsight ? `<div class="ai-quick-insight"><h4>AI 解析</h4><p>${escapeHtml(quickInsight)}</p></div>` : ""}
         `;
 
         const existingPanel = overlay.querySelector('.advanced-insights-panel');
@@ -573,9 +579,15 @@ class App {
 
         if (copyBtn) {
             copyBtn.onclick = () => {
-                const question = document.getElementById('user-question')?.value || "隨喜求卦";
-                const solarTime = this.getSolarTime();
-                const text = `【I-Ching Lab】\n問題：${question}\n時間：${solarTime}\n本卦：${original.name}${meta.hasChange ? " 之 " + future.name : ""}\n解義：${original.summary}`;
+                // Use the reading's saved question and cast date, not the live input or now
+                const record = JournalService.getRecord(this.currentRecordId);
+                const text = ShareService.buildCopyText({
+                    question: record?.question || document.getElementById('user-question')?.value,
+                    date: JournalService.getCastDate(record),
+                    original,
+                    future,
+                    hasChange: meta.hasChange
+                });
                 navigator.clipboard.writeText(text).then(() => {
                     const oldText = copyBtn.innerText;
                     copyBtn.innerText = "已複製資訊！";
@@ -657,7 +669,7 @@ class App {
 
     getAnalysisVerdict(type, hex) {
         if (!hex) return "無數據。";
-        const gZ = TimeService.getGanZhi(new Date());
+        const gZ = TimeService.getGanZhi(this.currentCastDate || new Date());
         const strengthMap = TimeService.getWuxingStrength(gZ.monthBranch);
 
         const targetMap = {
@@ -1291,6 +1303,73 @@ class App {
                 this.settings.tarotSpread = e.target.value;
             };
         }
+
+        this.setupBackupControls();
+    }
+
+    setupBackupControls() {
+        const exportBtn = document.getElementById('backup-export');
+        const importBtn = document.getElementById('backup-import');
+        const fileInput = document.getElementById('backup-file');
+        if (!exportBtn || !importBtn || !fileInput) return;
+
+        exportBtn.onclick = () => {
+            const backup = JournalService.exportBackup();
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const d = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            link.href = url;
+            link.download = `iching-journal-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            // Revoking right away can cancel the download in some browsers
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            this.showBackupStatus(backup.records.length === 0 ? '目前沒有紀錄，已匯出空白備份。' : '備份已匯出。');
+        };
+
+        importBtn.onclick = () => fileInput.click();
+
+        fileInput.onchange = async () => {
+            const file = fileInput.files[0];
+            fileInput.value = ''; // Allow choosing the same file again
+            if (!file) return;
+            // A reply finishing mid-import would write the old chat over the imported one
+            if (this.isChatStreaming) {
+                this.showBackupStatus('導師回覆中，請稍候再匯入。', true);
+                return;
+            }
+            try {
+                const { added, updated, skipped } = JournalService.importBackup(await file.text());
+                this.showBackupStatus(`已匯入 ${added} 筆，更新 ${updated} 筆，略過 ${skipped} 筆（已存在）。`);
+            } catch (error) {
+                if (error instanceof BackupError) {
+                    this.showBackupStatus(`匯入失敗：${error.message}`, true);
+                } else {
+                    console.error('Backup import error:', error);
+                    this.showBackupStatus('匯入失敗：無法讀取檔案。', true);
+                }
+            }
+        };
+
+        this.updateBackupAvailability();
+    }
+
+    updateBackupAvailability() {
+        const importBtn = document.getElementById('backup-import');
+        if (!importBtn) return;
+        importBtn.disabled = !!this.isChatStreaming;
+        importBtn.title = this.isChatStreaming ? '導師回覆中，請稍候再匯入' : '';
+    }
+
+    showBackupStatus(message, isError = false) {
+        const status = document.getElementById('backup-status');
+        if (!status) return;
+        status.innerText = message;
+        status.classList.toggle('error', isError);
+        status.classList.toggle('success', !isError);
     }
 
     applySettingsToUI() {
@@ -1917,6 +1996,8 @@ class App {
         // Show placeholder instead of empty bubble
         const aiMsgEl = this.appendMessageToUI('ai', '導師思考中...');
         let fullResponse = '';
+        this.isChatStreaming = true;
+        this.updateBackupAvailability();
 
         try {
             // Get the full record context for the AI
@@ -1957,6 +2038,8 @@ class App {
             console.error("Chat Error:", error);
         } finally {
             status.innerText = '在線';
+            this.isChatStreaming = false;
+            this.updateBackupAvailability();
         }
     }
 
@@ -2040,7 +2123,7 @@ class App {
                                 <span style="font-size: 0.8rem; background: rgba(212, 175, 55, 0.2); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px;">${time}</span>
                                 <strong style="color: var(--text-primary);">每日抽卡紀錄 (${cardCount} 牌)</strong>
                             </div>
-                            <div style="font-size: 0.9rem; color: var(--text-secondary);">${record.question || '每日抽卡紀錄'}</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">${escapeHtml(record.question || '每日抽卡紀錄')}</div>
                             ${cardsDisplayStr}
                         </div>
                         <div class="item-actions" style="display: flex; gap: 8px;">
@@ -2062,7 +2145,7 @@ class App {
                                     <span style="font-size: 0.8rem; background: rgba(212, 175, 55, 0.2); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px;">${time}</span>
                                     <strong style="color: var(--text-primary);">${displayName}</strong>
                                 </div>
-                                <div style="font-size: 0.9rem; color: var(--text-secondary);">${record.question || '隨喜求卦'}</div>
+                                <div style="font-size: 0.9rem; color: var(--text-secondary);">${escapeHtml(record.question || '隨喜求卦')}</div>
                             </div>
                             <div class="item-actions" style="display: flex; gap: 8px;">
                                 <button class="nav-btn" onclick="window.app.showHistoryResultOverlay('${record.id}')" title="查看結果"><i class="fas fa-eye"></i> 斷語</button>
@@ -2185,7 +2268,7 @@ class App {
                 
                 <div class="history-question glass-panel">
                     <span class="hint">問卜內容：</span>
-                    <p>${record.question || '（未輸入問題）'}</p>
+                    <p>${escapeHtml(record.question || '（未輸入問題）')}</p>
                 </div>
 
                 <div class="history-spread-grid">
@@ -2195,7 +2278,7 @@ class App {
                 <div class="history-insight glass-panel">
                     <h3>導師初步解析</h3>
                     <div class="insight-content">
-                        ${record.quickInsight ? record.quickInsight : '<p class="hint">此紀錄尚無初步解析內容。</p>'}
+                        ${record.quickInsight ? escapeHtml(record.quickInsight) : '<p class="hint">此紀錄尚無初步解析內容。</p>'}
                     </div>
                 </div>
 
@@ -2803,7 +2886,7 @@ class App {
                 ${record.quickInsight ? `
                 <div class="ai-insight-box" style="margin-top: 20px; padding: 15px; background: rgba(212, 175, 55, 0.1); border: 1px solid var(--accent-gold); border-radius: 10px;">
                     <h4 style="color: var(--accent-gold); margin-bottom: 5px;"><i class="fas fa-sparkles"></i> 導師初解</h4>
-                    <p style="font-size: 0.95rem; line-height: 1.6;">${record.quickInsight}</p>
+                    <p style="font-size: 0.95rem; line-height: 1.6;">${escapeHtml(record.quickInsight)}</p>
                 </div>
                 ` : ''}
             </div>

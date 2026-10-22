@@ -2019,6 +2019,25 @@ canvas {
     color: var(--text-secondary);
 }
 
+.backup-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.backup-status {
+    font-size: 0.85rem;
+    margin-top: 6px;
+}
+
+.backup-status.success {
+    color: #6fcf97;
+}
+
+.backup-status.error {
+    color: #eb5757;
+}
+
 /* In-page Mode Switcher */
 .mode-switcher-in-page {
     display: flex;

@@ -50,6 +50,16 @@ npm run dev
 ```
 啟動後，開啟瀏覽器並訪問 `http://localhost:3000` 即可進入 3D 抽爻桌面。
 
+#### **啟動 AI 後端 (Backend)**
+AI 導師對話需要後端伺服器（FastAPI），請另開一個終端機執行：
+```bash
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python server.py
+# 或者：uvicorn server:app --reload --port 8000
+```
+後端預設運行於 `http://localhost:8000`，並從 `.env` 讀取 `GOOGLE_API_KEY`。若後端位於其他網址，請在前端設定 `VITE_BACKEND_URL`。
+
 #### **如何「泡」數據 (Data Generation)**
 如果您需要重新生成 64 卦的 AI 增強數據：
 ```bash
@@ -79,10 +89,12 @@ npm run generate
 
 ## 📂 專案結構
 - `src/`: 前端原始碼 (Engine, Services, Styles)。
-- `docs/`: 專案設計文件與上下文 (`CONTEXT.md`)。
+- `CLAUDE.md`: 架構說明與開發指令（前端、後端）。
+- `server.py`: FastAPI 後端，代理 Gemini AI 導師對話 (`POST /chat`)。
 - `scripts/`: 數據生成與增強用的 Python 腳本。
 - `scripts/archive/`: 已執行過的一次性數據修正腳本。
-- `yi_data_library/`: 儲存 64 卦基礎 JSON。
-- `yi_data_enhanced/`: 儲存 AI 增強後的深度解析數據。
+- `public/yi_data_enhanced/`: 64 卦 JSON 數據（經文、納甲、AI 增強解析），前端主要數據來源。
+- `public/yi_data_library/`: 「自學與導航」頁面的 Markdown 理論文章。
+- `public/tarot_data/`, `public/tarot/`: 塔羅牌 JSON 數據與牌面圖片。
 
 *祝您在易經的世界中找到屬於您的靈感。* ☯
