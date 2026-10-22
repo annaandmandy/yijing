@@ -76,6 +76,7 @@ Nothing is committed yet, so the change is the working tree against the base bra
 
 ## 7. Commit, push, PR
 - Run `npm test` and `npm run build`. If either fails, stop and show me the output.
+- Run `git branch --show-current`. If it isn't `issue-$ARGUMENTS`, stop and tell me which branch you're on.
 - Commit with a message whose last line before the attribution trailer is `Refs #$ARGUMENTS`. Never write Fixes, Closes or Resolves; I decide when an issue closes.
 - Run `git push -u origin issue-$ARGUMENTS`.
 - Run `gh pr create --base <base branch>`. The body has these sections:
