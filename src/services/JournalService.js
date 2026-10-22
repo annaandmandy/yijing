@@ -61,6 +61,15 @@ export class JournalService {
   }
 
   /**
+   * Gets the date a record was cast, so its GanZhi stays fixed when reopened.
+   * Falls back to now for records without a valid date.
+   */
+  static getCastDate(record) {
+    const date = new Date(record?.date);
+    return isNaN(date.getTime()) ? new Date() : date;
+  }
+
+  /**
    * Retrieves full history.
    */
   static getHistory() {

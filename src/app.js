@@ -10,6 +10,7 @@ import { CastingManager } from './engine/CastingManager.js';
 
 import { AIService } from './services/AIService.js';
 import { TimeService } from './services/TimeService.js';
+import { ShareService } from './services/ShareService.js';
 
 import { HEXAGRAM_ELEMENTS, HEXAGRAM_PHONETICS, ELEMENT_COLORS } from './constants.js';
 import { TarotEngine } from './engine/TarotEngine.js';
@@ -145,7 +146,8 @@ class App {
 
         // Calculate Advanced Theory for AI Context
         const relations = HexagramEngine.getRelatedHexagrams(result.originalBinary);
-        const gZ = TimeService.getGanZhi(new Date());
+        const castDate = new Date();
+        const gZ = TimeService.getGanZhi(castDate);
         const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
         const strengthMap = TimeService.getWuxingStrength(gZ.monthBranch);
 
@@ -164,6 +166,7 @@ class App {
 
         // Save to Journal first to get ID for chat session
         const recordId = JournalService.saveRecord({
+            date: castDate.toISOString(),
             question: document.getElementById('user-question')?.value || "隨喜求卦",
             originalId: originalHex.id,
             originalBinary: result.originalBinary,
@@ -186,13 +189,11 @@ class App {
         if (detailBtn) detailBtn.classList.add('pulse-gold');
     }
 
-    getSolarTime() {
-        return new Date().toLocaleString('zh-TW', { timeZone: 'America/New_York' }) + " (波士頓真太陽時)";
-    }
-
     showResultOverlay(original, future, meta, recordId = null, isHistoricalView = false) {
         this.currentRecordId = recordId || this.currentRecordId;
         this.currentHexData = original; // Ensure session persistence
+        // GanZhi-based analysis uses the cast date, not today
+        this.currentCastDate = JournalService.getCastDate(JournalService.getRecord(this.currentRecordId));
         const isHistory = isHistoricalView || this.resultSource === 'history';
         if (this.currentRecordId && !this.resultSource) this.resultSource = 'history';
 
@@ -430,7 +431,7 @@ class App {
             return;
         }
 
-        const gZ = TimeService.getGanZhi(new Date());
+        const gZ = TimeService.getGanZhi(this.currentCastDate || new Date());
         const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
         const najia = original.najia_analysis;
 
@@ -475,7 +476,7 @@ class App {
 
     renderAdvancedPanel(original, future, meta, recordId) {
         const overlay = document.getElementById('result-overlay');
-        const gZ = TimeService.getGanZhi(new Date());
+        const gZ = TimeService.getGanZhi(this.currentCastDate || new Date());
         const beasts = HexagramEngine.getSixBeasts(gZ.dayStem);
         const strength = TimeService.getWuxingStrength(gZ.monthBranch);
         const relations = HexagramEngine.getRelatedHexagrams(original.binary);
@@ -514,7 +515,7 @@ class App {
                     </ul>
                 </div>
                 <div class="insight-col">
-                    <h4><i class="fas fa-bolt"></i> 今日能量</h4>
+                    <h4><i class="fas fa-bolt"></i> 當日能量</h4>
                     <div class="strength-tags">
                         ${Object.entries(strength).map(([el, st]) => `<span class="strength-tag ${st}">${el}:${st}</span>`).join('')}
                     </div>
@@ -573,9 +574,15 @@ class App {
 
         if (copyBtn) {
             copyBtn.onclick = () => {
-                const question = document.getElementById('user-question')?.value || "隨喜求卦";
-                const solarTime = this.getSolarTime();
-                const text = `【I-Ching Lab】\n問題：${question}\n時間：${solarTime}\n本卦：${original.name}${meta.hasChange ? " 之 " + future.name : ""}\n解義：${original.summary}`;
+                // Use the reading's saved question and cast date, not the live input or now
+                const record = JournalService.getRecord(this.currentRecordId);
+                const text = ShareService.buildCopyText({
+                    question: record?.question || document.getElementById('user-question')?.value,
+                    date: JournalService.getCastDate(record),
+                    original,
+                    future,
+                    hasChange: meta.hasChange
+                });
                 navigator.clipboard.writeText(text).then(() => {
                     const oldText = copyBtn.innerText;
                     copyBtn.innerText = "已複製資訊！";
@@ -657,7 +664,7 @@ class App {
 
     getAnalysisVerdict(type, hex) {
         if (!hex) return "無數據。";
-        const gZ = TimeService.getGanZhi(new Date());
+        const gZ = TimeService.getGanZhi(this.currentCastDate || new Date());
         const strengthMap = TimeService.getWuxingStrength(gZ.monthBranch);
 
         const targetMap = {
