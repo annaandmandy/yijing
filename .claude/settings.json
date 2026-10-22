@@ -28,7 +28,9 @@
       "Read(**/.[eE][nN][vV])",
       "Read(**/.[eE][nN][vV].*)",
       "Edit(**/.[eE][nN][vV])",
-      "Edit(**/.[eE][nN][vV].*)"
+      "Edit(**/.[eE][nN][vV].*)",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__plugin_playwright_playwright__browser_run_code_unsafe"
     ]
   },
   "hooks": {

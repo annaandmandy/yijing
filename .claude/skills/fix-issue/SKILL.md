@@ -18,6 +18,7 @@ Throughout:
 - `block-env-bash.sh` (Bash, any case) and the `Read`/`Edit` deny rules `**/.env`, `**/.env.*` and their bracket-class forms `**/.[eE][nN][vV]`, `**/.[eE][nN][vV].*`: no reading or changing `.env` files, in any letter case, at any depth.
 - `readonly-agent-bash.sh` (plan-reviewer, domain-checker): Bash limited to `gh issue view`, `gh pr list`, `gh pr view` (no `--web`) and read-only git, one command, no pipes.
 - `evidence-agent-bash.sh` (evidence-checker): Bash limited to `npm test`, `npm run build`, `gh pr view`, `gh issue view`, `gh run list/view` and read-only git, one command, no pipes.
+- `permissions.deny` for `browser_evaluate` and `browser_run_code_unsafe`: neither tool can run in any session.
 - `playwright-guard.sh` (every Playwright tool, every session): no `.env` in any argument (any case); URLs only `http://localhost:3000|8000` or `about:blank` (no `file://` or other sites), with no `%`, `..` or `@fs`.
 - `browser-checker-guard.sh` (browser-checker only): Bash limited to starting the frontend/backend, `curl` to localhost, `gh issue view`, the screenshot folder and `ls -a`. Playwright: the `playwright-guard.sh` rules, plus screenshots only as `reviews/issue-N-browser/<name>.png` and no `browser_evaluate` or `browser_run_code_unsafe`.
 - `stop-verify.sh` (Stop): `npm test` and `npm run build` must pass before you finish.
