@@ -1,8 +1,10 @@
 {
   "permissions": {
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)"
+      "Read(**/.[eE][nN][vV])",
+      "Read(**/.[eE][nN][vV].*)",
+      "Edit(**/.[eE][nN][vV])",
+      "Edit(**/.[eE][nN][vV].*)"
     ]
   },
   "hooks": {

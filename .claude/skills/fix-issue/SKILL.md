@@ -15,7 +15,7 @@ Throughout:
 
 ## Guardrails
 **What a hook enforces** (a blocked call shows the reason; fix the call, don't work around the hook):
-- `block-env-bash.sh` (Bash) and the `Read(./.env)` deny rule: no reading or changing `.env` files.
+- `block-env-bash.sh` (Bash, any case) and the `Read`/`Edit` deny rules `**/.[eE][nN][vV]` and `**/.[eE][nN][vV].*`: no reading or changing `.env` files, in any letter case, at any depth.
 - `readonly-agent-bash.sh` (plan-reviewer, domain-checker): Bash limited to `gh issue view` and read-only git, one command, no pipes.
 - `stop-verify.sh` (Stop): `npm test` and `npm run build` must pass before you finish.
 - `commit-guard.sh` (Bash, on `git commit` and `gh pr create|edit`):
