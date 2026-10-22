@@ -15,8 +15,9 @@ Throughout:
 
 ## Guardrails
 **What a hook enforces** (a blocked call shows the reason; fix the call, don't work around the hook):
-- `block-env-bash.sh` (Bash, any case) and the `Read`/`Edit` deny rules `**/.[eE][nN][vV]` and `**/.[eE][nN][vV].*`: no reading or changing `.env` files, in any letter case, at any depth.
+- `block-env-bash.sh` (Bash, any case) and the `Read`/`Edit` deny rules `**/.env`, `**/.env.*` and their bracket-class forms `**/.[eE][nN][vV]`, `**/.[eE][nN][vV].*`: no reading or changing `.env` files, in any letter case, at any depth.
 - `readonly-agent-bash.sh` (plan-reviewer, domain-checker): Bash limited to `gh issue view` and read-only git, one command, no pipes.
+- `evidence-agent-bash.sh` (evidence-checker): Bash limited to `npm test`, `npm run build`, `gh pr view`, `gh issue view`, `gh run list/view` and read-only git, one command, no pipes.
 - `stop-verify.sh` (Stop): `npm test` and `npm run build` must pass before you finish.
 - `commit-guard.sh` (Bash, on `git commit` and `gh pr create|edit`):
   - no commit on `main`, including switching to main and committing in one command;
@@ -28,6 +29,7 @@ Throughout:
 - The STOPs, and not treating a subagent's report as my approval.
 - No dependency without asking; never change a test's expected value without asking.
 - Keep the red and green test output; `// source:` URLs on domain values.
+- The PR stays a draft until CI has passed and evidence-checker shows no contradicted claim. Nothing stops `gh pr ready` from running earlier.
 - The PR targets the base branch from step 1; run `git branch --show-current` before committing.
 - What `commit-guard.sh` can't see, so never do these:
   - make commits any way other than `git commit -m` (no merge, cherry-pick, revert, rebase, am or pull commits, `gh pr merge`, `gh api`);
@@ -110,11 +112,17 @@ Nothing is committed yet, so the change is the working tree against the base bra
 - Run `git branch --show-current`. If it isn't `issue-$ARGUMENTS`, stop and tell me which branch you're on.
 - Commit with `git commit -m "$(cat <<'EOF' ... EOF)"`, with a message whose last line before the attribution trailer is `Refs #$ARGUMENTS`. Never write Fixes, Closes or Resolves; I decide when an issue closes. Never use `-F`, `--template`, `-C`, `--amend --no-edit` or an editor.
 - Run `git push -u origin issue-$ARGUMENTS`.
-- Run `gh pr create --base <base branch> --body "$(cat <<'EOF' ... EOF)"`. Never use `--body-file`, `-F`, `--fill`, `--template` or `--web`. The body has these sections:
+- Open the PR as a draft: `gh pr create --draft --base <base branch> --body "$(cat <<'EOF' ... EOF)"`. Never use `--body-file`, `-F`, `--fill`, `--template` or `--web`. The body has these sections:
   - **Root cause** (or **Design decisions**)
   - **Fix**
   - **Evidence**: the red and green test runs, and my browser check
   - **Review log**: for each reviewer, what it found, what was accepted, and what was rejected and why
   - **What the checks missed**
   - **Out of scope**: the proposed issues
+- Run `gh pr checks --watch`. If CI fails, stop and show me the failing check.
+- Run `git fetch origin` so `origin/<base branch>` is current (evidence-checker can't fetch).
+- Send the `evidence-checker` agent only the PR body (`gh pr view --json body`), the issue number `$ARGUMENTS` and the base branch, nothing else. Save its full report, verbatim, to `reviews/issue-$ARGUMENTS-evidence-checker.md`.
+- For every **contradicted** claim, fix the body with `gh pr edit --body "$(cat <<'EOF' ... EOF)"`. If the claim is wrong because the code is wrong, fix the code, commit, push, wait for CI again, and then fix the body. Run `evidence-checker` again on the new body. At most one more round; if anything is still contradicted, stop and show me.
+- Put the final evidence-checker table, verbatim, under **Evidence** with `gh pr edit --body`. Keep **unverifiable** rows (e.g. my browser check) as they are, with the reason.
+- Only then run `gh pr ready`.
 - Don't merge. Give me the PR URL.
