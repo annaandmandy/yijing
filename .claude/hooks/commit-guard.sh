@@ -22,8 +22,7 @@
 #   the GitHub web UI, anything run outside Claude;
 # - `git push origin HEAD:main` and other pushes to main;
 # - directory changes other than a leading `cd <dir>` or `git -C <dir>`,
-#   git aliases, `git -c alias...`, GIT_DIR / GIT_WORK_TREE;
-# - issue numbers in PR bodies on issue-N branches (that rule is commit-only).
+#   git aliases, `git -c alias...`, GIT_DIR / GIT_WORK_TREE.
 
 input=$(cat)
 
