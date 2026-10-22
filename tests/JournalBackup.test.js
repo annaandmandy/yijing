@@ -2,16 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { JournalService, BackupError } from '../src/services/JournalService.js';
+import { MemoryStorage } from './memoryStorage.js';
 
 const KEY = JournalService.STORAGE_KEY;
-
-/** In-memory stand-in for the browser's localStorage. */
-class MemoryStorage {
-  constructor() { this.map = new Map(); }
-  getItem(k) { return this.map.has(k) ? this.map.get(k) : null; }
-  setItem(k, v) { this.map.set(k, String(v)); }
-  removeItem(k) { this.map.delete(k); }
-}
 
 // Local noon, so the month never shifts with the time zone.
 const at = (y, m, d) => new Date(y, m - 1, d, 12, 0, 0);

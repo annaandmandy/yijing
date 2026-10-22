@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { JournalService } from '../src/services/JournalService.js';
+import { MemoryStorage } from './memoryStorage.js';
 import { TimeService } from '../src/services/TimeService.js';
 import { HexagramEngine } from '../src/engine/HexagramEngine.js';
 
@@ -49,5 +50,81 @@ describe('app.js does not take GanZhi from the current time (issue #2)', () => {
   it('never calls TimeService.getGanZhi(new Date())', () => {
     const source = fs.readFileSync(path.resolve(import.meta.dirname, '../src/app.js'), 'utf8');
     expect(source).not.toMatch(/TimeService\.getGanZhi\(\s*new\s+Date(\(\s*\))?\s*\)/);
+  });
+});
+
+describe('legacy numeric record ids (issue #8)', () => {
+  // The first saveRecord (commit 3cd8544) stored `id: Date.now()` as a number.
+  const LEGACY_ID = 1727942400000;
+  // The current saveRecord stores `Date.now().toString()`.
+  const STRING_ID = '1759464000000';
+  const chat = [{ role: 'user', content: '請解卦' }, { role: 'assistant', content: '此卦...' }];
+
+  // The History day modal builds onclick="…('${record.id}')", so every id reaches
+  // JournalService as a string.
+  const fromModal = id => `${id}`;
+
+  const stored = () => JSON.parse(localStorage.getItem(JournalService.STORAGE_KEY));
+
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', new MemoryStorage());
+    localStorage.setItem(JournalService.STORAGE_KEY, JSON.stringify([
+      { id: STRING_ID, date: '2025-10-03T04:00:00.000Z', type: 'iching', originalId: 1, messages: [] },
+      { id: LEGACY_ID, date: '2024-10-03T08:00:00.000Z', originalId: 2, messages: chat }
+    ]));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('opens a numeric-id record from the History modal', () => {
+    const record = JournalService.getRecord(fromModal(LEGACY_ID));
+    expect(record?.originalId).toBe(2);
+    expect(record.messages).toEqual(chat);
+  });
+
+  it('keeps chatting on a numeric-id record', () => {
+    const more = [...chat, { role: 'user', content: '那時機呢' }];
+    JournalService.updateMessages(fromModal(LEGACY_ID), more);
+    JournalService.updateRecord(fromModal(LEGACY_ID), { quickInsight: '吉' });
+    const legacy = stored().find(r => r.originalId === 2);
+    expect(legacy.messages).toEqual(more);
+    expect(legacy.quickInsight).toBe('吉');
+    expect(legacy.id).toBe(LEGACY_ID);
+  });
+
+  it('deletes a numeric-id record from the History modal', () => {
+    expect(JournalService.deleteRecord(fromModal(LEGACY_ID))).toBe(true);
+    expect(stored().map(r => r.id)).toEqual([STRING_ID]);
+  });
+
+  it('leaves string-id records working as before', () => {
+    expect(JournalService.getRecord(fromModal(STRING_ID))?.originalId).toBe(1);
+    JournalService.updateMessages(fromModal(STRING_ID), chat);
+    expect(stored()[0]).toMatchObject({ id: STRING_ID, messages: chat });
+    expect(JournalService.deleteRecord('999')).toBe(false);
+    expect(JournalService.deleteRecord(fromModal(STRING_ID))).toBe(true);
+    expect(stored().map(r => r.id)).toEqual([LEGACY_ID]);
+  });
+
+  it('still finds a numeric-id record when given the number itself', () => {
+    // app.js passes record.id straight through after getRecord (e.g. prepareAIMentorView)
+    expect(JournalService.getRecord(LEGACY_ID)?.originalId).toBe(2);
+    expect(JournalService.getRecord(Number(STRING_ID))?.originalId).toBe(1);
+  });
+
+  it('no source file compares record ids with ===, !==, includes, has or indexOf', () => {
+    const srcDir = path.resolve(import.meta.dirname, '../src');
+    const files = fs.readdirSync(srcDir, { recursive: true }).filter(f => f.endsWith('.js'));
+    // A record id: recordId, currentRecordId, record.id, item.id (JournalService's history items)
+    const rid = String.raw`(?:\b\w*[Rr]ecordId\b|\b(?:record|item)\.id\b)`;
+    const patterns = [
+      // rid ===/!== an expression; use JournalService.sameId instead. (comparing with a literal such as "null" is not an id match)
+      new RegExp(String.raw`${rid}\s*[!=]==\s*(?!['"\d]|null\b|undefined\b)[\w$]`),
+      new RegExp(String.raw`[\w$)\]]\s*[!=]==\s*${rid}`),
+      new RegExp(String.raw`\.(?:includes|has|indexOf)\(\s*${rid}`)
+    ];
+    const hits = files.flatMap(f => fs.readFileSync(path.join(srcDir, f), 'utf8').split('\n')
+      .map((line, i) => ({ where: `src/${f}:${i + 1}`, line: line.trim() }))
+      .filter(({ line }) => patterns.some(p => p.test(line))));
+    expect(hits).toEqual([]);
   });
 });
