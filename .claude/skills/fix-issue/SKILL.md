@@ -13,6 +13,28 @@ Throughout:
 - Never add a dependency without asking me (see CLAUDE.md).
 - If I correct you twice on the same thing, stop and tell me, so I can restart with a clearer instruction.
 
+## Guardrails
+**What a hook enforces** (a blocked call shows the reason; fix the call, don't work around the hook):
+- `block-env-bash.sh` (Bash) and the `Read(./.env)` deny rule: no reading or changing `.env` files.
+- `readonly-agent-bash.sh` (plan-reviewer, domain-checker): Bash limited to `gh issue view` and read-only git, one command, no pipes.
+- `stop-verify.sh` (Stop): `npm test` and `npm run build` must pass before you finish.
+- `commit-guard.sh` (Bash, on `git commit` and `gh pr create|edit`):
+  - no commit on `main`, including switching to main and committing in one command;
+  - no closing keyword (close/fix/resolve and their forms, any case) followed by `#N`, `owner/repo#N` or an issue URL;
+  - on `issue-N`, no commit that mentions any other `#M`;
+  - message and body must be readable in the command: `git commit -m "$(cat <<'EOF' ... EOF)"` and `gh pr create|edit --body "$(cat <<'EOF' ... EOF)"`. Blocked: `git commit -F/-t/-c/-C/--fixup/--squash`, no `-m` (editor, `--amend --no-edit`), `gh pr -F/--body-file/--fill*/--template/--editor/--web`, `$VAR`, `$(cat file)`, backticks, unquoted heredocs.
+
+**Instructions only** (no hook checks these; follow them yourself):
+- The STOPs, and not treating a subagent's report as my approval.
+- No dependency without asking; never change a test's expected value without asking.
+- Keep the red and green test output; `// source:` URLs on domain values.
+- The PR targets the base branch from step 1; run `git branch --show-current` before committing.
+- What `commit-guard.sh` can't see, so never do these:
+  - make commits any way other than `git commit -m` (no merge, cherry-pick, revert, rebase, am or pull commits, `gh pr merge`, `gh api`);
+  - push to main (`git push origin HEAD:main`);
+  - change directory any way other than a leading `cd <dir>` or `git -C <dir>`; use git aliases, `git -c`, `GIT_DIR` or `GIT_WORK_TREE`;
+  - mention another issue's number in a PR body on an `issue-N` branch (the issue-number rule covers commits only).
+
 ## 1. Read the issue and branch
 - If `$ARGUMENTS` is empty or isn't a number, stop and ask for the issue number.
 - Run `gh issue view $ARGUMENTS --json title,body,comments`.
@@ -86,9 +108,9 @@ Nothing is committed yet, so the change is the working tree against the base bra
 ## 7. Commit, push, PR
 - Run `npm test` and `npm run build`. If either fails, stop and show me the output.
 - Run `git branch --show-current`. If it isn't `issue-$ARGUMENTS`, stop and tell me which branch you're on.
-- Commit with a message whose last line before the attribution trailer is `Refs #$ARGUMENTS`. Never write Fixes, Closes or Resolves; I decide when an issue closes.
+- Commit with `git commit -m "$(cat <<'EOF' ... EOF)"`, with a message whose last line before the attribution trailer is `Refs #$ARGUMENTS`. Never write Fixes, Closes or Resolves; I decide when an issue closes. Never use `-F`, `--template`, `-C`, `--amend --no-edit` or an editor.
 - Run `git push -u origin issue-$ARGUMENTS`.
-- Run `gh pr create --base <base branch>`. The body has these sections:
+- Run `gh pr create --base <base branch> --body "$(cat <<'EOF' ... EOF)"`. Never use `--body-file`, `-F`, `--fill`, `--template` or `--web`. The body has these sections:
   - **Root cause** (or **Design decisions**)
   - **Fix**
   - **Evidence**: the red and green test runs, and my browser check
