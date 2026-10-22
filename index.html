@@ -234,6 +234,19 @@
                         </select>
                     </div>
 
+                    <div class="setting-item backup-setting">
+                        <div class="setting-info">
+                            <span class="setting-title">資料備份 Backup</span>
+                            <span class="setting-desc">匯出所有紀錄與導師對話，或從備份檔還原。</span>
+                            <span id="backup-status" class="backup-status" role="status"></span>
+                        </div>
+                        <div class="backup-actions">
+                            <button id="backup-export" class="btn-secondary">匯出備份</button>
+                            <button id="backup-import" class="btn-secondary">匯入備份</button>
+                            <input type="file" id="backup-file" accept=".json,application/json" hidden>
+                        </div>
+                    </div>
+
                     <!-- <div class="setting-item">
                         <div class="setting-info">
                             <span class="setting-title">AI 導師風格 AI Persona</span>

@@ -3,8 +3,24 @@
  * Manages the persistence of I-Ching divination records in local storage.
  */
 
+/**
+ * Thrown when a backup file can't be imported. The message is shown to the user.
+ */
+export class BackupError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'BackupError';
+  }
+}
+
 export class JournalService {
   static STORAGE_KEY = "iching_journal_history";
+
+  // Backup file format. Bump BACKUP_VERSION when the record shape changes and add
+  // MIGRATIONS[oldVersion] = data => data in the next version's shape.
+  static BACKUP_FORMAT = "iching-lab-journal";
+  static BACKUP_VERSION = 1;
+  static MIGRATIONS = {};
 
   /**
    * Saves a new divination record.
@@ -148,5 +164,131 @@ export class JournalService {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Builds the backup object: every record exactly as stored.
+   */
+  static exportBackup() {
+    return {
+      format: this.BACKUP_FORMAT,
+      version: this.BACKUP_VERSION,
+      exportedAt: new Date().toISOString(),
+      records: this.getHistory()
+    };
+  }
+
+  /**
+   * Backup as the text written to the downloaded file.
+   */
+  static serializeBackup() {
+    return JSON.stringify(this.exportBackup(), null, 2);
+  }
+
+  /**
+   * Parses, validates and migrates a backup file. Throws BackupError on any problem.
+   * @returns {Array} records in the current shape.
+   */
+  static parseBackup(text, { version = this.BACKUP_VERSION, migrations = this.MIGRATIONS } = {}) {
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new BackupError("檔案不是有效的 JSON，可能已損毀。");
+    }
+    if (!data || typeof data !== 'object' || Array.isArray(data) || data.format !== this.BACKUP_FORMAT) {
+      throw new BackupError("這不是 I-Ching Lab 的日誌備份檔。");
+    }
+    if (!Number.isInteger(data.version) || data.version < 1) {
+      throw new BackupError("備份檔的版本號無效。");
+    }
+    if (data.version > version) {
+      throw new BackupError("此備份來自較新版本，請先更新 App。");
+    }
+    while (data.version < version) {
+      const migrate = migrations[data.version];
+      if (!migrate) throw new BackupError(`無法轉換第 ${data.version} 版的備份檔。`);
+      data = migrate(data);
+    }
+    if (!Array.isArray(data.records)) {
+      throw new BackupError("備份檔缺少紀錄清單。");
+    }
+    data.records.forEach((record, i) => {
+      const problem = this.#recordProblem(record);
+      if (problem) throw new BackupError(`第 ${i + 1} 筆紀錄${problem}。`);
+    });
+    return data.records;
+  }
+
+  /**
+   * Only checks what every stored record has, so any journal the app wrote passes.
+   * Ids, spreads and messages are also checked because the UI puts them into HTML
+   * and onclick attributes, or calls string/array methods on them.
+   */
+  static #recordProblem(record) {
+    const isObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
+    if (!isObject(record)) return "格式不正確";
+    const { id, date, messages, type, spread } = record;
+    // saveRecord ids are Date.now(), as a digit string (or a number in the first version)
+    const validId = (typeof id === 'string' && /^\d+$/.test(id)) || (Number.isInteger(id) && id >= 0);
+    if (!validId) return "缺少 id 或 id 格式不正確";
+    if (typeof date !== 'string' || Number.isNaN(new Date(date).getTime())) return "的日期無法辨識";
+    if (messages !== undefined && !(Array.isArray(messages) && messages.every(m =>
+        isObject(m) && typeof m.role === 'string' && typeof m.content === 'string'))) {
+      return "的對話紀錄格式不正確";
+    }
+    if (type !== undefined && type !== 'iching' && type !== 'tarot') return "的類型不明";
+    // Both spread shapes getMonthlyStats reads: [{id, isReversed}] or a "0,22,77" string
+    if (spread !== undefined) {
+      const validSpread = Array.isArray(spread)
+        ? spread.every(c => isObject(c) && Number.isInteger(c.id) &&
+            (c.isReversed === undefined || typeof c.isReversed === 'boolean'))
+        : typeof spread === 'string' && /^[\d,\s]*$/.test(spread);
+      if (!validSpread) return "的牌陣格式不正確";
+    }
+    return null;
+  }
+
+  /**
+   * Merges a backup into the journal. Same id = same reading; the copy with the longer
+   * chat wins, local wins a tie. Nothing is written unless the whole file is valid.
+   * @returns {{added: number, updated: number, skipped: number}}
+   */
+  static importBackup(text) {
+    const imported = this.parseBackup(text);
+    const merged = this.getHistory();
+
+    // Each local record can be matched once, so same-millisecond duplicates survive.
+    const unmatched = new Map();
+    merged.forEach((record, index) => {
+      const key = String(record.id);
+      if (!unmatched.has(key)) unmatched.set(key, []);
+      unmatched.get(key).push(index);
+    });
+
+    const counts = { added: 0, updated: 0, skipped: 0 };
+    for (const record of imported) {
+      const index = unmatched.get(String(record.id))?.shift();
+      if (index === undefined) {
+        merged.push(record);
+        counts.added++;
+      } else if ((record.messages?.length || 0) > (merged[index].messages?.length || 0)) {
+        // Keep fields only the local copy has (e.g. a later quickInsight) and its id type
+        merged[index] = { ...merged[index], ...record, id: merged[index].id };
+        counts.updated++;
+      } else {
+        counts.skipped++;
+      }
+    }
+
+    // Stable sort keeps same-date records in their stored order.
+    merged.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(merged));
+    } catch {
+      throw new BackupError("儲存空間不足，日誌未變更。");
+    }
+    return counts;
   }
 }
