@@ -8,7 +8,9 @@ Frontend (Vite, http://localhost:3000):
 ```bash
 npm install
 npm run dev        # npm run build -> dist/, npm run preview, npm test
+npm run test:e2e   # Playwright browser tests in e2e/ (first time: npx playwright install chromium)
 ```
+The e2e tests build to `dist-e2e/`, serve it on port 4317 and answer `POST /chat` inside the browser, so they need no backend or API key. CI runs them in the `test-and-build` job.
 
 Backend (FastAPI AI proxy, http://localhost:8000):
 ```bash
