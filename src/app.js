@@ -2870,7 +2870,8 @@ class App {
         const body = modal.querySelector('.modal-body');
 
         let cardsHtml = '';
-        for (const card of record.spread) {
+        for (const c of record.spread) {
+            const card = typeof c === 'string' ? { id: c, isReversed: false } : c;
             const cardInfo = await TarotService.getCard(card.id);
             cardsHtml += `
                 <div class="tarot-result-card-mini" style="text-align: center; margin-bottom: 20px;">

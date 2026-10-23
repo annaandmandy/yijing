@@ -7,17 +7,21 @@ export class TarotEngine {
     static TOTAL_CARDS = 78;
 
     /**
+     * Every card id, as saved in journal spreads: "00"-"21" (major), "wands_01"-"pentacles_14" (minor).
+     */
+    static CARD_IDS = Object.freeze([
+        ...Array.from({ length: 22 }, (_, i) => i.toString().padStart(2, '0')),
+        ...['wands', 'cups', 'swords', 'pentacles'].flatMap(suit =>
+            Array.from({ length: 14 }, (_, i) => `${suit}_${(i + 1).toString().padStart(2, '0')}`)
+        )
+    ]);
+
+    /**
      * Shuffles the 78-card deck and assigns random orientations.
      * @returns {Array} - Array of objects {id, isReversed}
      */
     static shuffleDeck() {
-        const major = Array.from({ length: 22 }, (_, i) => i.toString().padStart(2, '0'));
-        const suits = ['wands', 'cups', 'swords', 'pentacles'];
-        const minor = suits.flatMap(suit =>
-            Array.from({ length: 14 }, (_, i) => `${suit}_${(i + 1).toString().padStart(2, '0')}`)
-        );
-
-        let deck = [...major, ...minor].map(id => ({
+        let deck = this.CARD_IDS.map(id => ({
             id,
             isReversed: Math.random() > 0.5
         }));

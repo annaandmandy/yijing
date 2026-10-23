@@ -3,6 +3,8 @@
  * Manages the persistence of I-Ching divination records in local storage.
  */
 
+import { TarotEngine } from '../engine/TarotEngine.js';
+
 /**
  * Thrown when a backup file can't be imported. The message is shown to the user.
  */
@@ -253,11 +255,14 @@ export class JournalService {
       return "的對話紀錄格式不正確";
     }
     if (type !== undefined && type !== 'iching' && type !== 'tarot') return "的類型不明";
-    // Both spread shapes getMonthlyStats reads: [{id, isReversed}] or a "0,22,77" string
+    // Card ids are the deck's ("00", "cups_14"); the History view calls id.includes on them.
+    // Arrays hold {id, isReversed}, or bare ids in readings saved before isReversed was stored.
+    // The "0,22,77" string is the older shape this check has always let through.
     if (spread !== undefined) {
+      const isCardId = id => TarotEngine.CARD_IDS.includes(id);
       const validSpread = Array.isArray(spread)
-        ? spread.every(c => isObject(c) && Number.isInteger(c.id) &&
-            (c.isReversed === undefined || typeof c.isReversed === 'boolean'))
+        ? spread.every(c => isCardId(c) || (isObject(c) && isCardId(c.id) &&
+            (c.isReversed === undefined || typeof c.isReversed === 'boolean')))
         : typeof spread === 'string' && /^[\d,\s]*$/.test(spread);
       if (!validSpread) return "的牌陣格式不正確";
     }

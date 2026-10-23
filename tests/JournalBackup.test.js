@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { JournalService, BackupError } from '../src/services/JournalService.js';
+import { TarotEngine } from '../src/engine/TarotEngine.js';
 import { MemoryStorage } from './memoryStorage.js';
 
 const KEY = JournalService.STORAGE_KEY;
@@ -45,13 +46,20 @@ function buildJournal() {
   JournalService.updateMessages(plum, chat(['體用如何', '體用比和']));
 
   vi.setSystemTime(at(2026, 10, 12));
+  // A fixed sequence for the shuffle, so every run deals the same real cards:
+  // cups_03 reversed, 11 and 19 upright
+  let seed = 0;
+  const random = vi.spyOn(Math, 'random').mockImplementation(() => (seed = (seed * 7 + 1) % 10) / 10);
+  const dealt = Object.values(TarotEngine.drawThreeCardSpread(TarotEngine.shuffleDeck()));
+  random.mockRestore();
   const tarot = JournalService.saveRecord({
     type: 'tarot',
     question: '塔羅占卜',
-    spread: [{ id: 0, isReversed: false }, { id: 22, isReversed: true }, { id: 77, isReversed: false }],
+    // Cards from the real deck, saved the way app.js does after a three-card draw
+    spread: dealt.map(c => ({ id: c.id, isReversed: c.isReversed })),
     spreadType: 'three-card'
   });
-  JournalService.updateRecord(tarot, { quickInsight: '過去的愚者...' });
+  JournalService.updateRecord(tarot, { quickInsight: '過去的聖杯三逆位...' });
   JournalService.updateMessages(tarot, chat(['未來呢', '金幣十...'], ['謝謝', '不客氣']));
 
   // Shape written by the first saveRecord (commit 3cd8544): numeric id, no type, no messages.
@@ -297,6 +305,34 @@ describe('rejecting damaged or unrelated files', () => {
     const tarot = file.records.find(r => r.type === 'tarot');
     expectRejected(withRecords([{ ...tarot, spread: 5 }]), /第 1 筆.*牌陣/);
     expectRejected(withRecords([{ ...tarot, spread: [{ id: '"><img>' }] }]), /第 1 筆.*牌陣/);
+    // A number: the History view calls id.includes('_') on every card id
+    expectRejected(withRecords([{ ...tarot, spread: [{ id: 0, isReversed: false }] }]), /第 1 筆.*牌陣/);
+    // Not a card in the deck, so there is no card file or image for it
+    expectRejected(withRecords([{ ...tarot, spread: [{ id: 'cups_15', isReversed: false }] }]), /第 1 筆.*牌陣/);
+    expectRejected(withRecords([{ ...tarot, spread: [{ id: '00', isReversed: 'yes' }] }]), /第 1 筆.*牌陣/);
+  });
+
+  it('accepts every card the deck can deal', () => {
+    // The card files the app loads by id (TarotService.getCard), not the engine's own list
+    const fileIds = fs.readdirSync(path.resolve(import.meta.dirname, '../public/tarot_data'))
+      .filter(name => /^card_.+\.json$/.test(name))
+      .map(name => name.slice('card_'.length, -'.json'.length));
+    expect(fileIds).toHaveLength(78);
+    expect([...TarotEngine.CARD_IDS].sort()).toEqual([...fileIds].sort());
+
+    const tarot = file.records.find(r => r.type === 'tarot');
+    const spread = TarotEngine.shuffleDeck().map(c => ({ id: c.id, isReversed: c.isReversed }));
+    JournalService.clearHistory();
+    JournalService.importBackup(withRecords([{ ...tarot, spread }]));
+    expect(JournalService.getRecord(tarot.id).spread).toEqual(spread);
+  });
+
+  it('accepts the bare card ids that readings saved before isReversed still hold', () => {
+    const tarot = file.records.find(r => r.type === 'tarot');
+    const spread = tarot.spread.map(c => c.id);
+    JournalService.clearHistory();
+    JournalService.importBackup(withRecords([{ ...tarot, spread }]));
+    expect(JournalService.getRecord(tarot.id).spread).toEqual(spread);
   });
 
   it('accepts the older comma-separated spread string', () => {
