@@ -8,13 +8,15 @@
         "build": "vite build",
         "preview": "vite preview",
         "generate": "python3 scripts/yijing_generate.py",
-        "test": "vitest run"
+        "test": "vitest run",
+        "test:e2e": "playwright test"
     },
     "dependencies": {
         "cannon-es": "^0.20.0",
         "three": "^0.160.0"
     },
     "devDependencies": {
+        "@playwright/test": "^1.64.1",
         "vite": "^5.0.0",
         "vitest": "^3.2.7"
     }

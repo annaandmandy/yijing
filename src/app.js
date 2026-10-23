@@ -80,6 +80,9 @@ class App {
         this.applySettingsToUI();
 
         this.showWelcomeMessage();
+
+        // Every handler is wired by now; the e2e tests wait for this before clicking
+        this.isReady = true;
     }
 
     showWelcomeMessage() {
