@@ -40,6 +40,7 @@
                     <div class="casting-mode-switcher mini-row">
                         <button class="mode-btn active" data-mode="coin">金錢卦 (投擲)</button>
                         <button class="mode-btn" data-mode="plum">梅花易數 (數字)</button>
+                        <button class="mode-btn" data-mode="plum-time">梅花易數 (時間)</button>
                     </div>
                 </div>
 
@@ -52,6 +53,20 @@
                             <input type="number" id="plum-n3" placeholder="數字三" class="glass-input">
                         </div>
                         <button id="plum-submit" class="btn-primary gold-glow">生成梅花卦</button>
+                    </div>
+                </div>
+
+                <div id="plum-time-input" class="plum-input-zone hidden">
+                    <div class="plum-form glass-panel">
+                        <h3>以起心動念之時起卦（年月日時）</h3>
+                        <div class="plum-time-when">
+                            <label><input type="radio" name="plum-time-when" value="now" checked> 現在</label>
+                            <label><input type="radio" name="plum-time-when" value="at"> 指定時間</label>
+                        </div>
+                        <input type="datetime-local" id="plum-time-at" class="glass-input hidden">
+                        <p id="plum-time-preview" class="plum-time-preview"></p>
+                        <p id="plum-time-error" class="plum-time-error hidden" role="alert"></p>
+                        <button id="plum-time-submit" class="btn-primary gold-glow">以時間起卦</button>
                     </div>
                 </div>
 

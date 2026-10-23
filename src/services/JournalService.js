@@ -98,6 +98,9 @@ export class JournalService {
    * Falls back to now for records without a valid date.
    */
   static getCastDate(record) {
+    // A time-based Plum Blossom cast keeps the moment it was cast for (castTime), which can be earlier than the save
+    const castTime = new Date(record?.castTime);
+    if (record?.castTime && !isNaN(castTime.getTime())) return castTime;
     const date = new Date(record?.date);
     return isNaN(date.getTime()) ? new Date() : date;
   }
