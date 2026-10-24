@@ -46,6 +46,22 @@ describe('getCastDate: reopening a saved reading (issue #2)', () => {
   });
 });
 
+describe('getCastDate: time-based Plum Blossom casts (issue #1)', () => {
+  const saved = at(2026, 10, 3).toISOString();
+  const picked = new Date(2026, 9, 2, 15, 0).toISOString(); // "yesterday at 3pm"
+
+  it('prefers the picked castTime over the save date', () => {
+    expect(JournalService.getCastDate({ id: '1', date: saved, castTime: picked }).toISOString()).toBe(picked);
+  });
+
+  it.each([
+    ['no castTime', undefined],
+    ['an invalid castTime', 'not a date']
+  ])('falls back to the save date for %s', (_, castTime) => {
+    expect(JournalService.getCastDate({ id: '1', date: saved, castTime }).toISOString()).toBe(saved);
+  });
+});
+
 describe('app.js does not take GanZhi from the current time (issue #2)', () => {
   it('never calls TimeService.getGanZhi(new Date())', () => {
     const source = fs.readFileSync(path.resolve(import.meta.dirname, '../src/app.js'), 'utf8');

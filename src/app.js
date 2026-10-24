@@ -207,9 +207,8 @@ class App {
 
         const overlay = document.getElementById('result-overlay');
         const qContainer = document.querySelector('.question-container');
-        const plumZone = document.getElementById('plum-blossom-input');
         if (qContainer) qContainer.style.display = 'none';
-        if (plumZone) plumZone.style.display = 'none';
+        this.syncPlumZones(true);
 
         // Basic Header Info
         const nameEl = overlay.querySelector('.hex-name');
@@ -367,7 +366,7 @@ class App {
         if (!analysis || !bodyTrigram || !guestTrigram) {
             const keys = Object.keys(pr).join('/');
             const innerKeys = pr.analysis ? Object.keys(pr.analysis).join(',') : 'n/a';
-            container.innerHTML = `<div class="glass-panel error-fallback">梅花格式不完整 (Keys: ${keys} | AnalysisKeys: ${innerKeys})。</div>`;
+            container.innerHTML = `<div class="glass-panel error-fallback">梅花格式不完整 (Keys: ${escapeHtml(keys)} | AnalysisKeys: ${escapeHtml(innerKeys)})。</div>`;
             return;
         }
 
@@ -378,15 +377,23 @@ class App {
             <div class="plum-trigram-item">
                 <span class="trigram-symbol ${wuxingMap[t.wuxing]}">${symbolMap[t.name] || ''}</span>
                 <div class="trigram-info">
-                    <span class="trigram-name">${t.name}</span>
-                    <span class="trigram-wuxing">${t.wuxing}</span>
+                    <span class="trigram-name">${escapeHtml(t.name)}</span>
+                    <span class="trigram-wuxing">${escapeHtml(t.wuxing)}</span>
                 </div>
                 ${label ? `<span class="plum-tag">${label}</span>` : ''}
             </div>
         `;
 
+        // plumResult comes from the journal, which an imported backup can fill, so escape what goes into HTML
+        const timeBasis = pr.timeCast ? `<div class="plum-time-basis">時間起卦：${escapeHtml(this.formatPlumTimeBasis(pr.timeCast))}</div>` : '';
+        const resultText = String(analysis.result ?? '');
+        const verdictLabel = resultText.split('：')[0] || String(analysis.interaction ?? '');
+        // Plain text, not Markdown: marked has no sanitizer, so a [link](javascript:…) in an imported record would run
+        const verdictText = escapeHtml(resultText.split('：')[1] || resultText || '根據體用生剋關係，此卦象代表發展平穩。');
+
         container.innerHTML = `
             <div class="plum-analysis-container">
+                ${timeBasis}
                 <div class="plum-timeline">
                     <!-- Stage 1: Original -->
                     <div class="plum-step">
@@ -424,10 +431,10 @@ class App {
 
                 <div class="plum-verdict-card">
                     <div class="verdict-header">
-                        <span class="verdict-interaction">${analysis.result?.split('：')[0] || analysis.interaction || ''}</span>
+                        <span class="verdict-interaction">${escapeHtml(verdictLabel)}</span>
                         <i class="fas fa-magic" style="color: var(--accent-gold); opacity: 0.5;"></i>
                     </div>
-                    <div class="verdict-text">${window.marked ? window.marked.parse(analysis.result?.split('：')[1] || analysis.result || '根據體用生剋關係，此卦象代表發展平穩。') : (analysis.result?.split('：')[1] || analysis.result)}</div>
+                    <div class="verdict-text"><p>${verdictText}</p></div>
                 </div>
             </div>
         `;
@@ -621,13 +628,8 @@ class App {
 
         // Restore input and mode switcher
         const qContainer = document.querySelector('.question-container');
-        const plumZone = document.getElementById('plum-blossom-input');
-
         if (qContainer) qContainer.style.display = 'flex';
-        // Only show plum zone if we are in plum mode
-        if (this.ichingMode === 'plum' && plumZone) {
-            plumZone.style.display = 'block';
-        }
+        this.syncPlumZones(false);
 
         this.resultSource = null;
         document.querySelector('.instruction').classList.remove('hidden');
@@ -1055,7 +1057,7 @@ class App {
                 hasChange: record.hasChange || false,
                 isPlum: record.isPlum || record.method === '梅花',
                 plumResult: record.plumResult || record.advancedTheory?.plum || null,
-                castingMode: record.method === '梅花' ? 'plum' : 'iching'
+                castingMode: (record.isPlum || record.method === '梅花') ? 'plum' : 'iching'
             };
 
             const futureHex = record.futureId ? this.library.find(h => h.id === record.futureId) : null;
@@ -1112,19 +1114,37 @@ class App {
         this.renderView();
     }
 
+    // Both Plum Blossom casts (by numbers and by time) replace the coin toss
+    isPlumMode() {
+        return this.ichingMode === 'plum' || this.ichingMode === 'plum-time';
+    }
+
+    /**
+     * Shows the input zone of the current Plum mode and hides the other one; hides both while the result
+     * overlay is open. Uses only the hidden class, clearing any inline display left from older code.
+     */
+    syncPlumZones(overlayOpen) {
+        const zones = { plum: 'plum-blossom-input', 'plum-time': 'plum-time-input' };
+        for (const [mode, id] of Object.entries(zones)) {
+            const zone = document.getElementById(id);
+            if (!zone) continue;
+            zone.style.display = '';
+            zone.classList.toggle('hidden', overlayOpen || this.ichingMode !== mode);
+        }
+        if (!overlayOpen && this.ichingMode === 'plum-time') this.updatePlumTimePreview();
+    }
+
     syncCastingModeUI() {
         const qContainer = document.querySelector('.question-container');
-        const plumZone = document.getElementById('plum-blossom-input');
         const coinZone = document.getElementById('canvas-container');
         const modeBtns = document.querySelectorAll('.casting-mode-switcher .mode-btn');
 
         if (qContainer) qContainer.style.display = 'flex';
+        this.syncPlumZones(false);
 
-        if (this.ichingMode === 'plum') {
-            if (plumZone) plumZone.classList.remove('hidden');
+        if (this.isPlumMode()) {
             if (coinZone) coinZone.classList.add('hidden');
         } else {
-            if (plumZone) plumZone.classList.add('hidden');
             if (coinZone) {
                 coinZone.classList.remove('hidden');
                 // Ensure 3D scene adapts to container size after being hidden
@@ -3012,6 +3032,16 @@ class App {
         if (submitBtn) {
             submitBtn.onclick = () => this.handlePlumBlossomSubmit();
         }
+
+        document.querySelectorAll('input[name="plum-time-when"]').forEach(radio => {
+            radio.onchange = () => this.updatePlumTimePreview();
+        });
+        const timeInput = document.getElementById('plum-time-at');
+        if (timeInput) timeInput.oninput = () => this.updatePlumTimePreview();
+        const timeSubmitBtn = document.getElementById('plum-time-submit');
+        if (timeSubmitBtn) {
+            timeSubmitBtn.onclick = () => this.handlePlumTimeSubmit();
+        }
     }
 
     async handlePlumBlossomSubmit() {
@@ -3025,7 +3055,91 @@ class App {
         }
 
         console.log(`Generating Plum Blossom for: ${n1}, ${n2}, ${n3}`);
-        const result = PlumBlossomEngine.calculateFromNumbers(n1, n2, n3);
+        this.showPlumReading(PlumBlossomEngine.calculateFromNumbers(n1, n2, n3));
+    }
+
+    // 「現在」 is read when the button is clicked; 「指定時間」 is the datetime-local value, as local time
+    getPlumTimeMoment() {
+        const mode = document.querySelector('input[name="plum-time-when"]:checked')?.value || 'now';
+        if (mode === 'now') return new Date();
+        const value = document.getElementById('plum-time-at')?.value;
+        if (!value) return null;
+        const date = new Date(value);
+        return isNaN(date.getTime()) ? null : date;
+    }
+
+    formatPlumTimeBasis(t) {
+        const monthNames = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
+        const month = `${t.isLeapMonth ? '閏' : ''}${monthNames[t.month - 1]}月`;
+        // Lunar day names: 初一 … 初十, 十一 … 二十, 廿一 … 廿九, 三十
+        const digits = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+        const tens = Math.floor(t.day / 10), ones = t.day % 10;
+        const day = t.day <= 10 ? `初${t.day === 10 ? '十' : digits[ones]}`
+            : ones === 0 ? (tens === 2 ? '二十' : '三十')
+            : `${['', '十', '廿'][tens]}${digits[ones]}`;
+        return `${t.yearBranch}年(${t.yearNum}) ${month}(${t.month}) ${day}日(${t.day}) ${t.hourBranch}時(${t.hourNum})`;
+    }
+
+    // Recomputed on mode switch, on the 現在/指定時間 toggle and on input; there is no timer to clean up
+    updatePlumTimePreview() {
+        const mode = document.querySelector('input[name="plum-time-when"]:checked')?.value || 'now';
+        const timeInput = document.getElementById('plum-time-at');
+        const preview = document.getElementById('plum-time-preview');
+        if (timeInput) timeInput.classList.toggle('hidden', mode !== 'at');
+        this.setPlumTimeError('');
+        if (!preview) return;
+
+        const moment = this.getPlumTimeMoment();
+        if (!moment) {
+            preview.textContent = '請選擇日期與時間';
+            return;
+        }
+        try {
+            const t = PlumBlossomEngine.toLunarMoment(moment);
+            preview.textContent = `${this.formatPlumTimeBasis(t)} → ${t.yearNum} + ${t.month} + ${t.day} + ${t.hourNum}`;
+        } catch (error) {
+            preview.textContent = '';
+            this.setPlumTimeError(error.message);
+        }
+    }
+
+    setPlumTimeError(message) {
+        const errorEl = document.getElementById('plum-time-error');
+        if (!errorEl) return;
+        errorEl.textContent = message;
+        errorEl.classList.toggle('hidden', !message);
+    }
+
+    handlePlumTimeSubmit() {
+        const moment = this.getPlumTimeMoment();
+        if (!moment) {
+            this.setPlumTimeError('請選擇日期與時間');
+            return;
+        }
+
+        let result;
+        try {
+            result = PlumBlossomEngine.calculateFromTime(moment);
+        } catch (error) {
+            if (!(error instanceof RangeError)) throw error;
+            this.setPlumTimeError(error.message);
+            return;
+        }
+        this.setPlumTimeError('');
+
+        this.showPlumReading(result, {
+            question: "梅花易數時間起卦",
+            plumMethod: 'time',
+            castTime: moment.toISOString()
+        });
+    }
+
+    /**
+     * Saves a Plum Blossom reading (by numbers or by time) to the journal and shows it,
+     * with its changed hexagram (變卦) like a coin cast with one moving line.
+     */
+    showPlumReading(result, extra = {}) {
+        const { question: defaultQuestion = "梅花易數求卦", ...recordExtra } = extra;
 
         // Match with library to get hexagram details
         const hex = this.library.find(h => h.binary === result.binary);
@@ -3033,6 +3147,8 @@ class App {
             console.error("Could not find hexagram for binary:", result.binary);
             return;
         }
+        const futureHex = this.library.find(h => h.binary === result.changedBinary) || null;
+        const changingLines = [result.movingLine];
 
         this.currentHexData = hex;
         // Inject Plum Blossom analysis for AI context
@@ -3040,25 +3156,31 @@ class App {
 
         // Save to Journal
         const recordId = JournalService.saveRecord({
-            question: document.getElementById('user-question')?.value || "梅花易數求卦",
+            question: document.getElementById('user-question')?.value || defaultQuestion,
             originalId: hex.id,
             originalBinary: result.binary,
             originalName: hex.name,
+            futureId: futureHex?.id,
+            futureName: futureHex?.name,
             movingLine: result.movingLine,
+            changingLines,
+            hasChange: true,
             isPlum: true,
             plumResult: result,
             advancedTheory: {
-                relations: PlumBlossomEngine.calculateFromNumbers(n1, n2, n3), // Reuse for theory
+                relations: result, // Reuse for theory
                 plum: result
-            }
+            },
+            ...recordExtra
         });
         this.currentRecordId = recordId;
         this.chatMessages = [];
 
         // Show result overlay (reusing Iching result UI)
-        this.showResultOverlay(hex, null, {
+        this.showResultOverlay(hex, futureHex, {
             originalBinary: result.binary,
-            hasChange: false,
+            hasChange: true,
+            changingLines,
             movingLine: result.movingLine,
             isPlum: true,
             plumResult: result

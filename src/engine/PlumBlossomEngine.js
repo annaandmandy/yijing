@@ -3,6 +3,12 @@
  * Logic for Plum Blossom Divination (梅花易數).
  * Handles number-to-trigram conversion, Body/Guest analysis, and Five Elements interaction.
  */
+import { HKO_LUNAR_YEARS, HKO_RANGE } from "./hkoLunarMonths.js";
+import { TimeService } from "../services/TimeService.js";
+
+// Midnight UTC of a civil date as ms. Unlike Date.UTC, years 0–99 stay as they are (not 1900–1999).
+const utcDay = (year, monthIndex, day) => new Date(0).setUTCFullYear(year, monthIndex, day);
+const isoDay = (iso) => { const [y, m, d] = iso.split("-").map(Number); return utcDay(y, m - 1, d); };
 
 export class PlumBlossomEngine {
     static TRIGRAMS = [
@@ -24,22 +30,114 @@ export class PlumBlossomEngine {
      * Moving Line = (Num1 + Num2 + Num3) % 6 (6 is Top)
      */
     static calculateFromNumbers(n1, n2, n3) {
-        const upperIdx = n1 % 8 || 8;
-        const lowerIdx = n2 % 8 || 8;
-        const movingLine = (n1 + n2 + n3) % 6 || 6;
+        return this.#buildResult(n1, n2, n1 + n2 + n3);
+    }
 
-        const upperTrigram = this.TRIGRAMS.find(t => t.id === upperIdx);
-        const lowerTrigram = this.TRIGRAMS.find(t => t.id === lowerIdx);
+    /**
+     * 年月日時起卦 (《梅花易數》卷一):
+     * 「年月日為上卦。年月日加時總數為下卦。又以年月日時總數取爻。」
+     * Year and hour are branch numbers (子 = 1 … 亥 = 12), month and day the lunar ones.
+     */
+    static calculateFromTimeNumbers(yearNum, month, day, hourNum) {
+        const dateSum = yearNum + month + day;
+        return this.#buildResult(dateSum, dateSum + hourNum, dateSum + hourNum);
+    }
+
+    /**
+     * Time cast for a moment, read as local wall-clock time.
+     * Throws RangeError when the lunar date can't be worked out (see toLunarMoment).
+     */
+    static calculateFromTime(date) {
+        const moment = this.toLunarMoment(date);
+        const result = this.calculateFromTimeNumbers(moment.yearNum, moment.month, moment.day, moment.hourNum);
+        return { ...result, timeCast: moment };
+    }
+
+    // Upper = upperNum % 8, lower = lowerNum % 8 (8 is 坤), moving line = lineNum % 6 (6 is the top)
+    static #buildResult(upperNum, lowerNum, lineNum) {
+        const upperTrigram = this.TRIGRAMS.find(t => t.id === (upperNum % 8 || 8));
+        const lowerTrigram = this.TRIGRAMS.find(t => t.id === (lowerNum % 8 || 8));
+        const movingLine = lineNum % 6 || 6;
 
         const binary = this.getHexBinary(upperTrigram.id, lowerTrigram.id);
+        const flipped = binary[movingLine - 1] === "1" ? "0" : "1";
+        const changedBinary = binary.slice(0, movingLine - 1) + flipped + binary.slice(movingLine);
 
         return {
             upperTrigram,
             lowerTrigram,
             movingLine,
             binary,
+            changedBinary,
             analysis: this.analyzeBodyGuest(upperTrigram, lowerTrigram, movingLine)
         };
+    }
+
+    // The dates hkoLunarMonths.js covers (lunar 1901 正月初一 to the end of 2100), written by its generator
+    static LUNAR_RANGE = { first: isoDay(HKO_RANGE.first), last: isoDay(HKO_RANGE.last) };
+    static #monthStarts = null;
+
+    /**
+     * Reads a moment as local wall-clock time and gives the lunar numbers the time cast needs.
+     * - Hours: 子時 is 23:00–00:59, 丑時 01:00–02:59, …; from 23:00 the day counts as the next day (子初換日).
+     * - The (rolled-over) local civil date is looked up in the HKO month table, so the lunar date is
+     *   HKO's date for that civil date whatever the device's time zone.
+     * - A leap month (閏月) counts as the month it repeats.
+     * Throws RangeError outside 1901-02-19 … 2100-12-31 (checked on the rolled-over date).
+     */
+    static toLunarMoment(date) {
+        const hour = date.getHours();
+        const hourIdx = Math.floor(((hour + 1) % 24) / 2);
+        // The day overflow is normalized (e.g. Jan 32 → Feb 1)
+        const civil = utcDay(date.getFullYear(), date.getMonth(), date.getDate() + (hour >= 23 ? 1 : 0));
+
+        if (isNaN(civil) || civil < this.LUNAR_RANGE.first || civil > this.LUNAR_RANGE.last) {
+            throw new RangeError("此日期超出農曆換算範圍（1901–2100）");
+        }
+
+        // Last month start on or before the date
+        const starts = this.#lunarMonthStarts();
+        let lo = 0, hi = starts.length - 1;
+        while (lo < hi) {
+            const mid = (lo + hi + 1) >> 1;
+            if (starts[mid].time <= civil) lo = mid; else hi = mid - 1;
+        }
+        const { lunarYear, month, isLeapMonth, time } = starts[lo];
+
+        const yearIdx = (((lunarYear - 4) % 12) + 12) % 12; // 4 CE was a 子 year
+        return {
+            lunarYear,
+            yearBranch: TimeService.BRANCHES[yearIdx],
+            yearNum: yearIdx + 1,
+            month,
+            isLeapMonth,
+            day: Math.round((civil - time) / 86400000) + 1,
+            hourBranch: TimeService.BRANCHES[hourIdx],
+            hourNum: hourIdx + 1
+        };
+    }
+
+    // Parses HKO_LUNAR_YEARS ("1901 02-19 03-20 … 01-10", * = leap month) into sorted month starts
+    static #lunarMonthStarts() {
+        if (!this.#monthStarts) {
+            this.#monthStarts = HKO_LUNAR_YEARS.flatMap(line => {
+                const [yearText, ...cells] = line.split(" ");
+                const lunarYear = Number(yearText);
+                let gregorianYear = lunarYear;
+                let month = 0;
+                let prev = "";
+                return cells.map(cell => {
+                    const isLeapMonth = cell.endsWith("*");
+                    const monthDay = cell.replace("*", "");
+                    if (monthDay < prev) gregorianYear++;
+                    prev = monthDay;
+                    if (!isLeapMonth) month++;
+                    const [m, d] = monthDay.split("-").map(Number);
+                    return { time: utcDay(gregorianYear, m - 1, d), lunarYear, month, isLeapMonth };
+                });
+            });
+        }
+        return this.#monthStarts;
     }
 
     /**

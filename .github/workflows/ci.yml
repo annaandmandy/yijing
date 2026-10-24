@@ -17,6 +17,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # CI runs in UTC; the time-based Plum Blossom cast reads local wall-clock time, so also test a UTC+8 zone
+      - run: TZ=Asia/Taipei npx vitest run tests/PlumBlossomEngine.test.js
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       # No GOOGLE_API_KEY or backend in CI: the e2e fixture answers POST /chat in the browser
